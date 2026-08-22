@@ -1,0 +1,138 @@
+.toplevel_page_wpsp_sitepulse .wp-menu-image img {
+    width: 28px;
+    padding: 0 !important;
+}
+
+.toplevel_page_wpsp_sitepulse .wp-menu-image {
+    display: flex;
+    justify-content: center;
+}
+
+/* Catch Attention Button - Pulse Early Access */
+.sp-btn-early-access {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: #ffffff !important;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 13px;
+    text-decoration: none !important;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    border: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    margin: 5px;
+}
+
+.sp-btn-early-access:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+}
+
+.sp-btn-early-access .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Pulsing effect to catch attention */
+@keyframes sp-early-access-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6); }
+    70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+.sp-btn-early-access.sp-pulse {
+    animation: sp-early-access-pulse 2s infinite;
+}
+
+/* Promo Banner Style */
+.sp-promo-banner {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border-radius: 16px;
+    padding: 24px 32px;
+    color: #ffffff !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(79, 70, 229, 0.2);
+}
+
+.sp-promo-banner::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    z-index: 0;
+}
+
+.sp-promo-content {
+    flex: 1;
+    z-index: 1;
+}
+
+.sp-promo-content h3 {
+    color: #ffffff !important;
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    margin: 0 0 8px 0 !important;
+    letter-spacing: -0.02em;
+}
+
+.sp-promo-content p {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 15px !important;
+    margin: 0 !important;
+    line-height: 1.5 !important;
+    max-width: 600px;
+}
+
+.sp-promo-action {
+    z-index: 1;
+    flex-shrink: 0;
+}
+
+.sp-promo-banner .sp-btn-early-access {
+    background: #ffffff !important;
+    color: #4f46e5 !important;
+    padding: 12px 28px;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.sp-promo-banner .sp-btn-early-access:hover {
+    background: #f8fafc !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+    .sp-promo-banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px;
+    }
+    .sp-promo-content p {
+        margin-bottom: 16px !important;
+    }
+}

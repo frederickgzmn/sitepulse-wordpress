@@ -1,0 +1,418 @@
+#wp-admin-bar-wpsp_view_report .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+/* Rainbow border animation class */
+#wp-admin-bar-wpsp_view_report .rainbow-border,
+.sitepulse_css_class .rainbow-border {
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+}
+
+#wp-admin-bar-wpsp_view_report .rainbow-border::before,
+.sitepulse_css_class .rainbow-border::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -2px;
+    right: -2px;
+    bottom: -4px;
+    background: conic-gradient(
+        #80ff00 0deg,
+        #00ff00 120deg,
+        #00ff80 150deg,
+        #00ffff 180deg,
+        #0080ff 210deg,
+        #0000ff 240deg
+    );
+    border-radius: 26px;
+    z-index: -1;
+    animation: rainbow-rotate 0.5s linear infinite;
+    transition: all 0.3s ease;
+}
+
+#wp-admin-bar-wpsp_view_report .rainbow-border::after,
+.sitepulse_css_class .rainbow-border::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    background: #212529;
+    border-radius: 24px;
+    z-index: -1;
+}
+
+#wp-admin-bar-wpsp_view_report .rainbow-border:hover::before,
+.sitepulse_css_class .rainbow-border:hover::before {
+    animation-duration: 1s;
+    top: -6px;
+    left: -3px;
+    right: -3px;
+    bottom: -6px;
+}
+
+@keyframes rainbow-rotate {
+    20% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+#wp-admin-bar-wpsp_view_report .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+#wp-admin-bar-wpsp_view_report .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #555555;
+    border: 1px solid #777777;
+    transition: .3s;
+}
+
+#wp-admin-bar-wpsp_view_report .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    top: 2px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    transition: .3s;
+}
+
+#wp-admin-bar-wpsp_view_report input:checked + .slider {
+    background-color: #00d4aa;
+    border-color: #00b894;
+}
+
+#wp-admin-bar-wpsp_view_report input:focus + .slider {
+    box-shadow: 0 0 2px #00d4aa;
+    outline: none;
+}
+
+#wp-admin-bar-wpsp_view_report input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+}
+
+#wp-admin-bar-wpsp_view_report .slider.round {
+    border-radius: 24px;
+}
+
+#wp-admin-bar-wpsp_view_report .slider.round:before {
+    border-radius: 50%;
+}
+
+#wp-admin-bar-wpsp_view_report .switch-container {
+    display: flex;
+    margin: 0;
+    background: transparent;
+    border: none;
+    min-width: 200px;
+}
+
+#wp-admin-bar-wpsp_view_report .sitepulse-container .sitepulse-ontracking {
+    text-align: center;
+}
+
+#wp-admin-bar-wpsp_view_report .switch-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 4px;
+    font-size: 13px;
+    font-weight: 400;
+    color: #eee;
+    line-height: 24px;
+}
+
+#wp-admin-bar-wpsp_view_report .switch-item:last-child {
+    border-bottom: none;
+}
+
+#wp-admin-bar-wpsp_view_report .switch-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+#wp-admin-bar-wpsp_view_report .switch-label {
+    flex-grow: 1;
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+/* Admin Bar Sitepulse */
+/* Constrain admin bar node to 130x30px */
+#wp-admin-bar-wpsp > .ab-item {
+    display:inline-flex !important;
+    align-items:center;
+    gap:6px;
+    padding:0 !important;
+    color:#e6f7ff !important;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+}
+
+#wp-admin-bar-wpsp > .ab-item .wshp-pill{
+    display: flex;
+    align-items: center;
+}
+
+/* Left icon small square */
+#wp-admin-bar-wpsp .wshp-left-icon {
+    width:22px;
+    height:22px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:5px;
+    background: linear-gradient(180deg,#0f3a55,#062433);
+    box-shadow: inset 0 -4px 8px rgba(255,255,255,0.02), 0 4px 10px rgba(0,0,0,0.45);
+    color:#8fe9ff;
+    flex:0 0 22px;
+}
+
+/* Compact label and badge */
+#wp-admin-bar-wpsp .wshp-label {
+    font-weight:600;
+    color:#e6f7ff;
+    font-size:11px;
+    line-height:1;
+    display:inline-block;
+    margin:0;
+    padding:0 3px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+/* Tiny circular count */
+#wp-admin-bar-wpsp .wshp-count {
+    display:inline-block;
+    min-width:16px;
+    height:16px;
+    line-height:16px;
+    font-size:10px;
+    text-align:center;
+    background:#ff6b6b;
+    color:#fff;
+    padding:0 4px;
+    border-radius:7px;
+    margin-left:6px;
+}
+
+/* Tiny circular count */
+#wp-admin-bar-wpsp .wshp-site-load-time {
+    display: inline-block;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    font-size: 10px;
+    text-align: center;
+    background: #c4cebf26;
+    color: #fff;
+    padding: 0 4px;
+    border-radius: 7px;
+    margin-left: 6px;
+}
+
+#wp-admin-bar-wpsp .wshp-site-load-time.green {
+    color: #04ff00;
+}
+
+#wp-admin-bar-wpsp .wshp-site-load-time.yellow {
+    color: #ffec00;
+}
+
+#wp-admin-bar-wpsp .wshp-site-load-time.red {
+    color: #ff3b3b;
+}
+
+.wpsp-stats {
+    background:#776bff !important;
+}
+
+/* Dropdown: keep compact and readable; width limited so it remains small */
+#wp-admin-bar-wpsp .ab-submenu {
+    background: rgba(12,16,20,0.98);
+    border-radius:6px;
+    padding:6px;
+    /* min-width:130px;
+    max-width:130px; */
+    box-shadow: 0 12px 30px rgba(2,8,16,0.85);
+    border: 1px solid rgba(255,255,255,0.03);
+}
+
+/* Make each dropdown row compact */
+#wp-admin-bar-wpsp .ab-submenu .ab-item {
+    background:transparent;
+    padding:4px 6px;
+    min-width: 100% !important;
+    height: auto !important;
+}
+
+/* Event row layout tuned for tight space */
+#wp-admin-bar-wpsp .wshp-event-row {
+    display:flex;
+    gap:8px;
+    align-items:flex-start;
+    padding:4px 0;
+}
+
+#wp-admin-bar-wpsp .wshp-ms {
+    min-width:56px;
+    text-align:right;
+    color:#ff8b8b;
+    font-weight:700;
+    font-family:Menlo,Consolas,monospace;
+    font-size:12px;
+    flex:0 0 56px;
+}
+
+/* Host and meta: truncate aggressively to fit */
+#wp-admin-bar-wpsp .wshp-host {
+    color:#e6eef6;
+    font-size:12px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:60px;
+}
+#wp-admin-bar-wpsp .wshp-meta {
+    color:#9fb2bd;
+    font-size:10px;
+    margin-top:3px;
+    display:block;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:60px;
+}
+
+/* Hover states */
+#wp-admin-bar-wpsp .ab-submenu .ab-item:hover,
+#wp-admin-bar-wpsp .ab-submenu .ab-item:focus {
+    background: linear-gradient(90deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+    border-radius:4px;
+}
+
+/* Ensure SVGs inherit color and do not overflow */
+#wp-admin-bar-wpsp svg { display:block; width:14px; height:14px; color:inherit; }
+
+/* Monospace timings */
+.wshp-mono{ font-family:Menlo,Consolas,monospace; }
+
+/* ------------------------------------ Alerts ------------------------------------  */
+/* SitePulse frontend styles */
+
+#sitepulse-alerts {
+    position: fixed;
+    top: 20px;
+    right: 50%;
+    transform: translateX(50%);
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 360px;
+    pointer-events: none; /* allow clicks to pass except on alerts */
+}
+
+.sitepulse-alert {
+    pointer-events: auto;
+    padding: 10px 14px;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    font-size: 14px;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 180ms ease, transform 180ms ease;
+    cursor: pointer;
+    word-break: break-word;
+}
+
+/* visible state */
+.sitepulse-alert.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* variants */
+.sitepulse-alert-info    { background: #2f86eb; color: #fff; }
+.sitepulse-alert-success { background: #28a745; color: #fff; }
+.sitepulse-alert-warning { background: #ffc107; color: #212529; }
+.sitepulse-alert-danger  { background: #dc3545; color: #fff; }
+
+/* Confirm dialog */
+.sitepulse-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 999998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+}
+
+.sitepulse-confirm-box {
+    background: #fff;
+    color: #212529;
+    padding: 18px;
+    border-radius: 8px;
+    min-width: 280px;
+    max-width: 720px;
+    box-shadow: 0 8px 26px rgba(0,0,0,0.18);
+    text-align: left;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+.sitepulse-confirm-message {
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+
+.sitepulse-confirm-actions {
+    text-align: right;
+}
+
+/* Buttons */
+.sitepulse-confirm-btn {
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.sitepulse-confirm-cancel {
+    margin-right: 8px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #212529;
+}
+
+.sitepulse-confirm-ok {
+    border: none;
+    background: #0d6efd;
+    color: #fff;
+}

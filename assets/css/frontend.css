@@ -1,0 +1,525 @@
+/* Admin real time tracking button styles */
+.sitepulse-realtime-tracking {
+    display: flex;
+    justify-content: center;
+}
+
+.sitepulse-realtime-tracking .sitepulse-btn {
+    border-radius: 5px !important;
+    padding: 2px 10px !important;
+    margin: 5px 0 !important;
+}
+
+/* SitePulse Completion Info Styles - Matching Modal Theme */
+#sitepulse-completion-info {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    color: #555;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    max-height: 400px;
+    overflow-y: auto;
+    /* border-left: 4px solid #cc1111; */
+}
+
+#sitepulse-completion-info::-webkit-scrollbar {
+    width: 6px;
+}
+
+#sitepulse-completion-info::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.sitepulse-event {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    position: relative;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.sitepulse-event:hover {
+    border-color: #cc1111;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(204, 17, 17, 0.15);
+}
+
+.sitepulse-event:last-child {
+    margin-bottom: 0;
+}
+
+.sitepulse-event::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: #cc1111;
+    border-radius: 3px 0 0 3px;
+}
+
+.sitepulse-event strong {
+    color: #cc1111;
+    font-weight: 600;
+    margin-right: 8px;
+    min-width: 90px;
+    display: inline-block;
+    font-size: 13px;
+}
+
+.sitepulse-event br {
+    margin-bottom: 6px;
+}
+
+/* Value styling for readability */
+.sitepulse-event {
+    line-height: 1.5;
+    font-size: 14px;
+    color: #555;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    #sitepulse-completion-info {
+        padding: 15px;
+        margin: 15px 0;
+        font-size: 13px;
+    }
+    
+    .sitepulse-event {
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+    
+    .sitepulse-event strong {
+        display: block;
+        margin-bottom: 3px;
+        min-width: auto;
+        font-size: 12px;
+    }
+    
+    .sitepulse-event br {
+        display: none;
+    }
+}
+
+/* Animation for new events */
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sitepulse-event {
+    animation: slideInFromTop 0.3s ease-out;
+}
+
+/* Loading state styling */
+#sitepulse-completion-info.loading {
+    position: relative;
+    overflow: hidden;
+}
+
+#sitepulse-completion-info.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Modal CSS */
+
+.sitepulse-modal {
+    display: none; 
+    position: fixed; 
+    z-index: 999; 
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    overflow: auto; 
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(2px);
+}
+
+.sitepulse-modal-content {
+    background: #fff;
+    margin: 8% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 480px;
+    max-width: 90vw;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.sitepulse-close-btn {
+    color: #999;
+    position: absolute;
+    top: 15px; right: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1000;
+    transition: color 0.2s ease;
+}
+
+.sitepulse-close-btn:hover {
+    color: #333;
+}
+
+.sitepulse-modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #0497d7 100%);
+    color: white;
+    padding: 25px 30px 20px;
+    border-radius: 12px 12px 0 0;
+    position: relative;
+}
+
+.sitepulse-modal-header h2 {
+    margin: 0 0 15px 0;
+    font-size: 24px;
+    font-weight: 600;
+    padding-right: 40px;
+}
+
+.sitepulse-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.sitepulse-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.sitepulse-status-dot.idle {
+    background: #95a5a6;
+}
+
+.sitepulse-status-dot.tracking {
+    background: #27ae60;
+    animation: pulse 2s infinite;
+}
+
+.sitepulse-status-dot.error {
+    background: #e74c3c;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.sitepulse-modal-body {
+    padding: 30px;
+}
+
+.sitepulse-modal-content-section {
+    transition: opacity 0.3s ease, height 0.3s ease;
+}
+
+.sitepulse-tracking-description {
+    color: #666;
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.sitepulse-tracking-description.setup-info {
+    color: #555;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0 0 25px 0;
+    padding: 15px;
+    background: #f0f7ff;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.sitepulse-tracking-description.current-page {
+    color: #333;
+    font-weight: 500;
+    margin: 0 0 20px 0;
+}
+
+.sitepulse-tracking-description.tracking-explanation {
+    color: #555;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0 0 25px 0;
+    padding: 15px;
+    background: #f8fdf8;
+    border-radius: 8px;
+    border-left: 4px solid #27ae60;
+}
+
+#current-page-name {
+    color: #667eea;
+    font-weight: 600;
+}
+
+.sitepulse-tracking-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.sitepulse-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.sitepulse-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #0497d7 100%);
+    color: white;
+}
+
+.sitepulse-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.sitepulse-btn-secondary {
+    background: #e74c3c;
+    color: white;
+}
+
+.sitepulse-btn-secondary:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+}
+
+.sitepulse-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.sitepulse-btn-icon {
+    font-size: 18px;
+}
+
+.sitepulse-tracking-info {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.sitepulse-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+}
+
+.sitepulse-info-item {
+    text-align: center;
+}
+
+.sitepulse-info-label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+}
+
+.sitepulse-info-value {
+    display: block;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Completion Modal Styles */
+.sitepulse-completion-animation {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.sitepulse-checkmark-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 5px 20px rgba(46, 204, 113, 0.3);
+    animation: scaleIn 0.6s ease-out;
+}
+
+.sitepulse-checkmark {
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+    animation: checkmarkPop 0.4s ease-out 0.2s both;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes checkmarkPop {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.sitepulse-completion-title {
+    text-align: center;
+    color: #333;
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 20px 0;
+}
+
+.sitepulse-completion-message {
+    color: #555;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0 0 15px 0;
+    padding: 20px;
+    background: #f8fdf8;
+    border-radius: 8px;
+    border-left: 4px solid #27ae60;
+}
+
+.sitepulse-results-info {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0 0 25px 0;
+    text-align: center;
+    font-style: italic;
+}
+
+.sitepulse-completion-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.sitepulse-view-results-btn {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    color: white;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.sitepulse-view-results-btn:hover {
+    background: linear-gradient(135deg, #229954 0%, #27ae60 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+#close-completed-modal {
+    background: #95a5a6;
+    color: white;
+}
+
+#close-completed-modal:hover {
+    background: #7f8c8d;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(149, 165, 166, 0.4);
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .sitepulse-modal-content {
+        margin: 5% auto;
+        width: 95vw;
+    }
+    
+    .sitepulse-modal-header {
+        padding: 20px 25px 15px;
+    }
+    
+    .sitepulse-modal-header h2 {
+        font-size: 20px;
+    }
+    
+    .sitepulse-modal-body {
+        padding: 25px;
+    }
+    
+    .sitepulse-tracking-controls {
+        flex-direction: column;
+    }
+    
+    .sitepulse-info-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}

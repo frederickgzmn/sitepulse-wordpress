@@ -1,0 +1,296 @@
+/**
+ * SitePulse Deactivation Feedback Modal Styles
+ */
+
+/* Overlay */
+.sp-deact-overlay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 999999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sp-deact-overlay.sp-deact-active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Modal Card */
+.sp-deact-modal {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    width: 520px;
+    max-width: 92vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(20px) scale(0.95);
+    transition: transform 0.3s ease;
+}
+
+.sp-deact-active .sp-deact-modal {
+    transform: translateY(0) scale(1);
+}
+
+/* Header */
+.sp-deact-header {
+    padding: 24px 28px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.sp-deact-header h3 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.sp-deact-header p {
+    margin: 0;
+    font-size: 13px;
+    color: #646970;
+    line-height: 1.5;
+}
+
+/* Body */
+.sp-deact-body {
+    padding: 16px 28px;
+}
+
+/* Reasons */
+.sp-deact-reasons {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sp-deact-reason {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin: 0;
+}
+
+.sp-deact-reason:hover {
+    background: #f6f7f7;
+    border-color: #c3c4c7;
+}
+
+.sp-deact-reason input[type="radio"] {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.sp-deact-reason input[type="radio"]:checked + .sp-deact-reason-text {
+    color: #2271b1;
+    font-weight: 500;
+}
+
+.sp-deact-reason:has(input:checked) {
+    border-color: #2271b1;
+    background: #f0f6fc;
+}
+
+.sp-deact-reason-text {
+    font-size: 13px;
+    color: #3c434a;
+    line-height: 1.4;
+}
+
+/* Other textarea */
+.sp-deact-other-wrap {
+    margin-top: 12px;
+}
+
+.sp-deact-other-wrap textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #c3c4c7;
+    border-radius: 8px;
+    font-size: 13px;
+    resize: vertical;
+    min-height: 70px;
+    font-family: inherit;
+    transition: border-color 0.15s ease;
+    box-sizing: border-box;
+}
+
+.sp-deact-other-wrap textarea:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}
+
+.sp-deact-char-count {
+    text-align: right;
+    font-size: 11px;
+    color: #a7aaad;
+    margin-top: 4px;
+}
+
+.sp-deact-detail-helper {
+    margin: 5px 52px 0 0;
+    color: #646970;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.sp-deact-recovery {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid #c3d9ed;
+    border-radius: 8px;
+    background: #f0f6fc;
+}
+
+.sp-deact-recovery strong {
+    display: block;
+    color: #1d2327;
+    font-size: 13px;
+}
+
+.sp-deact-recovery p {
+    margin: 4px 0 10px;
+    color: #50575e;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.sp-deact-recovery-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sp-deact-recovery-actions .button-link {
+    text-decoration: none;
+}
+
+/* Star Rating */
+.sp-deact-rating-section {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+}
+
+.sp-deact-rating-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #3c434a;
+    margin-bottom: 8px;
+}
+
+.sp-deact-rating-label span {
+    color: #787c82;
+    font-weight: 400;
+}
+
+.sp-deact-stars {
+    display: flex;
+    gap: 6px;
+}
+
+.sp-deact-star {
+    font-size: 28px;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.15s ease, transform 0.15s ease;
+    line-height: 1;
+    user-select: none;
+}
+
+.sp-deact-star:hover,
+.sp-deact-star-hover {
+    color: #ffb900;
+    transform: scale(1.15);
+}
+
+.sp-deact-star-active {
+    color: #ffb900;
+}
+
+.sp-deact-validation {
+    min-height: 18px;
+    margin: 8px 0 0;
+    color: #b32d2e;
+    font-size: 12px;
+}
+
+/* Footer */
+.sp-deact-footer {
+    padding: 16px 28px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid #eee;
+}
+
+.sp-deact-footer .button-primary {
+    background: #d63638;
+    border-color: #d63638;
+    color: #fff;
+    padding: 6px 20px;
+    height: auto;
+    font-size: 13px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+}
+
+.sp-deact-footer .button-primary:hover:not(:disabled) {
+    background: #b32d2e;
+    border-color: #b32d2e;
+}
+
+.sp-deact-footer .button-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sp-deact-footer .button-link {
+    color: #646970;
+    font-size: 12px;
+    text-decoration: none;
+    padding: 6px 8px;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.sp-deact-footer .button-link:hover {
+    color: #2271b1;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .sp-deact-modal {
+        width: 100%;
+        margin: 10px;
+        border-radius: 10px;
+    }
+    
+    .sp-deact-header,
+    .sp-deact-body,
+    .sp-deact-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .sp-deact-star {
+        font-size: 24px;
+    }
+}

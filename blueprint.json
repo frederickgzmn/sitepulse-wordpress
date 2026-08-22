@@ -1,0 +1,46 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"meta": {
+		"title": "SitePulse - Performance Monitoring Demo",
+		"description": "Experience SitePulse's real-time WordPress performance monitoring, slow plugin detection, API tracking, and error handling features.",
+		"author": "Frederic Guzman",
+		"categories": ["performance", "monitoring", "developer-tools", "optimization"]
+	},
+	"landingPage": "/wp-admin/admin.php?page=wpsp_sitepulse",
+	"preferredVersions": {
+		"php": "8.2",
+		"wp": "latest"
+	},
+	"features": {
+		"networking": true
+	},
+	"plugins": [
+		"sitepulse"
+	],
+	"steps": [
+		{
+			"step": "login",
+			"username": "admin",
+			"password": "password"
+		},
+		{
+			"step": "setSiteOptions",
+			"options": {
+				"blogname": "SitePulse Demo Site",
+				"blogdescription": "Testing WordPress Performance Monitoring"
+			}
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php require '/wordpress/wp-load.php'; update_option('sitepulse_profiler_enabled', true); update_option('sitepulse_curl_api_enabled', true); update_option('sitepulse_onboarding_complete', true); ?>"
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php require '/wordpress/wp-load.php'; wp_insert_post(array('post_title' => 'Performance Test Page', 'post_content' => '<!-- wp:paragraph --><p>This is a test page for SitePulse performance monitoring. Visit this page to see real-time metrics in your dashboard.</p><!-- /wp:paragraph --><!-- wp:heading --><h2>Test Heavy Content</h2><!-- /wp:heading --><!-- wp:paragraph --><p>SitePulse tracks page load times, plugin execution, and API calls. Check the SitePulse dashboard to see insights!</p><!-- /wp:paragraph -->', 'post_status' => 'publish', 'post_type' => 'page')); ?>"
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php require '/wordpress/wp-load.php'; wp_insert_post(array('post_title' => 'SitePulse Test Post', 'post_content' => '<!-- wp:paragraph --><p>This post demonstrates SitePulse monitoring capabilities. The plugin tracks every page request and helps identify performance bottlenecks.</p><!-- /wp:paragraph -->', 'post_status' => 'publish', 'post_type' => 'post')); ?>"
+		}
+	]
+}
