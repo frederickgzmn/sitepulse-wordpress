@@ -115,7 +115,6 @@ add_action( 'rest_api_init', function () {
 	sitepulse_register_route( '/onboarding/complete', 'sitepulse_complete_onboarding' );
 	sitepulse_register_route( '/onboarding/dismiss', 'sitepulse_dismiss_onboarding' );
 	sitepulse_register_route( '/onboarding/reset', 'sitepulse_reset_onboarding' );
-	sitepulse_register_route( '/product-event', 'sitepulse_record_product_event' );
 
 	// Settings routes
 	sitepulse_register_route( '/settings/update', 'sitepulse_update_settings' );
@@ -138,43 +137,6 @@ add_action( 'rest_api_init', function () {
 	sitepulse_register_route( '/autoload_options', 'sitepulse_get_autoload_options', 'POST' );
 	sitepulse_register_route( '/autoload_options/update', 'sitepulse_update_autoload_option' );
 } );
-
-/**
- * Record a privacy-safe product journey event in the local WordPress database.
- *
- * @param WP_REST_Request $request Request object.
- * @return WP_REST_Response|WP_Error
- */
-function sitepulse_record_product_event( WP_REST_Request $request ) {
-	$params  = $request->get_json_params();
-	$event   = isset( $params['event'] ) ? sanitize_key( $params['event'] ) : '';
-	$context = isset( $params['context'] ) && is_array( $params['context'] )
-		? $params['context']
-		: array();
-
-	if ( empty( $event ) || ! class_exists( 'Sitepulse_Product_Analytics' ) ) {
-		return new WP_Error(
-			'sitepulse_invalid_product_event',
-			__( 'A valid product event is required.', 'sitepulse' ),
-			array( 'status' => 400 )
-		);
-	}
-
-	$recorded = Sitepulse_Product_Analytics::track( $event, $context );
-	if ( ! $recorded ) {
-		return new WP_Error(
-			'sitepulse_product_event_not_recorded',
-			__( 'The product event could not be recorded.', 'sitepulse' ),
-			array( 'status' => 400 )
-		);
-	}
-
-	return rest_ensure_response(
-		array(
-			'success' => true,
-		)
-	);
-}
 
 // sitepulse_get_realtime_mode
 function sitepulse_get_realtime_mode( WP_REST_Request $request ) {
@@ -214,6 +176,9 @@ function sitepulse_enable_clear_curl_api_events( WP_REST_Request $request ) {
 function sitepulse_enable_clear_load_events( WP_REST_Request $request ) {
 	$sitepulse_Profiler = new Sitepulse_Profiler();
 	$sitepulse_Profiler->clear_events();
+
+	// Move sitepulse to first position in the active plugins list
+	sitepulse_move_to_first_position();
 
 	return rest_ensure_response( [
 		'success' => true,
@@ -760,17 +725,7 @@ function sitepulse_check_vulnerabilities_api( WP_REST_Request $request ) {
 		return new WP_Error( 'invalid_nonce', 'Invalid nonce', [ 'status' => 403 ] );
 	}
 
-	if ( SITEPULSE_PRO_IS_ACTIVE ) {
-		// If Pro is active
-
-		if ( ! class_exists( 'Sitepulse_Pro_Api_Service' ) ) {
-			return new WP_Error( 'service_unavailable', __( 'API Service not found.', 'sitepulse' ), [ 'status' => 500 ] );
-		}
-
-		$response = Sitepulse_Pro_Api_Service::check_vulnerabilities();
-	} else {
-		// If only Free is active
-
+	if ( ! SITEPULSE_PRO_IS_ACTIVE ) {
 		if ( ! class_exists( 'Sitepulse_Api_Service' ) ) {
 			return new WP_Error( 'service_unavailable', __( 'API Service not found.', 'sitepulse' ), [ 'status' => 500 ] );
 		}
@@ -914,15 +869,7 @@ function sitepulse_request_ai_diagnostic_api( WP_REST_Request $request ) {
 	$params = $request->get_json_params();
 	$force_new = isset( $params['force_new'] ) ? (bool) $params['force_new'] : false;
 
-	if ( SITEPULSE_PRO_IS_ACTIVE ) {
-		// If Pro is active
-		if ( ! class_exists( 'Sitepulse_Pro_Api_Service' ) ) {
-			return new WP_Error( 'service_unavailable', __( 'API Service not found.', 'sitepulse' ), [ 'status' => 500 ] );
-		}
-
-		$response = Sitepulse_Pro_Api_Service::request_ai_diagnostic( $force_new );
-	} else {
-		// If only Free is active
+	if ( ! SITEPULSE_PRO_IS_ACTIVE ) {
 		if ( ! class_exists( 'Sitepulse_Api_Service' ) ) {
 			return new WP_Error( 'service_unavailable', __( 'API Service not found.', 'sitepulse' ), [ 'status' => 500 ] );
 		}
@@ -959,15 +906,7 @@ function sitepulse_check_ai_diagnostic_status_api( WP_REST_Request $request ) {
 		return new WP_Error( 'invalid_nonce', 'Invalid nonce', [ 'status' => 403 ] );
 	}
 
-	if ( SITEPULSE_PRO_IS_ACTIVE ) {
-		// If Pro is active
-		if ( ! class_exists( 'Sitepulse_Pro_Api_Service' ) ) {
-			return new WP_Error( 'service_unavailable', __( 'API Service not found.', 'sitepulse' ), [ 'status' => 500 ] );
-		}
-
-		$response = Sitepulse_Pro_Api_Service::check_ai_diagnostic_status();
-	} else {
-		// If only Free is active
+	if ( ! SITEPULSE_PRO_IS_ACTIVE ) {
 		if ( ! class_exists( 'Sitepulse_Api_Service' ) ) {
 			return new WP_Error( 'service_unavailable', __( 'API Service not found.', 'sitepulse' ), [ 'status' => 500 ] );
 		}

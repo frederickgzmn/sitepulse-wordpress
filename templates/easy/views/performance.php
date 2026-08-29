@@ -21,11 +21,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<h2 class="sp-page-title"><?php echo esc_html__( 'Performance', 'sitepulse' ); ?></h2>
 		<p class="sp-page-subtitle"><?php echo esc_html__( 'Find out what\'s slowing your site down and how to speed it up', 'sitepulse' ); ?></p>
 	</div>
-	<div class="sp-dashboard-header-right">
-		<button type="button" class="sp-btn sp-btn-outline sp-btn-sm sp-refresh-performance">
-			<span class="dashicons dashicons-update"></span> <?php echo esc_html__( 'Refresh', 'sitepulse' ); ?>
-		</button>
-	</div>
 </div>
 
 
@@ -252,12 +247,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 						break;
 					}
 
-					$time_ms    = $plugin_stat['avg_time'];
+					$time_ms    = (float) ( $plugin_stat['current_load_time'] ?? 0.0 );
+					$average_ms = (float) ( $plugin_stat['avg_ms'] ?? 0.0 );
 					$perf_color = $time_ms > 1000 ? 'sp-badge-danger' : ( $time_ms > 500 ? 'sp-badge-warning' : 'sp-badge-success' );
 
-					$memory_formatted = class_exists( 'Sitepulse_Plugin_Profiler' )
-						? Sitepulse_Plugin_Profiler::format_memory( $plugin_stat['avg_memory'] )
-						: number_format( $plugin_stat['avg_memory'] / 1024, 2 ) . ' KB';
+					$average_formatted = class_exists( 'Sitepulse_Plugin_Profiler' )
+						? Sitepulse_Plugin_Profiler::format_time( $average_ms )
+						: number_format( $average_ms, 2 ) . ' ms';
 
 					$time_formatted = class_exists( 'Sitepulse_Plugin_Profiler' )
 						? Sitepulse_Plugin_Profiler::format_time( $time_ms )
@@ -275,11 +271,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</div>
 					<div class="sp-flex sp-gap-12 sp-items-center">
 						<div class="sp-text-right">
-							<div class="sp-text-xs sp-text-muted sp-mb-4"><?php echo esc_html__( 'Memory', 'sitepulse' ); ?></div>
-							<span class="sp-badge sp-badge-neutral"><?php echo esc_html( $memory_formatted ); ?></span>
+							<div class="sp-text-xs sp-text-muted sp-mb-4"><?php echo esc_html__( 'Average', 'sitepulse' ); ?></div>
+							<span class="sp-badge sp-badge-neutral"><?php echo esc_html( $average_formatted ); ?></span>
 						</div>
 						<div class="sp-text-right">
-							<div class="sp-text-xs sp-text-muted sp-mb-4"><?php echo esc_html__( 'Time', 'sitepulse' ); ?></div>
+							<div class="sp-text-xs sp-text-muted sp-mb-4"><?php echo esc_html__( 'Current', 'sitepulse' ); ?></div>
 							<span class="sp-badge <?php echo esc_attr( $perf_color ); ?>"><?php echo esc_html( $time_formatted ); ?></span>
 						</div>
 					</div>
@@ -320,102 +316,3 @@ if ( ! defined( 'ABSPATH' ) ) {
 </div>
 
 </div><!-- /sp-zone--infra -->
-
-
-<?php
-// ─── Pro Performance Widgets ────────────────────────────────────────────
-if ( defined( 'SITEPULSE_PRO_IS_ACTIVE' ) && SITEPULSE_PRO_IS_ACTIVE ) :
-?>
-
-<!-- ═══════════════════════════════════════════════════════════════════════
-     ZONE 4: Pro Analytics
-     ═══════════════════════════════════════════════════════════════════════ -->
-<div class="sp-zone sp-zone--ai">
-<div class="sp-zone-header">
-	<span class="dashicons dashicons-chart-area"></span>
-	<span class="sp-zone-title"><?php echo esc_html__( 'Pro Analytics', 'sitepulse-pro' ); ?></span>
-	<span class="sp-badge sp-badge-accent sp-zone-pro"><?php echo esc_html__( 'PRO', 'sitepulse-pro' ); ?></span>
-</div>
-
-
-
-<!-- Resource Diagnostics -->
-<div class="sp-card sp-mb-16">
-	<div class="sp-card-header">
-		<div>
-			<h3 class="sp-card-title">
-				<span class="dashicons dashicons-admin-tools"></span>
-				<?php echo esc_html__( 'Resource Diagnostics', 'sitepulse-pro' ); ?>
-			</h3>
-			<p class="sp-card-subtitle"><?php echo esc_html__( 'Server vs. site bottleneck analysis', 'sitepulse-pro' ); ?></p>
-		</div>
-		<button type="button" class="sp-btn sp-btn-outline sp-btn-sm sp-diagnostics-refresh-btn">
-			<span class="dashicons dashicons-update"></span> <?php echo esc_html__( 'Run Health Check', 'sitepulse-pro' ); ?>
-		</button>
-	</div>
-	<div class="sp-card-body">
-		<div class="sp-resource-diagnostics-content">
-			<div class="sp-loading" style="text-align: center; padding: 2rem;">
-				<span class="dashicons dashicons-update sp-spin" style="font-size: 24px; width: 24px; height: 24px;"></span>
-				<p class="sp-text-muted sp-text-xs" style="margin-top: 8px;">
-					<?php echo esc_html__( 'Running diagnostics...', 'sitepulse-pro' ); ?>
-				</p>
-			</div>
-		</div>
-	</div>
-</div>
-
-<?php
-// Plugin Troubleshoot status
-if ( class_exists( 'Sitepulse_Pro_Plugin_Troubleshoot' ) ) :
-	$troubleshoot = Sitepulse_Pro_Plugin_Troubleshoot::get_instance();
-	$ts_active    = $troubleshoot->is_active();
-	$ts_disabled  = $ts_active ? $troubleshoot->get_disabled_plugins() : array();
-?>
-<div class="sp-card sp-mb-16">
-	<div class="sp-card-header">
-		<div>
-			<h3 class="sp-card-title">
-				<span class="dashicons dashicons-admin-plugins"></span>
-				<?php echo esc_html__( 'Plugin Troubleshoot Mode', 'sitepulse-pro' ); ?>
-			</h3>
-			<p class="sp-card-subtitle"><?php echo esc_html__( 'Temporarily disable plugins for your session only', 'sitepulse-pro' ); ?></p>
-		</div>
-		<span class="sp-badge <?php echo $ts_active ? 'sp-badge-warning' : 'sp-badge-neutral'; ?>">
-			<?php echo $ts_active ? esc_html__( 'Active', 'sitepulse-pro' ) : esc_html__( 'Inactive', 'sitepulse-pro' ); ?>
-		</span>
-	</div>
-	<div class="sp-card-body">
-		<?php if ( $ts_active && ! empty( $ts_disabled ) ) : ?>
-			<div class="sp-alert sp-alert-warning sp-mb-16">
-				<span class="dashicons dashicons-warning"></span>
-				<div>
-					<strong><?php echo esc_html__( 'Troubleshoot mode is active', 'sitepulse-pro' ); ?></strong>
-					<span class="sp-text-xs" style="display:block;margin-top:2px;">
-						<?php echo esc_html( sprintf( _n( '%d plugin disabled for your session.', '%d plugins disabled for your session.', count( $ts_disabled ), 'sitepulse-pro' ), count( $ts_disabled ) ) ); ?>
-					</span>
-				</div>
-			</div>
-			<?php foreach ( $ts_disabled as $p_file ) :
-				if ( ! function_exists( 'get_plugin_data' ) ) {
-					require_once ABSPATH . 'wp-admin/includes/plugin.php';
-				}
-				$p_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $p_file );
-			?>
-				<div class="sp-list-item" style="padding:6px 0;">
-					<span class="sp-badge sp-badge-danger" style="font-size:10px;">OFF</span>
-					<span class="sp-text-sm sp-fw-500" style="margin-left:8px;"><?php echo esc_html( $p_data['Name'] ); ?></span>
-				</div>
-			<?php endforeach; ?>
-		<?php else : ?>
-			<div class="sp-empty" style="padding:16px;">
-				<p class="sp-empty-desc"><?php echo esc_html__( 'Use the Plugin Troubleshooting button in the admin bar to temporarily disable plugins.', 'sitepulse-pro' ); ?></p>
-			</div>
-		<?php endif; ?>
-	</div>
-</div>
-<?php endif; ?>
-
-</div><!-- /sp-zone--ai (Pro Analytics) -->
-
-<?php endif; // SITEPULSE_PRO_IS_ACTIVE ?>

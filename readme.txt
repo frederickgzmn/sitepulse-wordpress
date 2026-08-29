@@ -1,32 +1,21 @@
-=== SitePulse - See What’s Powering (or Slowing) Your Site ===
+=== SitePulse - Performance Monitor and AI Diagnostics ===
 Contributors: nilbug, frederickgzmn
 Tags: performance, speed, optimization, monitoring, profiler
 Requires at least: 5.5
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.1
+Stable tag: 1.4.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Find the plugin, hook, query, or external request slowing WordPress—and see the next place to investigate.
+Find and fix what slows your WordPress site. Real-time performance monitoring, plugin profiling, and external request tracking.
 
 == Description ==
 
-**SitePulse helps you stop guessing why WordPress feels slow.** It monitors activity inside your own WordPress installation, highlights the slowest plugins and hooks, and reveals delayed external requests such as payment, email, analytics, and licensing calls.
+**SitePulse** tells you **exactly what slows your site** and **what to do about it**, directly from your WordPress dashboard.
+Activate it, and within seconds you will see which plugins are heavy, which external calls are slow, and how to make your site faster.
 
-After activation, visit a few pages as you normally would and open the SitePulse dashboard. The **Recommended next step** card points you to the most useful result first.
-
-### Why install SitePulse?
-
-- **Find slow plugins and hooks** with measured execution times.
-- **See slow or failing external requests** and the service that initiated them.
-- **Review PHP errors and memory usage** from one dashboard.
-- **Keep core monitoring local** with optional cloud features disabled by default.
-- **Use Basic View or Developer View** depending on how much detail you need.
-
-SitePulse reports evidence; it does not automatically disable plugins or change your site based on a score. Review a finding before making production changes.
-
-### Key Features
+### 🚀 Key Features
 
 **🚀Stop Guessing Why Your Site is Slow**
 - 🚀 **AI Diagnostic** – Get instant insights into what's slowing down your site with AI-powered diagnostics
@@ -120,13 +109,13 @@ SitePulse communicates with **api.sitepulse.me** (operated by the plugin develop
 To provide these enhanced features, SitePulse sends **only performance-related metrics** to the external API:
 - Plugin names, versions, and slugs installed on your site
 - WordPress hook execution times and memory usage
-- API request URLs without query strings, plus response times
+- API request URLs and response times
 - Site domain name
 - Performance statistics and load times
 
 ### 🔒 What Data is NOT Collected?
 SitePulse is designed with privacy in mind and **does NOT collect**:
-- ❌ Names, emails, passwords, server IP addresses, or URL query strings
+- ❌ Personal user data (names, emails, passwords, IP addresses)
 - ❌ User content (posts, pages, comments, custom data)
 - ❌ Database content or sensitive information
 - ❌ Customer or visitor information
@@ -202,6 +191,19 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 ---
 
 == Changelog ==
+= 1.4.3 =
+* Hooks now display the url of the page that triggered it
+* Remove sitepulse pro dependencies
+* Added early profiler
+* Auto increment profiler calls when persistent
+* Auto detect active hooks activately consuming resources
+* Fixed a bug where the hook report was not showing
+* 
+
+= 1.4.2 =
+* Hook and api hook bugs fixed
+
+
 = 1.4.1 =
 * Better performance handling
 * sitepulse alternative cronjobs management

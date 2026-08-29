@@ -97,8 +97,8 @@ if ( class_exists( 'Sitepulse_Api_Service' ) && method_exists( 'Sitepulse_Api_Se
 				}
 			}
 			?>
-			<?php if ( ! empty( $sp_screenshot_src ) ) : ?>
-				<img src="<?php echo esc_url( $sp_screenshot_src ); ?>"
+			<?php if ( ! empty( $sp_screenshot_src ) && is_string( $sp_screenshot_src ) ) : ?>
+				<img src="<?php echo $sp_screenshot_src; ?>"
 					 alt="<?php echo esc_attr__( 'PageSpeed screenshot', 'sitepulse' ); ?>"
 					 style="max-width:100%;border-radius:var(--sp-radius-md);border:1px solid var(--sp-border);position: absolute;object-fit: cover;width: 100%;top: 0;right: 0;">
 			<?php else : ?>

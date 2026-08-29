@@ -29,7 +29,7 @@ class Sitepulse_Cron_Manager {
 	public static function init() {
 		// Check if external API is enabled in settings
 		$sp_all_settings = get_option( 'sitepulse_settings', array() );
-		$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : false;
+		$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : true;
 		if ( ! $sp_external_api_enabled ) {
 			return;
 		}
@@ -110,14 +110,7 @@ class Sitepulse_Cron_Manager {
 
 		$result = null;
 
-		if ( SITEPULSE_PRO_IS_ACTIVE ) {
-			// Pro library
-			// Load the API service class if not already loaded
-			if ( class_exists( 'Sitepulse_Pro_Api_Service' ) ) {
-				// Send the request
-				$result = Sitepulse_Pro_Api_Service::send_website_data();
-			}
-		} else {
+		if ( ! SITEPULSE_PRO_IS_ACTIVE ) {
 			// Free library
 			// Load the API service class if not already loaded
 			if ( ! class_exists( 'Sitepulse_Api_Service' ) ) {

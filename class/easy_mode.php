@@ -261,7 +261,7 @@ class Sitepulse_Easy_Mode {
 			),
 			array(
 				'slug'  => 'resource-load',
-				'label' => __( 'Slow Plugins', 'sitepulse' ),
+				'label' => __( 'Load Profiler', 'sitepulse' ),
 				'icon'  => 'dashicons-search',
 				'url'   => $base_url . '&sp_view=resource-load',
 			),
@@ -279,7 +279,7 @@ class Sitepulse_Easy_Mode {
 			),
 			array(
 				'slug'  => 'api-monitor',
-				'label' => __( 'External Requests', 'sitepulse' ),
+				'label' => __( 'API Monitor', 'sitepulse' ),
 				'icon'  => 'dashicons-rest-api',
 				'url'   => $base_url . '&sp_view=api-monitor',
 			),

@@ -116,15 +116,15 @@ if ( ! defined( 'ABSPATH' ) ) {
                             <div class="sp-setting-header">
                                 <label class="form-switch">
                                     <input type="checkbox" name="sitepulse_external_api_enabled" id="sitepulse_external_api_enabled" 
-                                           value="1" <?php checked( $current_settings['external_api_enabled'] ?? false, true ); ?> class="form-check-input" />
-                                    <span class="form-check-label fw-semibold"><?php echo esc_html__( 'Share performance data for PageSpeed & AI reports', 'sitepulse' ); ?></span>
+                                           value="1" <?php checked( $current_settings['external_api_enabled'] ?? true, true ); ?> class="form-check-input" />
+                                    <span class="form-check-label fw-semibold"><?php echo esc_html__( 'PageSpeed & AI Reports', 'sitepulse' ); ?></span>
                                 </label>
-                                <span class="badge <?php echo esc_attr( ($current_settings['external_api_enabled'] ?? false) ? 'bg-success' : 'bg-secondary' ); ?>">
-                                    <?php echo esc_html( ($current_settings['external_api_enabled'] ?? false) ? __( 'Enabled', 'sitepulse' ) : __( 'Disabled', 'sitepulse' ) ); ?>
+                                <span class="badge <?php echo esc_attr( ($current_settings['external_api_enabled'] ?? true) ? 'bg-success' : 'bg-secondary' ); ?>">
+                                    <?php echo esc_html( ($current_settings['external_api_enabled'] ?? true) ? __( 'Enabled', 'sitepulse' ) : __( 'Disabled', 'sitepulse' ) ); ?>
                                 </span>
                             </div>
                             <div class="sp-setting-description">
-                                <?php echo esc_html__( 'Optional cloud processing. Local monitoring continues when this is disabled.', 'sitepulse' ); ?>
+                                <?php echo esc_html__( 'Enable external API to receive PageSpeed Insights and AI diagnostic reports', 'sitepulse' ); ?>
                             </div>
                             <div class="sp-setting-help-box">
                                 <div class="alert alert-info" style="margin-top: 10px;">
@@ -132,12 +132,12 @@ if ( ! defined( 'ABSPATH' ) ) {
                                     <ul style="margin: 8px 0 0 20px;">
                                         <li><?php echo esc_html__( 'Plugin names, versions, and load times', 'sitepulse' ); ?></li>
                                         <li><?php echo esc_html__( 'Hook execution times and memory usage', 'sitepulse' ); ?></li>
-                                        <li><?php echo esc_html__( 'API request URLs without query strings, plus response times', 'sitepulse' ); ?></li>
+                                        <li><?php echo esc_html__( 'API request URLs and response times', 'sitepulse' ); ?></li>
                                         <li><?php echo esc_html__( 'Site domain name', 'sitepulse' ); ?></li>
                                     </ul>
                                     <strong style="margin-top: 8px; display: block;"><?php echo esc_html__( 'What is NOT sent:', 'sitepulse' ); ?></strong>
                                     <ul style="margin: 8px 0 0 20px;">
-                                        <li><?php echo esc_html__( '❌ No names, emails, passwords, server IP addresses, or URL query strings', 'sitepulse' ); ?></li>
+                                        <li><?php echo esc_html__( '❌ No personal user data (emails, passwords, IP addresses)', 'sitepulse' ); ?></li>
                                         <li><?php echo esc_html__( '❌ No user content (posts, pages, comments)', 'sitepulse' ); ?></li>
                                         <li><?php echo esc_html__( '❌ No database content or sensitive information', 'sitepulse' ); ?></li>
                                     </ul>

@@ -102,7 +102,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                   return $b['total_ms'] <=> $a['total_ms'];
               });
 
-              if ( empty( $stat ) && round( count( $stats ) ) == 0 ) {
+              if ( empty( $stats ) && round( count( $stats ) ) == 0 ) {
                 ?>
                 <div class="sp-detail-item sp-empty-state">
                   <div class="sp-detail-content">

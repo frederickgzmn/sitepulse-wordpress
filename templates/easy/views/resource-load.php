@@ -141,12 +141,16 @@ $sp_tracked_pid = get_option( 'sitepulse_current_tracked_pageid' );
 							<th><?php echo esc_html__( 'File', 'sitepulse' ); ?></th>
 							<th><?php echo esc_html__( 'Signature', 'sitepulse' ); ?></th>
 							<th><?php echo esc_html__( 'Calls', 'sitepulse' ); ?></th>
+							<th><?php echo esc_html__( 'Current Load Time', 'sitepulse' ); ?></th>
 							<th><?php echo esc_html__( 'Avg Time', 'sitepulse' ); ?></th>
+							<th><?php echo esc_html__( 'Status', 'sitepulse' ); ?></th>
+							<th><?php echo esc_html__( 'Last run', 'sitepulse' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php foreach ( array_slice( $sp_stats, 0, 50 ) as $footprint ) :
 							$fp_time = isset( $footprint['total_ms'] ) ? (float) $footprint['total_ms'] : 0;
+							$load_time = isset( $footprint['current_load_time'] ) ? (float) $footprint['current_load_time'] : 0;
 							$fp_calls = isset( $footprint['calls'] ) ? (int) $footprint['calls'] : 1;
 							$fp_avg = $fp_calls > 0 ? round( $fp_time / $fp_calls, 1 ) : 0;
 						?>
@@ -156,10 +160,70 @@ $sp_tracked_pid = get_option( 'sitepulse_current_tracked_pageid' );
 							<td class="sp-cell-mono sp-text-xs sp-cell-truncate" style="max-width:140px;" title="<?php echo esc_attr( isset( $footprint['fileline'] ) ? $footprint['fileline'] : '' ); ?>"><?php echo esc_html( isset( $footprint['fileline'] ) ? $footprint['fileline'] : '—' ); ?></td>
 							<td class="sp-cell-mono sp-text-xs sp-cell-truncate" style="max-width:140px;" title="<?php echo esc_attr( isset( $footprint['sig'] ) ? $footprint['sig'] : '' ); ?>"><?php echo esc_html( isset( $footprint['sig'] ) ? $footprint['sig'] : '—' ); ?></td>
 							<td class="sp-text-center"><?php echo esc_html( $fp_calls ); ?></td>
+							<td class="sp-text-center">
+								<?php
+								// Microseconds to seconds
+								if ( $load_time > 1000 ) {
+									$load_time = round( $load_time / 1000, 1 );
+									$unit = 's';
+								} else {
+									$unit = 'ms';
+								}
+
+								echo esc_html( round( $load_time, 1 ) );
+								?>
+								<span class="sp-text-xs sp-text-muted"><?php echo esc_html( $unit ); ?></span></td>
 							<td>
 								<span class="sp-badge <?php echo $fp_avg > 500 ? 'sp-badge-danger' : ( $fp_avg > 100 ? 'sp-badge-warning' : 'sp-badge-success' ); ?>">
 									<?php echo esc_html( $fp_avg ); ?>ms
 								</span>
+							</td>
+							<td>
+								<?php
+								if ( isset( $footprint['key'] ) ) {
+									// Check activity status
+									$is_active = Sitepulse_Profiler::is_active( $footprint['key'] );
+
+									if ( $is_active ) : ?>
+										<span class="sp-badge sp-badge-success">
+											<?php echo esc_html__( 'Active', 'sitepulse' ); ?>
+										</span>
+									<?php else : ?>
+										<span class="sp-badge sp-badge-neutral">
+											<?php echo esc_html__( 'Inactive since ' . SITEPULSE_SETTINGS_PROFILER_INACTIVE_AFTER_SECONDS . 's', 'sitepulse' ); ?>
+										</span>
+									<?php endif; ?>
+
+								<?php
+								} else {
+								?>
+									<span class="sp-badge sp-badge-warning">
+										<?php echo esc_html__( 'Unknown', 'sitepulse' ); ?>
+									</span>
+								<?php } ?>
+							</td>
+							<td>
+								<?php
+									if ( isset( $footprint['date_time'] ) ) {
+										// time ago format
+										$date_time = date_create_immutable(
+											$footprint['date_time'],
+											wp_timezone()
+										);
+
+										$time_ago = human_time_diff( $date_time->getTimestamp(), time() );
+										echo esc_html( $time_ago . ' ago' );
+									}
+								?>
+								<br>
+								<small>
+									<?php 
+										if ( isset( $footprint['current_url'] ) && ! empty( $footprint['current_url'] ) ) {
+											// limit characters
+											echo esc_html( mb_strimwidth( $footprint['current_url'], 0, 30, '...' ) ); 
+										}
+									?>
+								</small>
 							</td>
 						</tr>
 						<?php endforeach; ?>

@@ -117,109 +117,48 @@ $sp_cron_failure = isset( $sp_status['cron_status'] ) && $sp_status['cron_status
      ZONE 2: API & Notifications
      ═══════════════════════════════════════════════════════════════════════ -->
 <div class="sp-zone sp-zone--infra">
-<div class="sp-zone-header">
-	<span class="dashicons dashicons-rest-api"></span>
-	<span class="sp-zone-title"><?php echo esc_html__( 'Cloud Services & Notifications', 'sitepulse' ); ?></span>
-</div>
+	<div class="sp-zone-header">
+		<span class="dashicons dashicons-rest-api"></span>
+		<span class="sp-zone-title"><?php echo esc_html__( 'Cloud Services & Notifications', 'sitepulse' ); ?></span>
+	</div>
 
-<div class="sp-grid sp-grid-2 sp-mb-16">
-	<!-- External API -->
-	<div class="sp-card">
-		<div class="sp-card-header">
-			<h3 class="sp-card-title"><span class="dashicons dashicons-rest-api"></span> <?php echo esc_html__( 'Cloud Services', 'sitepulse' ); ?></h3>
-		</div>
-		<div class="sp-card-body">
-			<div class="sp-flex sp-justify-between sp-items-center sp-mb-16">
-				<div>
-					<p class="sp-text-sm sp-fw-500 sp-mb-0"><?php echo esc_html__( 'Connect to Cloud Services', 'sitepulse' ); ?></p>
-					<p class="sp-text-xs sp-text-muted sp-mb-0"><?php echo esc_html__( 'Allow SitePulse to use online tools for deeper analysis', 'sitepulse' ); ?></p>
+	<div class="sp-grid sp-grid-2 sp-mb-16">
+		<!-- External API -->
+		<div class="sp-card">
+			<div class="sp-card-header">
+				<h3 class="sp-card-title"><span class="dashicons dashicons-rest-api"></span> <?php echo esc_html__( 'Cloud Services', 'sitepulse' ); ?></h3>
+			</div>
+			<div class="sp-card-body">
+				<div class="sp-flex sp-justify-between sp-items-center sp-mb-16">
+					<div>
+						<p class="sp-text-sm sp-fw-500 sp-mb-0"><?php echo esc_html__( 'Connect to Cloud Services', 'sitepulse' ); ?></p>
+						<p class="sp-text-xs sp-text-muted sp-mb-0"><?php echo esc_html__( 'Allow SitePulse to use online tools for deeper analysis', 'sitepulse' ); ?></p>
+					</div>
+					<label class="sp-toggle">
+						<input type="checkbox" name="sitepulse_external_api_enabled" value="1" <?php checked( ! empty( $sp_current['external_api_enabled'] ) ); ?>>
+						<span class="sp-toggle-track"></span>
+					</label>
 				</div>
-				<label class="sp-toggle">
-					<input type="checkbox" name="sitepulse_external_api_enabled" value="1" <?php checked( ! empty( $sp_current['external_api_enabled'] ) ); ?>>
-					<span class="sp-toggle-track"></span>
-				</label>
+			</div>
+		</div>
+
+		<!-- Notifications -->
+		<div class="sp-card">
+			<div class="sp-card-header">
+				<h3 class="sp-card-title"><span class="dashicons dashicons-email-alt2"></span> <?php echo esc_html__( 'Notifications', 'sitepulse' ); ?></h3>
+			</div>
+			<div class="sp-card-body">
+				<div class="sp-mb-12">
+					<label class="sp-text-xs sp-fw-500 sp-mb-4" style="display:block;"><?php echo esc_html__( 'Emergency Contact Email', 'sitepulse' ); ?></label>
+					<input type="email" name="sitepulse_recovery_mode_email_addresses" class="sp-form-control sp-form-control-sm"
+						value="<?php echo esc_attr( isset( $sp_current['recovery_mode_email_addresses'] ) ? $sp_current['recovery_mode_email_addresses'] : get_option( 'admin_email' ) ); ?>"
+						placeholder="<?php echo esc_attr__( 'admin@example.com', 'sitepulse' ); ?>">
+					<p class="sp-text-xs sp-text-muted sp-mt-4"><?php echo esc_html__( 'We\'ll notify this email address if your site has a critical issue.', 'sitepulse' ); ?></p>
+				</div>
 			</div>
 		</div>
 	</div>
-
-	<!-- Notifications -->
-	<div class="sp-card">
-		<div class="sp-card-header">
-			<h3 class="sp-card-title"><span class="dashicons dashicons-email-alt2"></span> <?php echo esc_html__( 'Notifications', 'sitepulse' ); ?></h3>
-		</div>
-		<div class="sp-card-body">
-			<div class="sp-mb-12">
-				<label class="sp-text-xs sp-fw-500 sp-mb-4" style="display:block;"><?php echo esc_html__( 'Emergency Contact Email', 'sitepulse' ); ?></label>
-				<input type="email" name="sitepulse_recovery_mode_email_addresses" class="sp-form-control sp-form-control-sm"
-					   value="<?php echo esc_attr( isset( $sp_current['recovery_mode_email_addresses'] ) ? $sp_current['recovery_mode_email_addresses'] : get_option( 'admin_email' ) ); ?>"
-					   placeholder="<?php echo esc_attr__( 'admin@example.com', 'sitepulse' ); ?>">
-				<p class="sp-text-xs sp-text-muted sp-mt-4"><?php echo esc_html__( 'We\'ll notify this email address if your site has a critical issue.', 'sitepulse' ); ?></p>
-			</div>
-		</div>
-	</div>
-</div>
-
-<?php
-// Pro Performance Alerts
-if ( defined( 'SITEPULSE_PRO_IS_ACTIVE' ) && SITEPULSE_PRO_IS_ACTIVE && class_exists( 'Sitepulse_Pro_Alerts' ) ) :
-	$sp_alerts = Sitepulse_Pro_Alerts::get_instance()->get_settings();
-?>
-<div class="sp-card sp-mb-16">
-	<div class="sp-card-header">
-		<div>
-			<h3 class="sp-card-title">
-				<span class="dashicons dashicons-bell"></span>
-				<?php echo esc_html__( 'Speed Alerts', 'sitepulse-pro' ); ?>
-			</h3>
-			<p class="sp-card-subtitle"><?php echo esc_html__( 'Get an email when your site slows down', 'sitepulse-pro' ); ?></p>
-		</div>
-		<span class="sp-badge sp-badge-accent"><?php echo esc_html__( 'PRO', 'sitepulse-pro' ); ?></span>
-	</div>
-	<div class="sp-card-body">
-		<div class="sp-flex sp-justify-between sp-items-center sp-mb-16">
-			<div>
-				<p class="sp-text-sm sp-fw-500 sp-mb-0"><?php echo esc_html__( 'Enable Alerts', 'sitepulse-pro' ); ?></p>
-			</div>
-			<label class="sp-toggle">
-				<input type="checkbox" name="sitepulse_pro_alerts_enabled" value="1" <?php checked( ! empty( $sp_alerts['enabled'] ) ); ?>>
-				<span class="sp-toggle-track"></span>
-			</label>
-		</div>
-
-		<div class="sp-grid sp-grid-3 sp-mb-0">
-			<div>
-				<label class="sp-text-xs sp-fw-500 sp-mb-4" style="display:block;"><?php echo esc_html__( 'Alert Email', 'sitepulse-pro' ); ?></label>
-				<input type="email" name="sitepulse_pro_alerts_email" class="sp-form-control sp-form-control-sm"
-					   value="<?php echo esc_attr( isset( $sp_alerts['email'] ) ? $sp_alerts['email'] : get_option( 'admin_email' ) ); ?>">
-			</div>
-			<div>
-				<label class="sp-text-xs sp-fw-500 sp-mb-4" style="display:block;"><?php echo esc_html__( 'Sensitivity (%)', 'sitepulse-pro' ); ?></label>
-				<input type="number" name="sitepulse_pro_alerts_threshold" class="sp-form-control sp-form-control-sm"
-					   value="<?php echo esc_attr( isset( $sp_alerts['degradation_threshold'] ) ? $sp_alerts['degradation_threshold'] : 15 ); ?>" min="1" max="100">
-			</div>
-			<div>
-				<label class="sp-text-xs sp-fw-500 sp-mb-4" style="display:block;"><?php echo esc_html__( 'Wait Between Alerts (hrs)', 'sitepulse-pro' ); ?></label>
-				<input type="number" name="sitepulse_pro_alerts_cooldown" class="sp-form-control sp-form-control-sm"
-					   value="<?php echo esc_attr( isset( $sp_alerts['cooldown_hours'] ) ? $sp_alerts['cooldown_hours'] : 6 ); ?>" min="1" max="168">
-			</div>
-		</div>
-
-		<div class="sp-flex sp-justify-between sp-items-center sp-mt-16">
-			<div>
-				<p class="sp-text-sm sp-fw-500 sp-mb-0"><?php echo esc_html__( 'Automatic Checkups', 'sitepulse-pro' ); ?></p>
-				<p class="sp-text-xs sp-text-muted sp-mb-0"><?php echo esc_html__( 'Automatically check your site speed on a regular schedule', 'sitepulse-pro' ); ?></p>
-			</div>
-			<label class="sp-toggle">
-				<input type="checkbox" name="sitepulse_pro_alerts_schedule_enabled" value="1" <?php checked( ! empty( $sp_alerts['schedule_enabled'] ) ); ?>>
-				<span class="sp-toggle-track"></span>
-			</label>
-		</div>
-	</div>
-</div>
-<?php endif; ?>
-
 </div><!-- /sp-zone--infra -->
-
 
 <!-- Save Button -->
 <div class="sp-mb-24">

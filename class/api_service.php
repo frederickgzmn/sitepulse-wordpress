@@ -106,7 +106,6 @@ class Sitepulse_Api_Service {
 
 			// Collect API/Request data (curl events) - limit size to prevent timeouts
 			$api_requests = self::get_api_requests_data();
-			$api_requests = self::prepare_api_requests_for_transmission( $api_requests );
 
 			// Limit API requests to prevent large payloads that could cause timeouts
 			// Keep only the most recent 10 requests
@@ -127,6 +126,7 @@ class Sitepulse_Api_Service {
 				'domain' => home_url(),
 				'site_name' => get_bloginfo( 'name' ),
 				'website_info' => $website_info,
+				'ip_address' => self::get_host_ip_address(),
 				'timestamp' => current_time( 'mysql' ),
 			);
 
@@ -198,40 +198,6 @@ class Sitepulse_Api_Service {
 		}
 
 		return $api_requests;
-	}
-
-	/**
-	 * Remove query strings, fragments, local file paths, and extension-added fields
-	 * before external request diagnostics leave WordPress.
-	 *
-	 * @param array $api_requests Captured HTTP request events.
-	 * @return array
-	 */
-	private static function prepare_api_requests_for_transmission( $api_requests ) {
-		if ( ! is_array( $api_requests ) ) {
-			return array();
-		}
-
-		$safe_requests = array();
-		foreach ( $api_requests as $request ) {
-			if ( ! is_array( $request ) ) {
-				continue;
-			}
-
-			$url = isset( $request['url'] ) ? (string) $request['url'] : '';
-			$url = preg_replace( '/[?#].*$/', '', $url );
-
-			$safe_requests[] = array(
-				'ts'      => isset( $request['ts'] ) ? absint( $request['ts'] ) : 0,
-				'elapsed' => isset( $request['elapsed'] ) ? (float) $request['elapsed'] : 0,
-				'url'     => esc_url_raw( $url ),
-				'host'    => isset( $request['host'] ) ? sanitize_text_field( $request['host'] ) : '',
-				'code'    => isset( $request['code'] ) ? absint( $request['code'] ) : 0,
-				'origin'  => isset( $request['origin'] ) ? sanitize_text_field( $request['origin'] ) : '',
-			);
-		}
-
-		return $safe_requests;
 	}
 
 	/**
@@ -662,7 +628,7 @@ class Sitepulse_Api_Service {
 	private static function make_vulnerability_api_request( array $payload, $retry = false ) {
 		// Check if external API is enabled in settings
 		$sp_all_settings = get_option( 'sitepulse_settings', array() );
-		$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : false;
+		$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : true;
 		if ( ! $sp_external_api_enabled ) {
 			return array(
 				'success' => false,
@@ -813,7 +779,7 @@ class Sitepulse_Api_Service {
 	public static function request_ai_diagnostic( $force_new = false ) {
 		// Check if external API is enabled
 		$sp_all_settings = get_option( 'sitepulse_settings', array() );
-		$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : false;
+		$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : true;
 		if ( ! $sp_external_api_enabled ) {
 			return array(
 				'success' => false,
@@ -896,7 +862,7 @@ class Sitepulse_Api_Service {
 	public static function check_ai_diagnostic_status() {
 		// Check if external API is enabled
 		$sp_all_settings = get_option( 'sitepulse_settings', array() );
-		$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : false;
+		$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : true;
 		if ( ! $sp_external_api_enabled ) {
 			return array(
 				'success' => false,
@@ -1180,3 +1146,4 @@ class Sitepulse_Api_Service {
 		return $result;
 	}
 }
+

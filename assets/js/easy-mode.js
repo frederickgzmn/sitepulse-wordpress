@@ -11,7 +11,7 @@
 
   // Robust initialization prioritizing Pro localization
   var SP = window.SitePulseEasy || window.SitePulse || {};
-  
+
   // Debug log for checking JS errors and initialization
   if (Object.keys(SP).length === 0) {
     console.error('SitePulse Easy Mode: No localization data found!');
@@ -175,9 +175,9 @@
       $.ajax({
         url: SP.rest_url + 'sitepulse/v1/settings/update',
         method: 'POST',
-        data: JSON.stringify({ 
+        data: JSON.stringify({
           cron_disabled: enabled,
-          _wpnonce: SP.nonce 
+          _wpnonce: SP.nonce
         }),
         contentType: 'application/json',
         beforeSend: function (xhr) {
@@ -198,9 +198,9 @@
       $.ajax({
         url: SP.rest_url + 'sitepulse/v1/settings/update',
         method: 'POST',
-        data: JSON.stringify({ 
+        data: JSON.stringify({
           email_blocking_enabled: enabled,
-          _wpnonce: SP.nonce 
+          _wpnonce: SP.nonce
         }),
         contentType: 'application/json',
         beforeSend: function (xhr) {
@@ -208,71 +208,6 @@
         }
       });
     });
-  }
-
-  /* ======================================================
-   * Autoload Data Loader
-   * ====================================================== */
-  function initAutoloadDataLoader() {
-    $(document).on('click', '#sp-autoload-refresh', function () {
-      loadAutoloadOptions();
-    });
-
-    function loadAutoloadOptions() {
-      var $loading = $('#sp-autoload-loading');
-      var $error   = $('#sp-autoload-error');
-      var $results = $('#sp-autoload-results');
-      var $btn     = $('#sp-autoload-refresh');
-      var $placeholder = $('#sp-autoload-placeholder');
-
-      $btn.prop('disabled', true);
-      $loading.removeClass('d-none').show();
-      $error.addClass('d-none');
-      $results.addClass('d-none');
-      $placeholder.hide();
-
-      $.ajax({
-        url: SP.rest_url + 'sitepulse/v1/autoload_options',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ _wpnonce: SP.nonce }),
-        beforeSend: function (xhr) {
-          xhr.setRequestHeader('X-WP-Nonce', SP.nonce);
-        },
-        success: function (data) {
-          $loading.addClass('d-none').hide();
-          $btn.prop('disabled', false);
-
-          if (data && data.success !== false && data.data && data.data.length > 0) {
-            var $list = $('#sp-autoload-list');
-            var $summary = $('#sp-autoload-summary');
-            $summary.text((data.count || data.data.length) + ' options · Total size: ' + (data.total_autoload_size_formatted || '—'));
-
-            var html = '';
-            $.each(data.data, function (i, opt) {
-              var isOn = opt.autoload === 'on';
-              html += '<div class="sp-list-item" style="padding:10px 20px;">';
-              html += '<div class="sp-list-item-body">';
-              html += '<p class="sp-list-item-title sp-text-sm sp-cell-mono" style="word-break:break-all;">' + $('<span>').text(opt.option_name).html() + '</p>';
-              html += '<p class="sp-text-xs sp-text-muted sp-mb-0">' + $('<span>').text(opt.data_size_formatted || '—').html() + '</p>';
-              html += '</div>';
-              html += '<span class="sp-badge ' + (isOn ? 'sp-badge-success' : 'sp-badge-neutral') + '">' + (isOn ? 'on' : 'off') + '</span>';
-              html += '</div>';
-            });
-            $list.html(html);
-            $results.removeClass('d-none').show();
-          } else {
-            $results.removeClass('d-none').show();
-            $('#sp-autoload-list').html('<div class="sp-empty" style="padding:24px;"><p class="sp-empty-desc">No autoloaded options found.</p></div>');
-          }
-        },
-        error: function () {
-          $loading.addClass('d-none').hide();
-          $error.removeClass('d-none').find('.sp-alert').text('Failed to load autoload options.');
-          $btn.prop('disabled', false);
-        }
-      });
-    }
   }
 
   /* ======================================================
@@ -289,14 +224,14 @@
       if (!$modal.length) {
         $('body').append(
           '<div id="sp-sql-detail-modal" class="sp-modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:100010;align-items:center;justify-content:center;">' +
-            '<div class="sp-modal-content" style="background:var(--sp-bg-primary,#1e293b);border:1px solid var(--sp-border,rgba(255,255,255,0.08));border-radius:12px;max-width:700px;width:90%;max-height:80vh;overflow:auto;padding:24px;margin:auto;position:relative;top:50%;transform:translateY(-50%);">' +
-              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' +
-                '<h3 style="margin:0;font-size:16px;color:var(--sp-text-primary,#fff);">SQL Query Detail</h3>' +
-                '<button type="button" class="sp-sql-detail-close" style="background:none;border:none;color:var(--sp-text-muted);font-size:20px;cursor:pointer;padding:4px 8px;">&times;</button>' +
-              '</div>' +
-              '<pre class="sp-sql-detail-code" style="background:var(--sp-bg-secondary,rgba(0,0,0,0.2));border:1px solid var(--sp-border);border-radius:8px;padding:16px;font-size:12px;white-space:pre-wrap;word-break:break-all;color:var(--sp-text-primary,#e2e8f0);margin:0;max-height:50vh;overflow:auto;"></pre>' +
-              '<div class="sp-sql-detail-caller"></div>' +
-            '</div>' +
+          '<div class="sp-modal-content" style="background:var(--sp-bg-primary,#1e293b);border:1px solid var(--sp-border,rgba(255,255,255,0.08));border-radius:12px;max-width:700px;width:90%;max-height:80vh;overflow:auto;padding:24px;margin:auto;position:relative;top:50%;transform:translateY(-50%);">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' +
+          '<h3 style="margin:0;font-size:16px;color:var(--sp-text-primary,#fff);">SQL Query Detail</h3>' +
+          '<button type="button" class="sp-sql-detail-close" style="background:none;border:none;color:var(--sp-text-muted);font-size:20px;cursor:pointer;padding:4px 8px;">&times;</button>' +
+          '</div>' +
+          '<pre class="sp-sql-detail-code" style="background:var(--sp-bg-secondary,rgba(0,0,0,0.2));border:1px solid var(--sp-border);border-radius:8px;padding:16px;font-size:12px;white-space:pre-wrap;word-break:break-all;color:var(--sp-text-primary,#e2e8f0);margin:0;max-height:50vh;overflow:auto;"></pre>' +
+          '<div class="sp-sql-detail-caller"></div>' +
+          '</div>' +
           '</div>'
         );
         $modal = $('#sp-sql-detail-modal');
@@ -314,14 +249,14 @@
 
       var caller = $(this).data('caller');
       $modal.find('.sp-sql-detail-code').text(query);
-      
+
       var $callerWrap = $modal.find('.sp-sql-detail-caller');
       if (caller) {
         $callerWrap.html('<strong>Caller:</strong> ' + $('<span>').text(caller).html()).show();
       } else {
         $callerWrap.hide();
       }
-      
+
       $modal.css('display', 'block');
     });
   }
@@ -391,6 +326,62 @@
         window.location.reload();
       }).fail(function () {
         alert('Failed to clear event data. Please try again.');
+        $btn.prop('disabled', false);
+      });
+    });
+
+    // Only clear the load events
+    $(document).on('click', '.sp-clear-profiler-btn', function (e) {
+      e.preventDefault();
+
+      if (!confirm('Clear load data?')) return;
+
+      var $btn = $(this);
+      $btn.prop('disabled', true);
+
+      // Call both endpoints like the classic view does
+      var baseUrl = SP.rest_url.replace(/\/$/, '');
+      var loadReq = $.ajax({
+        url: baseUrl + '/sitepulse/v1/clear_load_events/clear',
+        method: 'POST',
+        data: { _wpnonce: SP.nonce },
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader('X-WP-Nonce', SP.nonce);
+        }
+      });
+
+      $.when(loadReq).done(function () {
+        window.location.reload();
+      }).fail(function () {
+        alert('Failed to clear load data. Please try again.');
+        $btn.prop('disabled', false);
+      });
+
+    });
+
+    $(document).on('click', '.sp-clear-curl-btn', function (e) {
+      e.preventDefault();
+
+      if (!confirm('Clear curl data?')) return;
+
+      var $btn = $(this);
+      $btn.prop('disabled', true);
+
+      // Call both endpoints like the classic view does
+      var baseUrl = SP.rest_url.replace(/\/$/, '');
+      var curlReq = $.ajax({
+        url: baseUrl + '/sitepulse/v1/clear_curl_api_events/clear',
+        method: 'POST',
+        data: { _wpnonce: SP.nonce },
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader('X-WP-Nonce', SP.nonce);
+        }
+      });
+
+      $.when(curlReq).done(function () {
+        window.location.reload();
+      }).fail(function () {
+        alert('Failed to clear curl data. Please try again.');
         $btn.prop('disabled', false);
       });
     });
@@ -485,9 +476,9 @@
       e.preventDefault();
       var $btn = $(this);
       var $target = $btn.closest('.sp-list-item-body').find('.sp-error-callstack');
-      
+
       $target.toggleClass('open');
-      
+
       var isVisible = $target.hasClass('open');
       $btn.find('.dashicons').toggleClass('dashicons-arrow-down-alt2', !isVisible).toggleClass('dashicons-arrow-up-alt2', isVisible);
       $btn.find('.sp-btn-text').text(isVisible ? 'Hide Details' : 'View Details');

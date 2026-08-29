@@ -135,8 +135,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 											</label>
 										</div>
 									</div>
-									<h3><?php echo esc_html__( 'Slow Plugin Monitor', 'sitepulse' ); ?></h3>
-									<p class="small text-muted"><?php echo esc_html__( 'Measure plugin, theme, and hook execution times locally.', 'sitepulse' ); ?></p>
+									<h3><?php echo esc_html__( 'LoadSentinel', 'sitepulse' ); ?></h3>
+									<p class="small text-muted"><?php echo esc_html__( 'Track hooks and execution times.', 'sitepulse' ); ?></p>
 								</div>
 							</div>
 							<div class="col-md-6 mb-3">
@@ -149,8 +149,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 											</label>
 										</div>
 									</div>
-									<h3><?php echo esc_html__( 'External Request Monitor', 'sitepulse' ); ?></h3>
-									<p class="small text-muted"><?php echo esc_html__( 'Find slow HTTP requests and the service that initiated them.', 'sitepulse' ); ?></p>
+									<h3><?php echo esc_html__( 'API Monitor', 'sitepulse' ); ?></h3>
+									<p class="small text-muted"><?php echo esc_html__( 'Monitor HTTP requests and API calls.', 'sitepulse' ); ?></p>
 								</div>
 							</div>
 						</div>
@@ -167,10 +167,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</div>
 						<div class="config-option mb-3">
 							<label class="form-switch">
-								<input type="checkbox" class="form-check-input" id="onboarding_external_api_enabled">
-								<span class="form-check-label"><?php echo esc_html__( 'Share performance data for PageSpeed & AI reports', 'sitepulse' ); ?></span>
+								<input type="checkbox" class="form-check-input" id="onboarding_external_api_enabled" checked>
+								<span class="form-check-label"><?php echo esc_html__( 'Enable PageSpeed & AI Reports', 'sitepulse' ); ?></span>
 							</label>
-							<p class="small text-muted"><?php echo esc_html__( 'Optional. SitePulse sends site and performance details to the SitePulse cloud. Local plugin and request monitoring works without this.', 'sitepulse' ); ?></p>
+							<p class="small text-muted"><?php echo esc_html__( 'Receive AI-powered diagnostics based on performance metrics.', 'sitepulse' ); ?></p>
 						</div>
 					</div>
 
@@ -185,8 +185,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<!-- Step 3: Data Collection & Finish -->
 			<div class="onboarding-step" data-step="3">
 				<div class="step-header text-center">
-					<h2><?php echo esc_html__( 'Your dashboard is ready', 'sitepulse' ); ?></h2>
-					<p><?php echo esc_html__( 'We are checking for initial insights in the background. You can open the dashboard now.', 'sitepulse' ); ?></p>
+					<h2><?php echo esc_html__( 'Finalizing Setup', 'sitepulse' ); ?></h2>
+					<p><?php echo esc_html__( 'Gathering initial performance insights for your site...', 'sitepulse' ); ?></p>
 				</div>
 				
 				<div class="step-body">
@@ -196,7 +196,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<div class="collection-icon mb-3">
 								<div class="spinner-border text-primary" role="status"></div>
 							</div>
-							<h3 class="collection-title"><?php echo esc_html__( 'Checking your site...', 'sitepulse' ); ?></h3>
+							<h3 class="collection-title"><?php echo esc_html__( 'Preparing data...', 'sitepulse' ); ?></h3>
 						</div>
 						
 						<div class="collection-progress my-4">
@@ -232,16 +232,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<!-- Completion Message (Initially Hidden) -->
 						<div class="collection-complete text-center mt-4" style="display: none;">
 							<div class="completion-icon dashicons dashicons-yes-alt mb-3"></div>
-							<h3 id="collectionCompleteTitle"><?php echo esc_html__( 'Initial check complete', 'sitepulse' ); ?></h3>
-							<p id="collectionCompleteMessage"><?php echo esc_html__( 'SitePulse is now monitoring your site.', 'sitepulse' ); ?></p>
+							<h3><?php echo esc_html__( 'You\'re All Set!', 'sitepulse' ); ?></h3>
+							<p><?php echo esc_html__( 'SitePulse is now monitoring your site.', 'sitepulse' ); ?></p>
 							
 							<div class="completion-actions mt-4">
-								<button type="button" class="btn btn-outline-primary me-2" id="retryDataCollection" style="display: none;">
-									<?php echo esc_html__( 'Retry Check', 'sitepulse' ); ?>
-								</button>
-								<button type="button" class="btn btn-primary btn-lg px-5 sp-finish-onboarding">
-									<?php echo esc_html__( 'Open Dashboard', 'sitepulse' ); ?>
-								</button>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wpsp_sitepulse' ) ); ?>" class="btn btn-primary btn-lg px-5">
+									<?php echo esc_html__( 'Go to Dashboard', 'sitepulse' ); ?>
+								</a>
 							</div>
 						</div>
 					</div>
@@ -263,10 +260,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<?php echo esc_html__( 'Next', 'sitepulse' ); ?>
 				</button>
 				<button type="button" class="btn btn-success" id="finishOnboarding" style="display: none;">
-					<?php echo esc_html__( 'Open Dashboard', 'sitepulse' ); ?>
+					<?php echo esc_html__( 'Finish Setup', 'sitepulse' ); ?>
 				</button>
 			</div>
 		</div>
 
 	</div>
 </div>
+
