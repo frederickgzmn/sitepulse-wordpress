@@ -12,7 +12,6 @@ jQuery(function ($) {
     let currentStep = 1;
     const totalSteps = 3;
     let dataCollectionComplete = false;
-    let collectionInProgress = false;
 
     // Configuration state
     const config = {
@@ -20,8 +19,7 @@ jQuery(function ($) {
         profiler_enabled: true,
         curl_enabled: true,
         savequeries: false,
-        email_blocking: false,
-        external_api_enabled: false
+        email_blocking: false
     };
 
     /**
@@ -48,8 +46,6 @@ jQuery(function ($) {
         updateUI();
         bindEvents();
         updateProgress();
-        trackProductEvent('onboarding_viewed', { step: currentStep });
-        trackProductEvent('onboarding_step_viewed', { step: currentStep });
     }
 
     /**
@@ -59,9 +55,8 @@ jQuery(function ($) {
         // Navigation buttons
         $('#nextStep').on('click', handleNext);
         $('#prevStep').on('click', handlePrev);
-        $('#finishOnboarding, .sp-finish-onboarding').on('click', handleFinish);
+        $('#finishOnboarding').on('click', handleFinish);
         $('#skipOnboarding').on('click', handleSkip);
-        $('#retryDataCollection').on('click', startDataCollection);
 
         // View mode selection
         $('.select-view-btn').on('click', function () {
@@ -109,7 +104,7 @@ jQuery(function ($) {
     /**
      * Handle next button click
      */
-    function handleNext() {
+    async function handleNext() {
         if (currentStep < totalSteps) {
             // Mark current step as completed
             $(`.stepper-step[data-step="${currentStep}"]`).addClass('completed');
@@ -119,7 +114,7 @@ jQuery(function ($) {
 
             // If moving to step 3 (data collection), trigger collection
             if (currentStep === 3 && !dataCollectionComplete) {
-                startDataCollection();
+                await startDataCollection();
             }
         }
     }
@@ -149,7 +144,6 @@ jQuery(function ($) {
         // Update progress bar and dots
         updateProgress();
         updateUI();
-        trackProductEvent('onboarding_step_viewed', { step: currentStep });
     }
 
     /**
@@ -182,7 +176,19 @@ jQuery(function ($) {
             $('#prevStep').show();
         }
 
-        $('#nextStep').prop('disabled', false).text('Next');
+        // Step 3 is data collection - hide prev/next initially
+        if (currentStep === 3 && !dataCollectionComplete) {
+            $('#prevStep').hide();
+            $('#nextStep').prop('disabled', true).text('Please wait...');
+        } else if (currentStep === 3 && dataCollectionComplete) {
+            $('#prevStep').show();
+            $('#nextStep').prop('disabled', false).text('Next');
+        }
+
+        // Reset button text for other steps
+        if (currentStep !== 3) {
+            $('#nextStep').text('Next');
+        }
 
         if (currentStep === totalSteps) {
             $('#nextStep').hide();
@@ -243,8 +249,8 @@ jQuery(function ($) {
      * Handle finish button
      */
     async function handleFinish() {
-        const $buttons = $('#finishOnboarding, .sp-finish-onboarding');
-        $buttons.addClass('loading').prop('disabled', true);
+        const $btn = $('#finishOnboarding');
+        $btn.addClass('loading').prop('disabled', true);
 
         try {
             // Save configuration
@@ -252,10 +258,6 @@ jQuery(function ($) {
 
             // Mark onboarding as completed
             await completeOnboarding();
-            trackProductEvent('onboarding_completed', {
-                collection_complete: dataCollectionComplete,
-                external_api_enabled: config.external_api_enabled
-            });
 
             // Show success message
             showNotification('Setup completed successfully! Redirecting to dashboard...', 'success');
@@ -268,7 +270,7 @@ jQuery(function ($) {
         } catch (error) {
             console.error('Error completing onboarding:', error);
             showNotification('Error completing setup. Please try again.', 'error');
-            $buttons.removeClass('loading').prop('disabled', false);
+            $btn.removeClass('loading').prop('disabled', false);
         }
     }
 
@@ -316,9 +318,11 @@ jQuery(function ($) {
             hasSettings = true;
         }
 
-        // Always save the explicit cloud-sharing choice.
-        settingsToUpdate.external_api_enabled = config.external_api_enabled;
-        hasSettings = true;
+        // Always save external API setting (defaults to true)
+        if (typeof config.external_api_enabled !== 'undefined') {
+            settingsToUpdate.external_api_enabled = config.external_api_enabled;
+            hasSettings = true;
+        }
 
         if (hasSettings) {
             promises.push(
@@ -342,7 +346,6 @@ jQuery(function ($) {
      */
     async function dismissOnboarding() {
         try {
-            trackProductEvent('onboarding_skipped', { step: currentStep });
             await makeRequest('sitepulse/v1/onboarding/dismiss', {});
             window.location.href = SitePulseOnboarding.admin_url;
         } catch (error) {
@@ -355,46 +358,27 @@ jQuery(function ($) {
     /**
      * Make REST API request
      */
-    async function makeRequest(endpoint, data, timeoutMs = 8000) {
+    async function makeRequest(endpoint, data) {
         const url = SitePulseOnboarding.rest_url.replace(/\/$/, '') + '/' + endpoint;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-WP-Nonce': SitePulseOnboarding.nonce
-                },
-                body: JSON.stringify({
-                    ...data,
-                    _wpnonce: SitePulseOnboarding.nonce
-                }),
-                signal: controller.signal
-            });
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': SitePulseOnboarding.nonce
+            },
+            body: JSON.stringify({
+                ...data,
+                _wpnonce: SitePulseOnboarding.nonce
+            })
+        });
 
-            if (!response.ok) {
-                const error = await response.json().catch(() => null);
-                throw new Error(error?.message || 'Request failed: ' + response.status);
-            }
-
-            return response.json();
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                throw new Error('Request timed out');
-            }
-            throw error;
-        } finally {
-            clearTimeout(timeoutId);
+        if (!response.ok) {
+            const error = await response.json().catch(() => null);
+            throw new Error(error?.message || 'Request failed: ' + response.status);
         }
-    }
 
-    /**
-     * Record a local product event without affecting the onboarding flow.
-     */
-    function trackProductEvent(event, context = {}) {
-        makeRequest('sitepulse/v1/product-event', { event, context }, 5000).catch(() => {});
+        return response.json();
     }
 
     /**
@@ -441,52 +425,37 @@ jQuery(function ($) {
      * Start data collection process
      */
     async function startDataCollection() {
-        if (collectionInProgress) {
-            return;
-        }
-
-        collectionInProgress = true;
-        dataCollectionComplete = false;
-        const collectionStartedAt = Date.now();
-        let completedTasks = 0;
-        let failedTasks = 0;
-
-        $('.collection-status, .collection-progress, .collection-details').show();
-        $('.collection-complete').hide();
-        $('#retryDataCollection').hide();
-        $('.detail-item').removeClass('active completed');
-        $('.detail-status')
-            .removeClass('loading complete error')
-            .addClass('pending')
-            .text('Pending');
-        $('.progress-bar').css('width', '0%').attr('aria-valuenow', 0);
-
         // Update status
         $('.collection-title').text('Collecting Data...');
-        $('.progress-text').text('Starting initial check...');
-        trackProductEvent('onboarding_collection_started');
+        $('.collection-message').text('Please wait while we gather initial insights');
 
         // First, ensure profiler is enabled for data collection
         try {
             await makeRequest('sitepulse/v1/sp_profiler/set_active', {
                 sitepulse_profiler_enabled: 'enabled'
-            }, 5000);
+            });
+            // Give profiler a moment to initialize
+            await new Promise(resolve => setTimeout(resolve, 500));
         } catch (error) {
             console.warn('Could not enable profiler:', error);
             // Continue anyway
         }
 
         const tasks = [
-            { name: 'profiler', label: 'Loading profiler data...', endpoint: 'sitepulse/v1/profiler_stats' },
-            { name: 'hooks', label: 'Analyzing plugin activity...', endpoint: 'sitepulse/v1/profiler_stats' },
-            { name: 'http', label: 'Checking external requests...', endpoint: 'sitepulse/v1/curl_stats' },
-            { name: 'memory', label: 'Gathering memory usage...', endpoint: 'sitepulse/v1/memory_info' },
-            { name: 'plugins', label: 'Profiling installed plugins...', endpoint: 'sitepulse/v1/plugin_profiler_stats' }
+            { name: 'profiler', label: 'Loading profiler data...', endpoint: 'sitepulse/v1/profiler_stats', delay: 200 },
+            { name: 'hooks', label: 'Analyzing plugin activity...', endpoint: 'sitepulse/v1/profiler_stats', delay: 300 },
+            { name: 'http', label: 'Checking external requests...', endpoint: 'sitepulse/v1/curl_stats', delay: 200 },
+            { name: 'memory', label: 'Gathering memory usage...', endpoint: 'sitepulse/v1/memory_info', delay: 300 },
+            { name: 'plugins', label: 'Profiling installed plugins...', endpoint: 'sitepulse/v1/plugin_profiler_stats', delay: 400 }
         ];
 
-        // Run independent checks together so onboarding never feels artificially slow.
-        await Promise.all(tasks.map(async function (task) {
-            const taskStartedAt = Date.now();
+        let progress = 0;
+        const progressIncrement = 100 / tasks.length;
+
+        // Execute tasks sequentially
+        for (let i = 0; i < tasks.length; i++) {
+            const task = tasks[i];
+
             // Mark as loading
             $(`.detail-item[data-task="${task.name}"]`).addClass('active');
             $(`.detail-item[data-task="${task.name}"] .detail-status`)
@@ -494,10 +463,17 @@ jQuery(function ($) {
                 .addClass('loading')
                 .text('Loading...');
 
+            // Update progress bar
+            progress += progressIncrement;
+            $('.progress-bar').css('width', progress + '%').attr('aria-valuenow', progress);
             $('.progress-text').text(task.label);
 
             try {
-                const data = await makeRequest(task.endpoint, {});
+                // Simulate API call with delay for better UX
+                await new Promise(resolve => setTimeout(resolve, task.delay));
+
+                // Make actual API call
+                const data = await makeRequest(task.endpoint, {}).catch(() => null);
 
                 // Mark as complete
                 $(`.detail-item[data-task="${task.name}"]`)
@@ -512,11 +488,6 @@ jQuery(function ($) {
                 if (data) {
                     updateCollectionStats(task.name, data);
                 }
-                completedTasks++;
-                trackProductEvent('onboarding_task_completed', {
-                    task: task.name,
-                    duration_ms: Date.now() - taskStartedAt
-                });
 
             } catch (error) {
                 console.error(`Error collecting ${task.name} data:`, error);
@@ -528,46 +499,30 @@ jQuery(function ($) {
                     .removeClass('loading')
                     .addClass('error')
                     .text('Error');
-                failedTasks++;
-                trackProductEvent('onboarding_task_failed', {
-                    task: task.name,
-                    reason: error.message || 'request_failed'
-                });
-            } finally {
-                const finishedTasks = completedTasks + failedTasks;
-                const progress = Math.round((finishedTasks / tasks.length) * 100);
-                $('.progress-bar').css('width', progress + '%').attr('aria-valuenow', progress);
             }
-        }));
+        }
 
         // Complete progress bar
         $('.progress-bar').css('width', '100%').attr('aria-valuenow', 100);
-        $('.progress-text').text(
-            failedTasks > 0
-                ? `${completedTasks} checks completed; ${failedTasks} need another try.`
-                : 'Initial check complete!'
-        );
+        $('.progress-text').text('Collection complete!');
 
-        $('#collectionCompleteTitle').text(
-            failedTasks > 0 ? 'Your dashboard is still ready' : 'Initial check complete'
-        );
-        $('#collectionCompleteMessage').text(
-            failedTasks > 0
-                ? 'Some checks could not finish. You can retry or continue to the dashboard.'
-                : 'SitePulse is now monitoring your site.'
-        );
-        $('#retryDataCollection').toggle(failedTasks > 0);
-        $('.collection-status').fadeOut(200);
-        $('.collection-complete').fadeIn(300);
+        // Wait a moment then show completion
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-        dataCollectionComplete = true;
-        collectionInProgress = false;
-        trackProductEvent('onboarding_collection_completed', {
-            completed_tasks: completedTasks,
-            failed_tasks: failedTasks,
-            duration_ms: Date.now() - collectionStartedAt
+        // Hide collection status and show completion
+        $('.collection-status').fadeOut(300);
+        $('.collection-progress').fadeOut(300);
+        $('.collection-details').fadeOut(300, function () {
+            $('.collection-complete').fadeIn(500);
+            dataCollectionComplete = true;
+
+            // Enable next button and update UI after a short delay
+            setTimeout(() => {
+                $('#nextStep').prop('disabled', false).text('Next');
+                $('#prevStep').show();
+                updateUI();
+            }, 1000);
         });
-        updateUI();
     }
 
     /**
@@ -632,6 +587,11 @@ jQuery(function ($) {
      * Keyboard navigation
      */
     $(document).on('keydown', function (e) {
+        // Disable keyboard navigation during data collection
+        if (currentStep === 3 && !dataCollectionComplete) {
+            return;
+        }
+
         // Left arrow - previous step
         if (e.keyCode === 37 && currentStep > 1) {
             handlePrev();
@@ -655,3 +615,4 @@ jQuery(function ($) {
     // Initialize when document is ready
     init();
 });
+

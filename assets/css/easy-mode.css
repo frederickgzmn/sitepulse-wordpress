@@ -120,91 +120,6 @@
   box-sizing: border-box;
 }
 
-/* ---------- First useful result ---------- */
-.sp-first-insight {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 16px;
-  padding: 18px 20px;
-  border: 1px solid var(--sp-border);
-  border-left: 4px solid var(--sp-info);
-  border-radius: var(--sp-radius-lg);
-  background: var(--sp-bg-card);
-  box-shadow: var(--sp-shadow-sm);
-}
-
-.sp-first-insight--success {
-  border-left-color: var(--sp-success);
-}
-
-.sp-first-insight--warning {
-  border-left-color: var(--sp-warning);
-}
-
-.sp-first-insight--danger {
-  border-left-color: var(--sp-danger);
-}
-
-.sp-first-insight-icon {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border-radius: var(--sp-radius-md);
-  color: var(--sp-info);
-  background: var(--sp-info-soft);
-}
-
-.sp-first-insight--success .sp-first-insight-icon {
-  color: var(--sp-success);
-  background: var(--sp-success-soft);
-}
-
-.sp-first-insight--warning .sp-first-insight-icon {
-  color: var(--sp-warning);
-  background: var(--sp-warning-soft);
-}
-
-.sp-first-insight--danger .sp-first-insight-icon {
-  color: var(--sp-danger);
-  background: var(--sp-danger-soft);
-}
-
-.sp-first-insight-kicker {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--sp-text-tertiary);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.sp-first-insight h3 {
-  margin: 0;
-  color: var(--sp-text-primary);
-  font-size: 16px;
-  line-height: 1.35;
-}
-
-.sp-first-insight p {
-  margin: 3px 0 0;
-  color: var(--sp-text-secondary);
-  font-size: 12px;
-}
-
-@media screen and (max-width: 782px) {
-  .sp-first-insight {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .sp-first-insight .sp-btn {
-    grid-column: 1 / -1;
-    justify-content: center;
-  }
-}
-
 /* ---------- Form Controls Overrides ---------- */
 .sp-easy .form-check-input {
   cursor: pointer;
@@ -5419,3 +5334,4 @@ body.toplevel_page_wpsp_sitepulse #wpfooter {
   color: var(--sp-text-primary);
   margin-right: 6px;
 }
+

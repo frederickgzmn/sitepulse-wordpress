@@ -90,7 +90,6 @@ $sp_status_info    = isset( $status_info ) ? $status_info : ( $sp_settings_inst 
 
 </div><!-- /sp-zone--infra -->
 
-
 <!-- ═══════════════════════════════════════════════════════════════════════
      ZONE 2: Infrastructure
      ═══════════════════════════════════════════════════════════════════════ -->
@@ -169,84 +168,3 @@ $sp_status_info    = isset( $status_info ) ? $status_info : ( $sp_settings_inst 
 
 </div><!-- /sp-zone--ai -->
 
-
-<?php if ( defined( 'SITEPULSE_PRO_IS_ACTIVE' ) && SITEPULSE_PRO_IS_ACTIVE ) : ?>
-<!-- ═══════════════════════════════════════════════════════════════════════
-     ZONE 3: Pro Status
-     ═══════════════════════════════════════════════════════════════════════ -->
-<div class="sp-zone sp-zone--data">
-<div class="sp-zone-header">
-	<span class="dashicons dashicons-admin-plugins"></span>
-	<span class="sp-zone-title"><?php echo esc_html__( 'Pro Status', 'sitepulse' ); ?></span>
-	<span class="sp-badge sp-badge-accent sp-zone-pro"><?php echo esc_html__( 'PRO', 'sitepulse' ); ?></span>
-</div>
-
-<!-- MU-Plugin Status -->
-<?php if ( class_exists( 'Sitepulse_Pro_Plugin' ) ) :
-	$sp_mu_status = Sitepulse_Pro_Plugin::get_mu_plugin_status();
-?>
-<div class="sp-card sp-mb-16">
-	<div class="sp-card-header">
-		<div>
-			<h3 class="sp-card-title"><span class="dashicons dashicons-admin-plugins"></span> <?php echo esc_html__( 'MU-Plugin Status', 'sitepulse' ); ?></h3>
-			<p class="sp-card-subtitle"><?php echo esc_html__( 'An early-loading extension for faster performance tracking', 'sitepulse' ); ?></p>
-		</div>
-		<span class="sp-badge <?php echo ! empty( $sp_mu_status['is_active'] ) ? 'sp-badge-success' : 'sp-badge-warning'; ?>">
-			<?php echo ! empty( $sp_mu_status['is_active'] ) ? esc_html__( 'Installed', 'sitepulse' ) : esc_html__( 'Not Installed', 'sitepulse' ); ?>
-		</span>
-
-		<span class="sp-badge <?php echo ! empty( $sp_mu_status['needs_update'] ) ? 'sp-badge-warning' : 'sp-badge-success'; ?>">
-			<?php echo ! empty( $sp_mu_status['needs_update'] ) ? esc_html__( 'Update Available', 'sitepulse' ) : esc_html__( 'Up to Date', 'sitepulse' ); ?>
-		</span>
-	</div>
-	<?php if ( ! empty( $sp_mu_status['is_active'] ) ) : ?>
-	<div class="sp-card-body sp-p-0">
-		<table class="sp-table sp-table-striped">
-			<tbody>
-				<?php if ( isset( $sp_mu_status['version'] ) ) : ?>
-					<tr><td class="sp-fw-500"><?php echo esc_html__( 'Version', 'sitepulse' ); ?></td><td><?php echo esc_html( $sp_mu_status['version'] ); ?></td></tr>
-				<?php endif; ?>
-				<?php if ( isset( $sp_mu_status['path'] ) ) : ?>
-					<tr><td class="sp-fw-500"><?php echo esc_html__( 'Path', 'sitepulse' ); ?></td><td class="sp-cell-mono sp-text-xs"><?php echo esc_html( $sp_mu_status['path'] ); ?></td></tr>
-				<?php endif; ?>
-			</tbody>
-		</table>
-	</div>
-	<?php endif; ?>
-</div>
-<?php endif; ?>
-
-<!-- Pro Version & Updates -->
-<div class="sp-card sp-mb-16">
-	<div class="sp-card-header">
-		<h3 class="sp-card-title"><span class="dashicons dashicons-update"></span> <?php echo esc_html__( 'Pro Version & Updates', 'sitepulse' ); ?></h3>
-	</div>
-	<div class="sp-card-body sp-p-0">
-		<table class="sp-table sp-table-striped">
-			<tbody>
-				<tr>
-					<td class="sp-fw-500"><?php echo esc_html__( 'SitePulse Core', 'sitepulse' ); ?></td>
-					<td><?php echo esc_html( defined( 'SITEPULSE_VERSION' ) ? SITEPULSE_VERSION : '—' ); ?></td>
-				</tr>
-				<tr>
-					<td class="sp-fw-500"><?php echo esc_html__( 'SitePulse Pro', 'sitepulse' ); ?></td>
-					<td><?php echo esc_html( defined( 'SITEPULSE_PRO_VERSION' ) ? SITEPULSE_PRO_VERSION : '—' ); ?></td>
-				</tr>
-				<?php if ( ! empty( $sp_status_info ) ) :
-					foreach ( $sp_status_info as $info_key => $info_val ) :
-						if ( ! is_string( $info_val ) && ! is_numeric( $info_val ) ) {
-							continue;
-						}
-				?>
-					<tr>
-						<td class="sp-fw-500"><?php echo esc_html( ucwords( str_replace( '_', ' ', $info_key ) ) ); ?></td>
-						<td><?php echo esc_html( $info_val ); ?></td>
-					</tr>
-				<?php endforeach; endif; ?>
-			</tbody>
-		</table>
-	</div>
-</div>
-
-</div><!-- /sp-zone--data -->
-<?php endif; ?>

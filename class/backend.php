@@ -70,11 +70,6 @@ class Sitepulse_Backend {
 				'domain'         => esc_url_raw( home_url() ),
 				'plugin_version' => defined( 'SITEPULSE_VERSION' ) ? SITEPULSE_VERSION : '',
 				'wp_version'     => get_bloginfo( 'version' ),
-				'dashboard_url'  => admin_url( 'admin.php?page=wpsp_sitepulse' ),
-				'support_url'    => 'https://wordpress.org/support/plugin/sitepulse/',
-				'journey'        => class_exists( 'Sitepulse_Product_Analytics' )
-					? Sitepulse_Product_Analytics::get_summary()
-					: array(),
 			] );
 		}
 
@@ -186,8 +181,8 @@ class Sitepulse_Backend {
 		// Add a submenu for the LoadSentinel
 		$page_resource_load = add_submenu_page(
 			$this->plugin->setPrefix( "sitepulse" ),
-			__( 'Slow Plugins', 'sitepulse' ),
-			__( 'Slow Plugins', 'sitepulse' ),
+			__( 'Insights', 'sitepulse' ),
+			__( 'Insights', 'sitepulse' ),
 			'manage_options',
 			$this->plugin->setPrefix( "sitepulse" ) . '_' . SITEPULSE_PROFILER_SLUG,
 			[ &$this, 'render_resource_load' ],
@@ -199,8 +194,8 @@ class Sitepulse_Backend {
 		// Add a submenu for the cURL API
 		$page_curl_api = add_submenu_page(
 			$this->plugin->setPrefix( "sitepulse" ),
-			__( 'External Requests', 'sitepulse' ),
-			__( 'External Requests', 'sitepulse' ),
+			__( 'APIMonitor', 'sitepulse' ),
+			__( 'APIMonitor', 'sitepulse' ),
 			'manage_options',
 			$this->plugin->setPrefix( "sitepulse" ) . '_' . SITEPULSE_CURL_API_SLUG,
 			[ &$this, 'render_curl_api' ],
@@ -347,6 +342,7 @@ class Sitepulse_Backend {
 						$slow_plugins_themes[] = array(
 							'name' => ucfirst( $plugin_or_theme ),
 							'time_ms' => $time_ms,
+							'date_time' => isset( $stat['date_time'] ) ? $stat['date_time'] : 0,
 							'severity' => $time_ms > 1000 ? 'critical' : 'warning'
 						);
 					}
@@ -363,6 +359,7 @@ class Sitepulse_Backend {
 						$slow_plugins_profiler[] = array(
 							'name' => isset( $plugin_stat['plugin_name'] ) ? $plugin_stat['plugin_name'] : 'Unknown Plugin',
 							'time_ms' => $time_ms,
+							'date_time' => isset( $plugin_stat['date_time'] ) ? $plugin_stat['date_time'] : 0,
 							'severity' => $time_ms > 1000 ? 'critical' : 'warning'
 						);
 					}
@@ -659,9 +656,7 @@ class Sitepulse_Backend {
 
 		// Skip slow queries calculation when pro is active (pro has its own SQL Monitor)
 		$slow_queries = [];
-		if ( ! SITEPULSE_PRO_IS_ACTIVE ) {
-			$slow_queries = $this->plugin->sp_get_slow_queries( 100.0, 50 );
-		}
+		$slow_queries = $this->plugin->sp_get_slow_queries( 100.0, 50 );
 		$curLoader = new Sitepulse_CurLoader();
 		$curl_events = array_reverse( $curLoader::get_events() );
 
@@ -695,28 +690,6 @@ class Sitepulse_Backend {
 		$fatal_count = isset( $error_log_stats['fatal_count'] ) ? (int) $error_log_stats['fatal_count'] : 0;
 		$warning_count = isset( $error_log_stats['warning_count'] ) ? (int) $error_log_stats['warning_count'] : 0;
 
-		if ( class_exists( 'Sitepulse_Product_Analytics' ) ) {
-			Sitepulse_Product_Analytics::track_once( 'dashboard_viewed' );
-
-			$finding_type = '';
-			if ( ! empty( $all_slow_items ) ) {
-				$finding_type = 'slow_plugin';
-			} elseif ( ! empty( $slow_api_requests ) ) {
-				$finding_type = 'slow_external_request';
-			} elseif ( $error_count > 0 ) {
-				$finding_type = 'site_error';
-			} elseif ( ! empty( $stats ) || ! empty( $curl_events ) || ! empty( $plugin_profiler_stats ) ) {
-				$finding_type = 'healthy_scan';
-			}
-
-			if ( $finding_type ) {
-				Sitepulse_Product_Analytics::track_once(
-					'first_useful_finding',
-					array( 'type' => $finding_type )
-				);
-			}
-		}
-
 		// Determine if we should show performance warnings
 		$is_overall_slow = ( $scores['loadsentinel_score'] < 60 );
 		$show_performance_warnings = ! empty( $all_slow_items ) || $total_load_time > 2000 || $is_overall_slow;
@@ -738,17 +711,7 @@ class Sitepulse_Backend {
 		// Get PageSpeed Insights report data
 		$pagespeed_report = null;
 
-		if ( SITEPULSE_PRO_IS_ACTIVE ) {
-			// Pro library
-			if ( class_exists( 'Sitepulse_Pro_Api_Service' ) ) {
-				$pagespeed_report = Sitepulse_Pro_Api_Service::get_pagespeed_report( true );
-			} else {
-				// Use the Free if pro is not available for some reason
-				if ( class_exists( 'Sitepulse_Api_Service' ) ) {
-					$pagespeed_report = Sitepulse_Api_Service::get_pagespeed_report( true );
-				}
-			}
-		} else {
+		if ( ! SITEPULSE_PRO_IS_ACTIVE ) {
 			// Free
 			if ( class_exists( 'Sitepulse_Api_Service' ) ) {
 				$pagespeed_report = Sitepulse_Api_Service::get_pagespeed_report( true );
@@ -794,7 +757,7 @@ class Sitepulse_Backend {
 
 		// AI Diagnostic shared variables - loaded once for both views
 		$sp_ai_settings = get_option( 'sitepulse_settings', array() );
-		$sp_ai_external_api_enabled = isset( $sp_ai_settings['external_api_enabled'] ) ? (bool) $sp_ai_settings['external_api_enabled'] : false;
+		$sp_ai_external_api_enabled = isset( $sp_ai_settings['external_api_enabled'] ) ? (bool) $sp_ai_settings['external_api_enabled'] : true;
 		$ai_diagnostic_status = null;
 		$ai_diagnostic_requested_at = null;
 		$ai_diagnostic_queue_position = null;
@@ -807,9 +770,7 @@ class Sitepulse_Backend {
 			
 			// Get report if completed or no status yet
 			if ( $ai_diagnostic_status === 'completed' || empty( $ai_diagnostic_status ) ) {
-				if ( SITEPULSE_PRO_IS_ACTIVE && class_exists( 'Sitepulse_Pro_Api_Service' ) ) {
-					$ai_diagnostic_report = Sitepulse_Pro_Api_Service::get_ai_diagnostic_report( true );
-				} elseif ( class_exists( 'Sitepulse_Api_Service' ) ) {
+				if ( ! SITEPULSE_PRO_IS_ACTIVE ) {
 					$ai_diagnostic_report = Sitepulse_Api_Service::get_ai_diagnostic_report( true );
 				}
 			}

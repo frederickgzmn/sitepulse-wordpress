@@ -52,7 +52,7 @@ class Sitepulse_Settings extends Sitepulse_Setup {
             'cron_disabled' => false,
             'original_cron_setting' => false,
             'recovery_mode_email_addresses' => '',
-            'external_api_enabled' => false,
+            'external_api_enabled' => true, // Default enabled for PageSpeed and AI features
         );
         
         $settings = get_option(self::SETTINGS_OPTION_KEY, $defaults);
@@ -377,7 +377,7 @@ class Sitepulse_Settings extends Sitepulse_Setup {
      * Check if external API data collection is enabled
      */
     public function is_external_api_enabled() {
-        return (bool) $this->get_setting('external_api_enabled', false);
+        return (bool) $this->get_setting('external_api_enabled', true);
     }
     
     /**
@@ -492,8 +492,7 @@ class Sitepulse_Settings extends Sitepulse_Setup {
             'email_blocking_enabled' => false,
             'email_blocking_mode' => self::EMAIL_MODE_SENDMAIL,
             'cron_disabled' => false,
-            'original_cron_setting' => false,
-            'external_api_enabled' => false
+            'original_cron_setting' => false
         );
         
         $this->save_settings($defaults);

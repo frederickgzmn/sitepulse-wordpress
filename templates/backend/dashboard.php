@@ -108,8 +108,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 								</div>
 								<div class="sp-widget-stats">
 									<div class="sp-stat-item">
-										<?php if ( $has_report && isset( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ) ) : ?>
-											<span class="sp-stat-value sp-ai-health-score"><?php echo esc_html( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ); ?></span>
+										<?php if ( $has_report && isset( $ai_diagnostic_report['metrics_summary'] ) && is_array( $ai_diagnostic_report['metrics_summary'] ) && isset( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ) && is_scalar( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ) ) : ?>
+											<span class="sp-stat-value sp-ai-health-score"><?php echo esc_html( (string) $ai_diagnostic_report['metrics_summary']['overall_health_score'] ); ?></span>
 											<span class="sp-stat-label"><?php echo esc_html__( 'Health', 'sitepulse' ); ?></span>
 										<?php elseif ( $is_pending ) : ?>
 											<span class="sp-stat-value text-warning"><span class="spinner-border spinner-border-sm"></span></span>
@@ -178,60 +178,60 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<?php elseif ( $has_report ) : ?>
 								<!-- Completed State - Show Results -->
 								<?php
-								$report_status = isset( $ai_diagnostic_report['status'] ) ? $ai_diagnostic_report['status'] : 'info';
+								$report_status = isset( $ai_diagnostic_report['status'] ) && is_string( $ai_diagnostic_report['status'] ) ? $ai_diagnostic_report['status'] : 'info';
 								$status_class = $report_status === 'success' ? 'success' : ( $report_status === 'warning' ? 'warning' : ( $report_status === 'danger' ? 'danger' : 'info' ) );
 								?>
 								<div class="sp-ai-status-completed">
 									<!-- Summary -->
-									<?php if ( isset( $ai_diagnostic_report['summary'] ) ) : ?>
+									<?php if ( isset( $ai_diagnostic_report['summary'] ) && is_scalar( $ai_diagnostic_report['summary'] ) ) : ?>
 										<div class="alert alert-<?php echo esc_attr( $status_class ); ?> mb-3">
 											<div class="d-flex align-items-start">
 												<span class="dashicons dashicons-<?php echo $report_status === 'success' ? 'yes-alt' : ( $report_status === 'warning' ? 'warning' : 'info' ); ?> me-2"></span>
-												<div><?php echo esc_html( $ai_diagnostic_report['summary'] ); ?></div>
+												<div><?php echo esc_html( (string) $ai_diagnostic_report['summary'] ); ?></div>
 											</div>
 										</div>
 									<?php endif; ?>
 
 									<!-- Metrics Summary -->
-									<?php if ( isset( $ai_diagnostic_report['metrics_summary'] ) ) : ?>
+									<?php if ( isset( $ai_diagnostic_report['metrics_summary'] ) && is_array( $ai_diagnostic_report['metrics_summary'] ) ) : ?>
 										<div class="sp-ai-metrics-row mb-3">
 											<div class="row g-2">
-												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] ) ) : ?>
+												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] ) && is_scalar( $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] ) ) : ?>
 													<div class="col-3 text-center">
 														<div class="sp-ai-grade-badge badge bg-<?php echo $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] === 'A' ? 'success' : ( $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] === 'B' ? 'info' : 'warning' ); ?> fs-5 px-3 py-2">
-															<?php echo esc_html( $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] ); ?>
+															<?php echo esc_html( (string) $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] ); ?>
 														</div>
 														<small class="d-block text-muted mt-1"><?php echo esc_html__( 'Speed', 'sitepulse' ); ?></small>
 													</div>
 												<?php endif; ?>
-												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['security_grade'] ) ) : ?>
+												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['security_grade'] ) && is_scalar( $ai_diagnostic_report['metrics_summary']['security_grade'] ) ) : ?>
 													<div class="col-3 text-center">
 														<div class="sp-ai-grade-badge badge bg-<?php echo $ai_diagnostic_report['metrics_summary']['security_grade'] === 'A' ? 'success' : ( $ai_diagnostic_report['metrics_summary']['security_grade'] === 'B' ? 'info' : 'warning' ); ?> fs-5 px-3 py-2">
-															<?php echo esc_html( $ai_diagnostic_report['metrics_summary']['security_grade'] ); ?>
+															<?php echo esc_html( (string) $ai_diagnostic_report['metrics_summary']['security_grade'] ); ?>
 														</div>
 														<small class="d-block text-muted mt-1"><?php echo esc_html__( 'Security', 'sitepulse' ); ?></small>
 													</div>
 												<?php endif; ?>
-												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['error_severity'] ) ) : ?>
+												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['error_severity'] ) && is_string( $ai_diagnostic_report['metrics_summary']['error_severity'] ) ) : ?>
 													<div class="col-3 text-center">
 														<?php 
 														$error_sev = $ai_diagnostic_report['metrics_summary']['error_severity'];
 														$error_class = $error_sev === 'low' ? 'success' : ( $error_sev === 'medium' ? 'warning' : 'danger' );
 														?>
 														<div class="sp-ai-grade-badge badge bg-<?php echo esc_attr( $error_class ); ?> fs-6 px-3 py-2">
-															<?php echo esc_html( ucfirst( $error_sev ) ); ?>
+															<?php echo esc_html( ucfirst( (string) $error_sev ) ); ?>
 														</div>
 														<small class="d-block text-muted mt-1"><?php echo esc_html__( 'Errors', 'sitepulse' ); ?></small>
 													</div>
 												<?php endif; ?>
-												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ) ) : ?>
+												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ) && is_numeric( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ) ) : ?>
 													<div class="col-3 text-center">
 														<?php 
 														$health = $ai_diagnostic_report['metrics_summary']['overall_health_score'];
 														$health_class = $health >= 80 ? 'success' : ( $health >= 60 ? 'warning' : 'danger' );
 														?>
 														<div class="sp-ai-grade-badge badge bg-<?php echo esc_attr( $health_class ); ?> fs-5 px-3 py-2">
-															<?php echo esc_html( $health ); ?>
+															<?php echo esc_html( (string) $health ); ?>
 														</div>
 														<small class="d-block text-muted mt-1"><?php echo esc_html__( 'Health', 'sitepulse' ); ?></small>
 													</div>
@@ -253,7 +253,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 													</h2>
 													<div id="sp-ai-insight-basic-<?php echo esc_attr( $key ); ?>" class="accordion-collapse collapse" data-bs-parent="#sp-ai-insights-accordion-basic">
 														<div class="accordion-body small">
-															<?php echo esc_html( $insight ); ?>
+															<?php if ( isset( $insight ) && is_scalar( $insight ) ) : ?>
+																<?php echo esc_html( (string) $insight ); ?>
+															<?php endif; ?>
 														</div>
 													</div>
 												</div>
@@ -262,7 +264,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 									<?php endif; ?>
 
 									<!-- Recommendations -->
-									<?php if ( isset( $ai_diagnostic_report['recommendations'] ) ) : ?>
+									<?php if ( isset( $ai_diagnostic_report['recommendations'] ) && is_array( $ai_diagnostic_report['recommendations'] ) ) : ?>
 										<?php 
 										$recs = $ai_diagnostic_report['recommendations'];
 										$has_recommendations = ( ! empty( $recs['critical'] ) || ! empty( $recs['high'] ) || ! empty( $recs['moderate'] ) || ! empty( $recs['low'] ) );
@@ -272,11 +274,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 												<h6 class="mb-2"><span class="dashicons dashicons-lightbulb me-1"></span><?php echo esc_html__( 'Recommendations', 'sitepulse' ); ?></h6>
 												<ul class="list-unstyled mb-0 small">
 													<?php foreach ( array( 'critical', 'high', 'moderate', 'low' ) as $priority ) : ?>
-														<?php if ( ! empty( $recs[ $priority ] ) ) : ?>
+														<?php if ( ! empty( $recs[ $priority ] ) && is_array( $recs[ $priority ] ) ) : ?>
 															<?php foreach ( $recs[ $priority ] as $rec ) : ?>
 																<li class="mb-1">
 																	<span class="badge bg-<?php echo $priority === 'critical' ? 'danger' : ( $priority === 'high' ? 'warning text-dark' : ( $priority === 'moderate' ? 'info' : 'secondary' ) ); ?> me-1"><?php echo esc_html( ucfirst( $priority ) ); ?></span>
-																	<?php echo esc_html( $rec ); ?>
+																	<?php if ( isset( $rec ) && is_scalar( $rec ) ) : ?>
+																		<?php echo esc_html( (string) $rec ); ?>
+																	<?php endif; ?>
 																</li>
 															<?php endforeach; ?>
 														<?php endif; ?>
@@ -287,12 +291,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 									<?php endif; ?>
 
 									<!-- Recommended Plugins -->
-									<?php if ( isset( $ai_diagnostic_report['wordpress_specific']['recommended_plugins'] ) && ! empty( $ai_diagnostic_report['wordpress_specific']['recommended_plugins'] ) ) : ?>
+									<?php if ( isset( $ai_diagnostic_report['wordpress_specific'] ) && is_array( $ai_diagnostic_report['wordpress_specific'] ) && isset( $ai_diagnostic_report['wordpress_specific']['recommended_plugins'] ) && is_array( $ai_diagnostic_report['wordpress_specific']['recommended_plugins'] ) && ! empty( $ai_diagnostic_report['wordpress_specific']['recommended_plugins'] ) ) : ?>
 										<div class="sp-ai-wp-specific mt-3">
 											<h6 class="mb-2"><span class="dashicons dashicons-admin-plugins me-1"></span><?php echo esc_html__( 'Recommended Plugins', 'sitepulse' ); ?></h6>
 											<ul class="list-unstyled mb-0 small ps-2">
 												<?php foreach ( $ai_diagnostic_report['wordpress_specific']['recommended_plugins'] as $plugin ) : ?>
-													<li><span class="badge bg-success me-1"><?php echo esc_html__( '+', 'sitepulse' ); ?></span><?php echo esc_html( $plugin ); ?></li>
+													<?php if ( isset( $plugin ) && is_scalar( $plugin ) ) : ?>
+														<li><span class="badge bg-success me-1"><?php echo esc_html__( '+', 'sitepulse' ); ?></span><?php echo esc_html( (string) $plugin ); ?></li>
+													<?php endif; ?>
 												<?php endforeach; ?>
 											</ul>
 										</div>
@@ -1697,7 +1703,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<?php 
 				// Only show PageSpeed widget if user has enabled external API (PageSpeed & AI Reports)
 				$sp_all_settings = get_option( 'sitepulse_settings', array() );
-				$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : false;
+				$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : true;
 				if ( $sp_external_api_enabled ) :
 				?>
 				<?php if ( $has_valid_pagespeed && $ps_performance_score > 0 ) : ?>
@@ -1957,8 +1963,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 								</div>
 								<div class="sp-widget-stats">
 									<div class="sp-stat-item">
-										<?php if ( $has_report && isset( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ) ) : ?>
-											<span class="sp-stat-value sp-ai-health-score"><?php echo esc_html( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ); ?></span>
+										<?php if ( $has_report && isset( $ai_diagnostic_report['metrics_summary'] ) && is_array( $ai_diagnostic_report['metrics_summary'] ) && isset( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ) && is_scalar( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ) ) : ?>
+											<span class="sp-stat-value sp-ai-health-score"><?php echo esc_html( (string) $ai_diagnostic_report['metrics_summary']['overall_health_score'] ); ?></span>
 											<span class="sp-stat-label"><?php echo esc_html__( 'Health', 'sitepulse' ); ?></span>
 										<?php elseif ( $is_pending ) : ?>
 											<span class="sp-stat-value text-warning"><span class="spinner-border spinner-border-sm"></span></span>
@@ -2027,60 +2033,60 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<?php elseif ( $has_report ) : ?>
 								<!-- Completed State - Show Results -->
 								<?php
-								$report_status = isset( $ai_diagnostic_report['status'] ) ? $ai_diagnostic_report['status'] : 'info';
+								$report_status = isset( $ai_diagnostic_report['status'] ) && is_string( $ai_diagnostic_report['status'] ) ? $ai_diagnostic_report['status'] : 'info';
 								$status_class = $report_status === 'success' ? 'success' : ( $report_status === 'warning' ? 'warning' : ( $report_status === 'danger' ? 'danger' : 'info' ) );
 								?>
 								<div class="sp-ai-status-completed">
 									<!-- Summary -->
-									<?php if ( isset( $ai_diagnostic_report['summary'] ) ) : ?>
+									<?php if ( isset( $ai_diagnostic_report['summary'] ) && is_scalar( $ai_diagnostic_report['summary'] ) ) : ?>
 										<div class="alert alert-<?php echo esc_attr( $status_class ); ?> mb-3">
 											<div class="d-flex align-items-start">
 												<span class="dashicons dashicons-<?php echo $report_status === 'success' ? 'yes-alt' : ( $report_status === 'warning' ? 'warning' : 'info' ); ?> me-2"></span>
-												<div><?php echo esc_html( $ai_diagnostic_report['summary'] ); ?></div>
+												<div><?php echo esc_html( (string) $ai_diagnostic_report['summary'] ); ?></div>
 											</div>
 										</div>
 									<?php endif; ?>
 
 									<!-- Metrics Summary -->
-									<?php if ( isset( $ai_diagnostic_report['metrics_summary'] ) ) : ?>
+									<?php if ( isset( $ai_diagnostic_report['metrics_summary'] ) && is_array( $ai_diagnostic_report['metrics_summary'] ) ) : ?>
 										<div class="sp-ai-metrics-row mb-3">
 											<div class="row g-2">
-												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] ) ) : ?>
+												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] ) && is_scalar( $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] ) ) : ?>
 													<div class="col-3 text-center">
 														<div class="sp-ai-grade-badge badge bg-<?php echo $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] === 'A' ? 'success' : ( $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] === 'B' ? 'info' : 'warning' ); ?> fs-5 px-3 py-2">
-															<?php echo esc_html( $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] ); ?>
+															<?php echo esc_html( (string) $ai_diagnostic_report['metrics_summary']['pagespeed_grade'] ); ?>
 														</div>
 														<small class="d-block text-muted mt-1"><?php echo esc_html__( 'Speed', 'sitepulse' ); ?></small>
 													</div>
 												<?php endif; ?>
-												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['security_grade'] ) ) : ?>
+												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['security_grade'] ) && is_scalar( $ai_diagnostic_report['metrics_summary']['security_grade'] ) ) : ?>
 													<div class="col-3 text-center">
 														<div class="sp-ai-grade-badge badge bg-<?php echo $ai_diagnostic_report['metrics_summary']['security_grade'] === 'A' ? 'success' : ( $ai_diagnostic_report['metrics_summary']['security_grade'] === 'B' ? 'info' : 'warning' ); ?> fs-5 px-3 py-2">
-															<?php echo esc_html( $ai_diagnostic_report['metrics_summary']['security_grade'] ); ?>
+															<?php echo esc_html( (string) $ai_diagnostic_report['metrics_summary']['security_grade'] ); ?>
 														</div>
 														<small class="d-block text-muted mt-1"><?php echo esc_html__( 'Security', 'sitepulse' ); ?></small>
 													</div>
 												<?php endif; ?>
-												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['error_severity'] ) ) : ?>
+												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['error_severity'] ) && is_string( $ai_diagnostic_report['metrics_summary']['error_severity'] ) ) : ?>
 													<div class="col-3 text-center">
 														<?php 
 														$error_sev = $ai_diagnostic_report['metrics_summary']['error_severity'];
 														$error_class = $error_sev === 'low' ? 'success' : ( $error_sev === 'medium' ? 'warning' : 'danger' );
 														?>
 														<div class="sp-ai-grade-badge badge bg-<?php echo esc_attr( $error_class ); ?> fs-6 px-3 py-2">
-															<?php echo esc_html( ucfirst( $error_sev ) ); ?>
+															<?php echo esc_html( ucfirst( (string) $error_sev ) ); ?>
 														</div>
 														<small class="d-block text-muted mt-1"><?php echo esc_html__( 'Errors', 'sitepulse' ); ?></small>
 													</div>
 												<?php endif; ?>
-												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ) ) : ?>
+												<?php if ( isset( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ) && is_numeric( $ai_diagnostic_report['metrics_summary']['overall_health_score'] ) ) : ?>
 													<div class="col-3 text-center">
 														<?php 
 														$health = $ai_diagnostic_report['metrics_summary']['overall_health_score'];
 														$health_class = $health >= 80 ? 'success' : ( $health >= 60 ? 'warning' : 'danger' );
 														?>
 														<div class="sp-ai-grade-badge badge bg-<?php echo esc_attr( $health_class ); ?> fs-5 px-3 py-2">
-															<?php echo esc_html( $health ); ?>
+															<?php echo esc_html( (string) $health ); ?>
 														</div>
 														<small class="d-block text-muted mt-1"><?php echo esc_html__( 'Health', 'sitepulse' ); ?></small>
 													</div>
@@ -2102,7 +2108,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 													</h2>
 													<div id="sp-ai-insight-<?php echo esc_attr( $key ); ?>" class="accordion-collapse collapse" data-bs-parent="#sp-ai-insights-accordion">
 														<div class="accordion-body small">
-															<?php echo esc_html( $insight ); ?>
+															<?php
+																if ( isset( $insight ) && is_scalar( $insight ) ) {
+																	echo esc_html( (string) $insight );
+																}
+															?>
 														</div>
 													</div>
 												</div>
@@ -2111,7 +2121,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 									<?php endif; ?>
 
 									<!-- Recommendations -->
-									<?php if ( isset( $ai_diagnostic_report['recommendations'] ) ) : ?>
+									<?php if ( isset( $ai_diagnostic_report['recommendations'] ) && is_array( $ai_diagnostic_report['recommendations'] ) ) : ?>
 										<?php 
 										$recs = $ai_diagnostic_report['recommendations'];
 										$has_recommendations = ( ! empty( $recs['critical'] ) || ! empty( $recs['high'] ) || ! empty( $recs['moderate'] ) || ! empty( $recs['low'] ) );
@@ -2121,11 +2131,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 												<h6 class="mb-2"><span class="dashicons dashicons-lightbulb me-1"></span><?php echo esc_html__( 'Recommendations', 'sitepulse' ); ?></h6>
 												<ul class="list-unstyled mb-0 small">
 													<?php foreach ( array( 'critical', 'high', 'moderate', 'low' ) as $priority ) : ?>
-														<?php if ( ! empty( $recs[ $priority ] ) ) : ?>
+														<?php if ( ! empty( $recs[ $priority ] ) && is_array( $recs[ $priority ] ) ) : ?>
 															<?php foreach ( $recs[ $priority ] as $rec ) : ?>
 																<li class="mb-1">
 																	<span class="badge bg-<?php echo $priority === 'critical' ? 'danger' : ( $priority === 'high' ? 'warning text-dark' : ( $priority === 'moderate' ? 'info' : 'secondary' ) ); ?> me-1"><?php echo esc_html( ucfirst( $priority ) ); ?></span>
-																	<?php echo esc_html( $rec ); ?>
+																	<?php if ( isset( $rec ) && is_scalar( $rec ) ) : ?>
+																		<?php echo esc_html( (string) $rec ); ?>
+																	<?php endif; ?>
 																</li>
 															<?php endforeach; ?>
 														<?php endif; ?>
@@ -2137,12 +2149,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 									<!-- WordPress Specific Recommendations -->
 									<!-- Recommended Plugins -->
-									<?php if ( isset( $ai_diagnostic_report['wordpress_specific']['recommended_plugins'] ) && ! empty( $ai_diagnostic_report['wordpress_specific']['recommended_plugins'] ) ) : ?>
+									<?php if ( isset( $ai_diagnostic_report['wordpress_specific'] ) && is_array( $ai_diagnostic_report['wordpress_specific'] ) && isset( $ai_diagnostic_report['wordpress_specific']['recommended_plugins'] ) && is_array( $ai_diagnostic_report['wordpress_specific']['recommended_plugins'] ) && ! empty( $ai_diagnostic_report['wordpress_specific']['recommended_plugins'] ) ) : ?>
 										<div class="sp-ai-wp-specific mt-3">
 										<h6 class="mb-2"><span class="dashicons dashicons-admin-plugins me-1"></span><?php echo esc_html__( 'Recommended Plugins', 'sitepulse' ); ?></h6>
 										<ul class="list-unstyled mb-0 small ps-2">
 										<?php foreach ( $ai_diagnostic_report['wordpress_specific']['recommended_plugins'] as $plugin ) : ?>
-										<li><span class="badge bg-success me-1"><?php echo esc_html__( '+', 'sitepulse' ); ?></span><?php echo esc_html( $plugin ); ?></li>
+											<?php if ( isset( $plugin ) && is_scalar( $plugin ) ) { ?>
+												<li><span class="badge bg-success me-1"><?php echo esc_html__( '+', 'sitepulse' ); ?></span><?php echo esc_html( (string) $plugin ); ?></li>
+											<?php } ?>
 										<?php endforeach; ?>
 									</ul>
 									</div>
@@ -2651,7 +2665,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 										}
 
 										// Determine performance level based on time
-										$time_ms = $plugin_stat['avg_time'];
+										$time_ms = $plugin_stat['avg_ms'];
 										if ( $time_ms > 1000 ) {
 											$perf_level = 'poor';
 											$perf_color = '#ff4444';
@@ -2662,11 +2676,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 											$perf_level = 'good';
 											$perf_color = '#38d39f';
 										}
-
-										// Format memory
-										$memory_formatted = class_exists( 'Sitepulse_Plugin_Profiler' )
-											? Sitepulse_Plugin_Profiler::format_memory( $plugin_stat['avg_memory'] )
-											: number_format( $plugin_stat['avg_memory'] / 1024, 2 ) . ' KB';
 										?>
 										<div class="sp-detail-item">
 											<div class="sp-detail-main">
@@ -2685,14 +2694,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 														<span
 															class="sp-metric-value"><?php echo esc_html( class_exists( 'Sitepulse_Plugin_Profiler' ) ? Sitepulse_Plugin_Profiler::format_time( $time_ms ) : number_format( $time_ms, 2 ) . ' ms' ); ?></span>
 													</div>
-												</div>
-											</div>
-											<div class="sp-detail-secondary">
-												<div class="sp-detail-stats">
-													<span class="sp-stat">
-														<span class="sp-stat-label"><?php echo esc_html__( 'Memory', 'sitepulse' ); ?>:</span>
-														<span class="sp-stat-value"><?php echo esc_html( $memory_formatted ); ?></span>
-													</span>
 												</div>
 											</div>
 										</div>

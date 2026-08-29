@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name:       SitePulse - See What’s Powering (or Slowing) Your Site
+ * Plugin Name:       SitePulse - Performance Monitor and AI Diagnostics
  * Description:       SitePulse gives you real-time insights into your WordPress site’s performance, slow queries, and bottlenecks - so you can keep your site fast, healthy, and optimized.
- * Version:           1.4.1
+ * Version:           1.4.3
  * Author:            Frederic Guzman
  * Author URI:        https://www.nilbug.com
  * Text Domain:       sitepulse
@@ -16,6 +16,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Prevent to load this plugin if Pro version is active
+if ( defined( 'SITEPULSE_PRO_IS_ACTIVE' ) && true === SITEPULSE_PRO_IS_ACTIVE ) {
+	// admin notice if SitePulse Pro is already active
+	add_action( 'admin_notices', function() {
+		?>
+		<div class="notice notice-error">
+			<p><?php printf( esc_html__( 'SitePulse Pro is already active. SitePulse Free need to be deactivated.', 'sitepulse' ) ); ?></p>
+		</div>
+		<?php
+	} );
+
+	return;
+}
+
 // SitePulse defines. He.
 define( 'SITEPULSE_PLUGIN_FILE', __FILE__ );
 if ( ! defined( 'SITEPULSE_DEBUG' ) ) {
@@ -26,7 +40,7 @@ if ( ! defined( 'SITEPULSE_STRESS_MODE' ) ) {
 	define( 'SITEPULSE_STRESS_MODE', false );
 }
 
-define( 'SITEPULSE_VERSION',               '1.4.1' );
+define( 'SITEPULSE_VERSION',               '1.4.3' );
 define( 'SITEPULSE_NAME',                  'SitePulse' );
 define( 'SITEPULSE_SLUG',                  'sitepulse' );
 define( 'SITEPULSE_PREFIX',                'wpsp' );
@@ -52,6 +66,10 @@ define( 'SITEPULSE_ADMIN_ASSETS_CSS_URL',  SITEPULSE_ADMIN_ASSETS_URL . 'css/' )
 define( 'SITEPULSE_ADMIN_ASSETS_CSS_PATH', SITEPULSE_ADMIN_ASSETS_PATH . 'css/' );
 define( 'SITEPULSE_ADMIN_ASSETS_IMG_URL',  SITEPULSE_ADMIN_ASSETS_URL . 'img/' );
 
+// Plugin settings
+define( 'SITEPULSE_SETTINGS_PROFILER_INACTIVE_AFTER_SECONDS',  60 ); // 60 seconds
+
+
 // Addons Constants
 // Profiler constants
 define( 'SITEPULSE_PROFILER_KEY',           	 'sitepulse_profiler_stats' );
@@ -71,6 +89,99 @@ define( 'SITEPULSE_REALTIME_TRACKING_TIME', 30 ); // In seconds
 // Load error handler FIRST to catch any errors during plugin loading
 require_once SITEPULSE_CLASS_PATH . 'error_handler.php';
 
+// Move SitePulse to first position in the active plugins list
+function sitepulse_move_to_first_position(): void {
+	if ( sitepulse_is_first_plugin() ) {
+		return;
+	}
+
+	$sitepulse = plugin_basename( SITEPULSE_PLUGIN_FILE );
+	$plugins   = (array) get_option( 'active_plugins', array() );
+	$position  = array_search( $sitepulse, $plugins, true );
+
+	if ( false === $position || 0 === $position ) {
+		return;
+	}
+	unset( $plugins[ $position] );
+	$plugins = array_values( $plugins );
+	array_unshift( $plugins, $sitepulse );
+
+	update_option( 'active_plugins', $plugins );
+}
+
+function sitepulse_is_second_position(): bool {
+	$sitepulse = plugin_basename( SITEPULSE_PLUGIN_FILE );
+	$plugins   = (array) get_option( 'active_plugins', array() );
+	$position  = array_search( $sitepulse, $plugins, true );
+
+	return isset( $plugins[1] ) && $plugins[1] === $sitepulse;
+}
+
+function sitepulse_move_to_second_position(): void {
+	if ( sitepulse_is_second_position() ) {
+		return;
+	}
+
+	$sitepulse = plugin_basename( SITEPULSE_PLUGIN_FILE );
+	$plugins   = (array) get_option( 'active_plugins', array() );
+	$position  = array_search( $sitepulse, $plugins, true );
+
+	if ( false === $position || 1 === $position ) {
+		return;
+	}
+	unset( $plugins[ $position] );
+	$plugins = array_values( $plugins );
+	array_splice( $plugins, 1, 0, $sitepulse );
+
+	update_option( 'active_plugins', $plugins );
+}
+
+/**
+ * Detect another plugin displacing SitePulse from position zero.
+ *
+ * @return string|null Plugin currently occupying position zero, or null.
+ */
+function sitepulse_detect_first_position_conflict(): ?string {
+    $sitepulse = plugin_basename( SITEPULSE_PLUGIN_FILE );
+    $plugins   = array_values(
+        (array) get_option( 'active_plugins', array() )
+    );
+
+    $position = array_search( $sitepulse, $plugins, true );
+
+    if ( false === $position || 0 === $position ) {
+        return null;
+    }
+
+    return $plugins[0] ?? null;
+}
+
+// Conflict detector between SitePulse and other plugins
+define( 'SITEPULSE_CONFLICTING_PLUGIN', sitepulse_detect_first_position_conflict() );
+
+if ( null !== SITEPULSE_CONFLICTING_PLUGIN ) {
+	sitepulse_move_to_second_position();
+    // Wordpress notifications to show the admin that SitePulse is not the first plugin in the active plugins list
+	add_action( 'admin_notices', function() {
+		?>
+		<div class="notice notice-warning">
+			<p><?php printf( esc_html__( 'SitePulse free is having conflict with %s. Sitepulse will ignore all metrics based on this plugin to avoid errors.', 'sitepulse' ), SITEPULSE_CONFLICTING_PLUGIN, SITEPULSE_CONFLICTING_PLUGIN ); ?></p>
+		</div>
+		<?php
+	} );
+}
+
+// Check if SitePulse is the first plugin in the active plugins list
+function sitepulse_is_first_plugin(): bool {
+    $sitepulse = plugin_basename( SITEPULSE_PLUGIN_FILE );
+    $plugins   = (array) get_option( 'active_plugins', array() );
+
+    return isset( $plugins[0] ) && $plugins[0] === $sitepulse;
+}
+
+// Runs after WordPress has saved the activation list.
+add_action( 'activated_plugin', 'sitepulse_move_to_first_position', PHP_INT_MAX );
+
 // Initialize error handler immediately after loading (before other plugins)
 if ( class_exists( 'Sitepulse_Error_Handler' ) ) {
 	Sitepulse_Error_Handler::init();
@@ -79,7 +190,6 @@ if ( class_exists( 'Sitepulse_Error_Handler' ) ) {
 // Load utility classes (shared helpers)
 require_once SITEPULSE_CLASS_PATH . 'utils.php';
 require_once SITEPULSE_CLASS_PATH . 'page_tracker.php';
-require_once SITEPULSE_CLASS_PATH . 'product_analytics.php';
 
 // Load profiler class
 require_once SITEPULSE_CLASS_PATH . 'profiler.php';
@@ -97,20 +207,13 @@ if ( ! defined( 'SITEPULSE_PRO_IS_ACTIVE' ) ) {
 	define( 'SITEPULSE_PRO_IS_ACTIVE', Sitepulse_Setup::is_pro_active() );
 }
 
-
-// Load Easy Mode only for the free runtime (avoid class conflicts with pro plugin).
-if ( ! SITEPULSE_PRO_IS_ACTIVE ) {
-	require_once SITEPULSE_CLASS_PATH . 'easy_mode.php';
-}
+require_once SITEPULSE_CLASS_PATH . 'easy_mode.php';
 
 // Only load api_service, cron_manager, and cron_fallback when pro is not active.
-// Pro version has its own implementation of these components.
-if ( ! SITEPULSE_PRO_IS_ACTIVE ) {
-	require_once SITEPULSE_CLASS_PATH . 'api_service.php';
-	require_once SITEPULSE_PATH . 'inc/cron_manager.php';
-	// Cron fallback runner — catches stale cron tasks and executes them non-blocking.
-	require_once SITEPULSE_PATH . 'inc/cron_fallback.php';
-}
+require_once SITEPULSE_CLASS_PATH . 'api_service.php';
+require_once SITEPULSE_PATH . 'inc/cron_manager.php';
+// Cron fallback runner — catches stale cron tasks and executes them non-blocking.
+require_once SITEPULSE_PATH . 'inc/cron_fallback.php';
 
 // Load AI diagnostic cron manager (works with both free and pro)
 require_once SITEPULSE_PATH . 'inc/ai_diagnostic_cron.php';
@@ -229,7 +332,6 @@ class Sitepulse_Loader {
 		update_option( SITEPULSE_PROFILER_ENABLED, true );
 		update_option( SITEPULSE_CURL_API_ENABLED, true );
 		update_option( 'sitepulse_plugins_profiler_enabled', true );
-		Sitepulse_Product_Analytics::track_once( 'plugin_activated' );
 		
 		// Set transient to trigger onboarding redirect
 		set_transient( 'sitepulse_activation_redirect', true, 30 );

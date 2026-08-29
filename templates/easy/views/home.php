@@ -52,91 +52,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</div>
 </div>
 
-<?php
-$sp_first_insight_title       = '';
-$sp_first_insight_description = '';
-$sp_first_insight_url         = '';
-$sp_first_insight_cta         = '';
-$sp_first_insight_tone        = 'info';
-$sp_first_insight_icon        = 'chart-line';
-
-if ( ! empty( $all_slow_items ) ) {
-	$sp_first_slow_item          = reset( $all_slow_items );
-	$sp_first_insight_title       = sprintf(
-		/* translators: %s: plugin, theme, or hook name */
-		__( 'Start here: %s is your slowest item', 'sitepulse' ),
-		$sp_first_slow_item['name']
-	);
-	$sp_first_insight_description = sprintf(
-		/* translators: %s: execution time in milliseconds */
-		__( 'It took about %s ms in the latest sample. Review its timing before changing or disabling anything.', 'sitepulse' ),
-		number_format_i18n( $sp_first_slow_item['time_ms'], 0 )
-	);
-	$sp_first_insight_url  = admin_url( 'admin.php?page=wpsp_sitepulse&sp_view=performance' );
-	$sp_first_insight_cta  = __( 'Review slow items', 'sitepulse' );
-	$sp_first_insight_tone = 'warning';
-	$sp_first_insight_icon = 'performance';
-} elseif ( ! empty( $slow_api_requests ) ) {
-	$sp_first_slow_request = reset( $slow_api_requests );
-	$sp_request_name       = ! empty( $sp_first_slow_request['origin'] ) && 'Unknown' !== $sp_first_slow_request['origin']
-		? $sp_first_slow_request['origin']
-		: wp_parse_url( $sp_first_slow_request['url'], PHP_URL_HOST );
-	$sp_request_name       = $sp_request_name ? $sp_request_name : __( 'An external service', 'sitepulse' );
-
-	$sp_first_insight_title       = sprintf(
-		/* translators: %s: external service name */
-		__( 'Start here: %s responded slowly', 'sitepulse' ),
-		$sp_request_name
-	);
-	$sp_first_insight_description = sprintf(
-		/* translators: %s: response time in milliseconds */
-		__( 'The request took about %s ms. Check whether it is delaying pages that depend on it.', 'sitepulse' ),
-		number_format_i18n( $sp_first_slow_request['time_ms'], 0 )
-	);
-	$sp_first_insight_url  = admin_url( 'admin.php?page=wpsp_sitepulse&sp_view=api-monitor' );
-	$sp_first_insight_cta  = __( 'Review external requests', 'sitepulse' );
-	$sp_first_insight_tone = 'warning';
-	$sp_first_insight_icon = 'rest-api';
-} elseif ( ! empty( $error_count ) ) {
-	$sp_first_insight_title       = sprintf(
-		/* translators: %d: number of detected errors */
-		_n( 'SitePulse found %d recent error', 'SitePulse found %d recent errors', $error_count, 'sitepulse' ),
-		$error_count
-	);
-	$sp_first_insight_description = __( 'Review the error details to identify recurring plugin, theme, or server problems.', 'sitepulse' );
-	$sp_first_insight_url         = admin_url( 'admin.php?page=wpsp_sitepulse&sp_view=security' );
-	$sp_first_insight_cta         = __( 'Review errors', 'sitepulse' );
-	$sp_first_insight_tone        = 'danger';
-	$sp_first_insight_icon        = 'warning';
-} elseif ( ! empty( $stats ) || ! empty( $curl_events ) || ! empty( $plugin_profiler_stats ) ) {
-	$sp_first_insight_title       = __( 'No major bottleneck found in the latest sample', 'sitepulse' );
-	$sp_first_insight_description = __( 'SitePulse is monitoring locally. Keep it active and check again after normal traffic or a slow page visit.', 'sitepulse' );
-	$sp_first_insight_url         = admin_url( 'admin.php?page=wpsp_sitepulse&sp_view=performance' );
-	$sp_first_insight_cta         = __( 'See performance details', 'sitepulse' );
-	$sp_first_insight_tone        = 'success';
-	$sp_first_insight_icon        = 'yes-alt';
-} else {
-	$sp_first_insight_title       = __( 'Collecting your first useful measurements', 'sitepulse' );
-	$sp_first_insight_description = __( 'Visit a few public pages while logged in, then refresh this dashboard to reveal slow plugins and external requests.', 'sitepulse' );
-	$sp_first_insight_url         = admin_url( 'admin.php?page=wpsp_sitepulse' );
-	$sp_first_insight_cta         = __( 'Refresh dashboard', 'sitepulse' );
-}
-?>
-
-<section class="sp-first-insight sp-first-insight--<?php echo esc_attr( $sp_first_insight_tone ); ?> sp-mb-24" aria-labelledby="sp-first-insight-title">
-	<div class="sp-first-insight-icon">
-		<span class="dashicons dashicons-<?php echo esc_attr( $sp_first_insight_icon ); ?>"></span>
+<!-- Early Access Promo Banner -->
+<div class="sp-promo-banner sp-mb-24">
+	<div class="sp-promo-content">
+		<h3><?php echo esc_html__( 'Claim Your Early Access', 'sitepulse' ); ?></h3>
+		<p><?php echo esc_html__( 'Experience the future of WordPress performance today. SitePulse Pro is now open for early access. Secure your spot and start optimizing with elite tools.', 'sitepulse' ); ?></p>
 	</div>
-	<div class="sp-first-insight-copy">
-		<span class="sp-first-insight-kicker"><?php echo esc_html__( 'Recommended next step', 'sitepulse' ); ?></span>
-		<h3 id="sp-first-insight-title"><?php echo esc_html( $sp_first_insight_title ); ?></h3>
-		<p><?php echo esc_html( $sp_first_insight_description ); ?></p>
+	<div class="sp-promo-action">
+		<a href="https://sitepulse.me/" target="_blank" class="sp-btn-early-access sp-pulse">
+			<span class="dashicons dashicons-star-filled"></span>
+			<?php echo esc_html__( 'Secure My Spot', 'sitepulse' ); ?>
+		</a>
 	</div>
-	<a href="<?php echo esc_url( $sp_first_insight_url ); ?>" class="sp-btn sp-btn-primary sp-btn-sm">
-		<?php echo esc_html( $sp_first_insight_cta ); ?>
-		<span aria-hidden="true">→</span>
-	</a>
-</section>
+</div>
 
 <div class="sp-dashboard-layout">
 <div class="sp-hero-grid sp-mb-24">
@@ -602,8 +530,6 @@ if ( ! empty( $all_slow_items ) ) {
 	</div>
 </div>
 
-
-
 <!-- ═══════════════════════════════════════════════════════════════════════
      MAIN DASHBOARD COLUMNS
      ═══════════════════════════════════════════════════════════════════════ -->
@@ -765,297 +691,6 @@ if ( ! empty( $all_slow_items ) ) {
 
 <!-- RIGHT COLUMN -->
 <div class="sp-col">
-<!-- Database & Monitoring -->
-<?php if ( defined( 'SITEPULSE_PRO_IS_ACTIVE' ) && SITEPULSE_PRO_IS_ACTIVE ) : ?>
-<div class="sp-zone sp-zone--data">
-	<!-- Performance Trends -->
-	<div class="sp-pulse-card">
-		<div class="sp-pulse-card-header">
-			<div>
-				<h3 class="sp-pulse-card-title">
-					<span class="dashicons dashicons-chart-line"></span>
-					<?php echo esc_html__( 'Performance Trends', 'sitepulse-pro' ); ?>
-				</h3>
-				<p class="sp-pulse-card-subtitle"><?php echo esc_html__( 'Track how your site speed changes over time', 'sitepulse-pro' ); ?></p>
-			</div>
-		</div>
-		<div class="sp-pulse-card-body">
-			<?php
-			if ( class_exists( 'Sitepulse_Pro_Performance_History' ) ) :
-				$history_tracker = Sitepulse_Pro_Performance_History::get_instance();
-				$api_history     = $history_tracker->get_api_history( 7 );
-				$hooks_history   = $history_tracker->get_hooks_history( 7 );
-				$has_trend_data  = ! empty( $api_history ) || ! empty( $hooks_history );
-
-				if ( $has_trend_data ) :
-					$total_days    = count( array_unique( array_merge( array_keys( $api_history ), array_keys( $hooks_history ) ) ) );
-					$max_api_time  = 0;
-					$max_hook_time = 0;
-					foreach ( $api_history as $d ) {
-						if ( isset( $d['max_time'] ) && $d['max_time'] > $max_api_time ) {
-							$max_api_time = $d['max_time'];
-						}
-					}
-					foreach ( $hooks_history as $d ) {
-						if ( isset( $d['max_time'] ) && $d['max_time'] > $max_hook_time ) {
-							$max_hook_time = $d['max_time'];
-						}
-					}
-					$api_fmt  = class_exists( 'Sitepulse_Utils' ) ? Sitepulse_Utils::format_time( $max_api_time, 'seconds' ) : round( $max_api_time * 1000 ) . 'ms';
-					$hook_fmt = class_exists( 'Sitepulse_Utils' ) ? Sitepulse_Utils::format_time( $max_hook_time, 'seconds' ) : round( $max_hook_time * 1000 ) . 'ms';
-			?>
-				<div class="sp-grid sp-grid-2 sp-mb-16">
-					<div class="sp-pulse-card" style="background:var(--sp-bg-secondary);border:1px solid var(--sp-border);">
-						<div class="sp-pulse-card-body sp-flex sp-items-center sp-gap-12">
-							<span class="dashicons dashicons-admin-site-alt3" style="color:var(--sp-info);font-size:20px;width:20px;height:20px;"></span>
-							<div>
-								<p class="sp-fw-700 sp-mb-0" style="margin:0;font-size:16px;color:var(--sp-text-primary);"><?php echo esc_html( $api_fmt ); ?></p>
-								<p class="sp-text-xs sp-text-muted" style="margin:2px 0 0;"><?php echo esc_html__( 'Slowest Connection (7 days)', 'sitepulse-pro' ); ?></p>
-							</div>
-						</div>
-					</div>
-					<div class="sp-pulse-card" style="background:var(--sp-bg-secondary);border:1px solid var(--sp-border);">
-						<div class="sp-pulse-card-body sp-flex sp-items-center sp-gap-12">
-							<span class="dashicons dashicons-performance" style="color:var(--sp-accent);font-size:20px;width:20px;height:20px;"></span>
-							<div>
-								<p class="sp-fw-700 sp-mb-0" style="margin:0;font-size:16px;color:var(--sp-text-primary);"><?php echo esc_html( $hook_fmt ); ?></p>
-								<p class="sp-text-xs sp-text-muted" style="margin:2px 0 0;"><?php echo esc_html__( 'Slowest Plugin Action (7 days)', 'sitepulse-pro' ); ?></p>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="sp-alert sp-alert-success">
-					<span class="dashicons dashicons-yes-alt"></span>
-					<div>
-						<strong><?php echo esc_html__( 'Tracking Active', 'sitepulse-pro' ); ?></strong>
-						<span class="sp-text-xs sp-text-muted" style="display:block;margin-top:2px;">
-							<?php echo esc_html( sprintf(
-								_n( 'Collecting data for %d day.', 'Collecting data for %d days.', $total_days, 'sitepulse-pro' ),
-								$total_days
-							) ); ?>
-						</span>
-					</div>
-				</div>
-			<?php else : ?>
-				<div class="sp-empty" style="padding:24px;">
-					<div class="sp-empty-icon"><span class="dashicons dashicons-clock" style="color:var(--sp-info);"></span></div>
-					<p class="sp-empty-title"><?php echo esc_html__( 'Collecting Performance Data', 'sitepulse-pro' ); ?></p>
-					<p class="sp-empty-desc"><?php echo esc_html__( 'Trends will appear once slow hooks or API calls are detected.', 'sitepulse-pro' ); ?></p>
-				</div>
-			<?php endif; ?>
-			<?php endif; ?>
-		</div>
-	</div>
-
-	<!-- Database Monitor (SQL + Autoload) -->
-	<div class="sp-pulse-card">
-		<div class="sp-pulse-card-header">
-			<div>
-				<h3 class="sp-pulse-card-title">
-					<span class="dashicons dashicons-database"></span>
-					<?php echo esc_html__( 'Database Monitor', 'sitepulse-pro' ); ?>
-				</h3>
-				<p class="sp-pulse-card-subtitle"><?php echo esc_html__( 'Database lookups and startup data', 'sitepulse-pro' ); ?></p>
-			</div>
-		</div>
-		<div style="padding:12px 20px;border-bottom:1px solid var(--sp-border);">
-			<div class="sp-section-buttons">
-				<button type="button" class="sp-section-toggle active" data-section="sp-sql-queries-section">
-					<?php echo esc_html__( 'Database Lookups', 'sitepulse-pro' ); ?>
-				</button>
-				<button type="button" class="sp-section-toggle" data-section="sp-autoload-section">
-					<?php echo esc_html__( 'Startup Data', 'sitepulse-pro' ); ?>
-				</button>
-			</div>
-		</div>
-		<div id="sp-sql-queries-section" class="sp-pulse-card-body sp-p-0">
-			<?php if ( class_exists( 'Sitepulse_Pro_SQL_Monitor' ) ) :
-				$sql_monitor = Sitepulse_Pro_SQL_Monitor::get_instance();
-				$sql_stats   = $sql_monitor->get_statistics();
-				$sql_recent  = $sql_monitor->get_queries( 3 );
-			?>
-				<div class="sp-grid sp-grid-3" style="padding:16px 20px;gap:12px;">
-					<div style="text-align:center;">
-						<p class="sp-fw-700" style="font-size:18px;margin:0;color:var(--sp-text-primary);"><?php echo esc_html( $sql_stats['avg_queries'] ); ?></p>
-						<p class="sp-text-xs sp-text-muted" style="margin:2px 0 0;"><?php echo esc_html__( 'Avg. Lookups', 'sitepulse-pro' ); ?></p>
-					</div>
-					<div style="text-align:center;">
-						<p class="sp-fw-700" style="font-size:18px;margin:0;color:var(--sp-text-primary);"><?php echo esc_html( number_format( $sql_stats['avg_time'] * 1000, 0 ) ); ?>ms</p>
-						<p class="sp-text-xs sp-text-muted" style="margin:2px 0 0;"><?php echo esc_html__( 'Avg. Lookup Time', 'sitepulse-pro' ); ?></p>
-					</div>
-					<div style="text-align:center;">
-						<p class="sp-fw-700" style="font-size:18px;margin:0;color:var(--sp-text-primary);"><?php echo esc_html( count( $sql_recent ) ); ?></p>
-						<p class="sp-text-xs sp-text-muted" style="margin:2px 0 0;"><?php echo esc_html__( 'Recent Snapshots', 'sitepulse-pro' ); ?></p>
-					</div>
-				</div>
-				<?php
-				$sp_al = isset( $autoload_metrics ) && is_array( $autoload_metrics )
-					? $autoload_metrics
-					: ( ( class_exists( 'Sitepulse_Utils' ) && method_exists( 'Sitepulse_Utils', 'get_autoload_metrics' ) ) ? Sitepulse_Utils::get_autoload_metrics() : [] );
-				$autoload_fmt   = isset( $sp_al['fmt'] ) ? $sp_al['fmt'] : '—';
-				$autoload_class = isset( $sp_al['class'] ) ? $sp_al['class'] : 'sp-text-muted';
-				?>
-				<div class="sp-flex sp-px-20 sp-pb-16 sp-content-center">
-					<span class="sp-text-xs sp-text-muted"> <?php echo esc_html__( 'Startup Data Size:', 'sitepulse-pro' ); ?></span>
-					<span class="sp-text-xs sp-fw-700 <?php echo esc_attr( $autoload_class ); ?>"><?php echo esc_html( $autoload_fmt ); ?></span>
-				</div>
-				<?php if ( ! empty( $sql_recent ) ) : ?>
-					<?php foreach ( array_slice( $sql_recent, 0, 3 ) as $sql_entry ) : 
-						$slowest_sq = ! empty( $sql_entry['slow_queries'] ) ? $sql_entry['slow_queries'][0] : null;
-						$slowest_sql = $slowest_sq ? $slowest_sq['sql'] : '';
-						$caller      = $slowest_sq ? $slowest_sq['stack'] : '';
-						
-						// If no slow query but we have a URL, use URL as title if SQL is truly missing
-						$title_text  = ! empty( $slowest_sql ) ? $slowest_sql : $sql_entry['url'];
-						$meta_text   = ! empty( $slowest_sql ) ? $sql_entry['url'] : '';
-					?>
-						<div class="sp-list-item" style="padding:12px 20px;">
-							<div class="sp-list-item-body">
-								<p class="sp-list-item-title sp-text-sm sp-cell-mono sp-cell-truncate" title="<?php echo esc_attr( $title_text ); ?>" style="color:var(--sp-primary-light); margin-bottom: 2px;">
-									<?php echo esc_html( wp_trim_words( $title_text, 10, '...' ) ); ?>
-								</p>
-								<div class="sp-flex sp-items-center sp-gap-8 sp-text-xs sp-text-muted">
-									<?php if ( ! empty( $caller ) ) : ?>
-										<span class="sp-text-accent" style="font-family: var(--sp-font-mono);"><?php echo esc_html( $caller ); ?></span>
-										<span class="sp-text-muted">&bull;</span>
-									<?php endif; ?>
-									<span><?php echo esc_html( $sql_entry['total_queries'] ); ?> queries</span>
-									<span>&bull;</span>
-									<span><?php echo esc_html( number_format( $sql_entry['total_time'] * 1000, 0 ) ); ?>ms</span>
-									<?php if ( ! empty( $meta_text ) ) : ?>
-										<span class="sp-text-muted">&bull;</span>
-										<span class="sp-text-xs" style="opacity: 0.7;"><?php echo esc_html( wp_trim_words( $meta_text, 4 ) ); ?></span>
-									<?php endif; ?>
-								</div>
-							</div>
-							<?php if ( ! empty( $sql_entry['slow_queries'] ) && $sql_entry['slow_queries'][0]['time'] > 0.1 ) : ?>
-								<span class="sp-badge sp-badge-danger"><?php echo esc_html( count( $sql_entry['slow_queries'] ) ); ?> slow</span>
-							<?php else : ?>
-								<span class="sp-badge sp-badge-success" style="opacity:0.8;"><?php echo esc_html__( 'OK', 'sitepulse' ); ?></span>
-							<?php endif; ?>
-						</div>
-					<?php endforeach; ?>
-				<?php else : ?>
-					<div class="sp-empty" style="padding:24px;">
-						<p class="sp-empty-desc"><?php echo esc_html__( 'No SQL snapshots captured yet.', 'sitepulse-pro' ); ?></p>
-						<?php if ( ! defined( 'SAVEQUERIES' ) || ! SAVEQUERIES ) : ?>
-							<button type="button" class="sp-btn sp-btn-sm sp-btn-accent sp-enable-savequeries sp-mt-8">
-								<span class="dashicons dashicons-admin-generic" style="font-size:14px;width:14px;height:14px;"></span>
-								<?php echo esc_html__( 'Turn On Database Tracking', 'sitepulse-pro' ); ?>
-							</button>
-						<?php endif; ?>
-					</div>
-				<?php endif; ?>
-			<?php endif; ?>
-		</div>
-		<div id="sp-autoload-section" style="display:none;">
-			<div id="sp-autoload-loading" class="text-center" style="padding:32px 20px;">
-				<span class="spinner-border spinner-border-sm me-2" role="status"></span>
-				<span class="sp-text-sm sp-text-muted"><?php echo esc_html__( 'Loading autoloaded options...', 'sitepulse-pro' ); ?></span>
-			</div>
-			<div id="sp-autoload-error" class="d-none" style="padding:16px 20px;">
-				<div class="sp-alert sp-alert-danger sp-mb-0" style="font-size:13px;"></div>
-			</div>
-			<div id="sp-autoload-results" class="d-none">
-				<div style="border-bottom:1px solid var(--sp-border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;">
-					<small id="sp-autoload-summary" class="sp-text-xs sp-text-muted"></small>
-					<button type="button" id="sp-autoload-refresh" class="sp-btn sp-btn-ghost sp-btn-sm">
-						<span class="dashicons dashicons-update-alt" style="font-size:14px;width:14px;height:14px;"></span>
-					</button>
-				</div>
-				<div class="sp-details-list" id="sp-autoload-list"></div>
-			</div>
-		</div>
-	</div>
-
-<?php
-// Performance Alerts
-if ( class_exists( 'Sitepulse_Pro_Alerts' ) ) :
-	$alerts_instance = Sitepulse_Pro_Alerts::get_instance();
-	$alert_settings  = $alerts_instance->get_settings();
-	$alert_history   = $alerts_instance->get_alert_history( 3 );
-	$score_trend     = $alerts_instance->get_score_trend();
-	$ps_current      = $alerts_instance->get_current_pagespeed_score();
-?>
-<div class="sp-pulse-card sp-mb-16">
-	<div class="sp-pulse-card-header">
-		<div>
-			<h3 class="sp-pulse-card-title">
-				<span class="dashicons dashicons-bell"></span>
-				<?php echo esc_html__( 'Performance Alerts', 'sitepulse-pro' ); ?>
-			</h3>
-			<p class="sp-pulse-card-subtitle"><?php echo esc_html__( 'Alerts when your site speed drops', 'sitepulse-pro' ); ?></p>
-		</div>
-		<div class="sp-flex sp-items-center sp-gap-8">
-			<span class="sp-badge <?php echo $alert_settings['enabled'] ? 'sp-badge-success' : 'sp-badge-neutral'; ?>">
-				<?php echo $alert_settings['enabled'] ? esc_html__( 'Alerts ON', 'sitepulse-pro' ) : esc_html__( 'Alerts OFF', 'sitepulse-pro' ); ?>
-			</span>
-			<?php if ( $ps_current ) : ?>
-				<span class="sp-badge sp-badge-solid-accent" style="font-size:14px;padding:4px 10px;">
-					<?php
-					$trend_icon = $score_trend === 'up' ? '↑' : ( $score_trend === 'down' ? '↓' : '→' );
-					echo esc_html( $trend_icon . ' ' . $ps_current['score'] );
-					?>
-				</span>
-			<?php endif; ?>
-		</div>
-	</div>
-	<div class="sp-pulse-card-body sp-p-0">
-		<?php if ( ! empty( $alert_history ) ) : ?>
-			<?php foreach ( $alert_history as $a ) : ?>
-				<div class="sp-list-item" style="padding:10px 20px;">
-					<?php
-					$a_type = isset( $a['type'] ) ? $a['type'] : 'pagespeed_degradation';
-					$a_time = isset( $a['timestamp'] ) ? wp_date( 'M j, H:i', $a['timestamp'] ) : '—';
-					?>
-					<?php if ( $a_type === 'pagespeed_degradation' ) : ?>
-						<div class="sp-list-item-icon" style="background:var(--sp-danger-soft);">
-							<span class="dashicons dashicons-arrow-down-alt" style="color:var(--sp-danger);font-size:16px;width:16px;height:16px;"></span>
-						</div>
-						<div class="sp-list-item-body">
-							<p class="sp-list-item-title"><?php echo esc_html__( 'Speed score dropped', 'sitepulse-pro' ); ?></p>
-							<p class="sp-text-xs sp-text-muted">
-								<?php echo esc_html( ( isset( $a['previous_score'] ) ? $a['previous_score'] : '?' ) . ' → ' . ( isset( $a['current_score'] ) ? $a['current_score'] : '?' ) ); ?>
-								&bull; <?php echo esc_html( $a_time ); ?>
-							</p>
-						</div>
-						<span class="sp-badge sp-badge-danger">-<?php echo isset( $a['drop'] ) ? esc_html( $a['drop'] ) : '?'; ?> pts</span>
-					<?php elseif ( $a_type === 'test_alert' ) : ?>
-						<div class="sp-list-item-icon" style="background:var(--sp-info-soft, rgba(59,130,246,.12));">
-							<span class="dashicons dashicons-email-alt" style="color:var(--sp-info);font-size:16px;width:16px;height:16px;"></span>
-						</div>
-						<div class="sp-list-item-body">
-							<p class="sp-list-item-title"><?php echo esc_html__( 'Test alert email sent', 'sitepulse-pro' ); ?></p>
-							<p class="sp-text-xs sp-text-muted"><?php echo esc_html( $a_time ); ?></p>
-						</div>
-						<span class="sp-badge sp-badge-info"><?php echo esc_html__( 'Test', 'sitepulse-pro' ); ?></span>
-					<?php else : ?>
-						<div class="sp-list-item-icon" style="background:var(--sp-accent-soft);">
-							<span class="dashicons dashicons-calendar-alt" style="color:var(--sp-accent);font-size:16px;width:16px;height:16px;"></span>
-						</div>
-						<div class="sp-list-item-body">
-							<p class="sp-list-item-title"><?php echo esc_html__( 'Scheduled report sent', 'sitepulse-pro' ); ?></p>
-							<p class="sp-text-xs sp-text-muted"><?php echo esc_html( $a_time ); ?></p>
-						</div>
-						<span class="sp-badge sp-badge-accent"><?php echo esc_html__( 'Scheduled', 'sitepulse-pro' ); ?></span>
-					<?php endif; ?>
-				</div>
-			<?php endforeach; ?>
-		<?php else : ?>
-			<div class="sp-empty" style="padding:24px;">
-				<div class="sp-empty-icon"><span class="dashicons dashicons-yes-alt" style="color:var(--sp-success);"></span></div>
-				<p class="sp-empty-title"><?php echo esc_html__( 'No Alerts Yet', 'sitepulse-pro' ); ?></p>
-				<p class="sp-empty-desc"><?php echo esc_html__( 'Your site speed has been steady — no drops detected.', 'sitepulse-pro' ); ?></p>
-			</div>
-		<?php endif; ?>
-	</div>
-</div>
-<?php endif; ?>
-
-</div><!-- /sp-zone--data -->
-<?php endif; ?>
-
-<?php if ( ! defined( 'SITEPULSE_PRO_IS_ACTIVE' ) || ! SITEPULSE_PRO_IS_ACTIVE ) : ?>
 	<?php
 	$sp_slow_query_results = ( isset( $slow_queries['results'] ) && is_array( $slow_queries['results'] ) ) ? $slow_queries['results'] : array();
 	$sp_slow_query_count   = count( $sp_slow_query_results );
@@ -1068,6 +703,65 @@ if ( class_exists( 'Sitepulse_Pro_Alerts' ) ) :
 			<span class="dashicons dashicons-database"></span>
 			<span class="sp-zone-title"><?php echo esc_html__( 'Queries and Alerts', 'sitepulse' ); ?></span>
 		</div>
+		<!-- Performance Warnings -->
+		<div class="sp-card">
+			<div class="sp-card-header">
+				<div>
+					<h3 class="sp-card-title">
+						<span class="dashicons dashicons-performance"></span>
+						<?php echo esc_html__( 'Speed Warnings', 'sitepulse' ); ?>
+					</h3>
+					<p class="sp-card-subtitle"><?php echo esc_html__( 'Plugins and connections that are slowing things down', 'sitepulse' ); ?></p>
+				</div>
+			</div>
+			<div class="sp-card-body sp-p-0">
+				<?php if ( ! empty( $all_slow_items ) ) : ?>
+					<?php foreach ( array_slice( $all_slow_items, 0, 5 ) as $slow ) : ?>
+						<div class="sp-list-item" style="padding:10px 20px;">
+							<div class="sp-list-item-icon" style="background:<?php echo $slow['severity'] === 'critical' ? 'var(--sp-danger-soft)' : 'var(--sp-warning-soft)'; ?>;">
+								<span class="dashicons dashicons-admin-plugins" style="color:<?php echo $slow['severity'] === 'critical' ? 'var(--sp-danger)' : 'var(--sp-warning)'; ?>;font-size:16px;width:16px;height:16px;"></span>
+							</div>
+							<div class="sp-list-item-body">
+								<p class="sp-list-item-title"><?php echo esc_html( $slow['name'] ); ?></p>
+							</div>
+							<div class="sp-list-item-right">
+								<span class="sp-badge <?php echo $slow['severity'] === 'critical' ? 'sp-badge-danger' : 'sp-badge-warning'; ?>">
+									<?php echo esc_html( number_format( $slow['time_ms'], 0 ) ); ?>ms
+									<small style="opacity:0.8;" class="sp-block">
+										<?php
+										if ( isset( $slow['date_time'] ) ) {
+											// time ago format
+											$date_time = date_create_immutable(
+												$slow['date_time'],
+												wp_timezone()
+											);
+
+											$time_ago = human_time_diff( $date_time->getTimestamp(), time() );
+											echo esc_html( $time_ago . ' ago' );
+										}
+										?>
+									</small>
+								</span>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				<?php else : ?>
+					<div class="sp-empty" style="padding:32px 20px;">
+						<div class="sp-empty-icon"><span class="dashicons dashicons-yes-alt" style="color:var(--sp-success);"></span></div>
+						<p class="sp-empty-title"><?php echo esc_html__( 'All Clear', 'sitepulse' ); ?></p>
+						<p class="sp-empty-desc"><?php echo esc_html__( 'Everything is running smoothly! No speed issues found.', 'sitepulse' ); ?></p>
+					</div>
+				<?php endif; ?>
+			</div>
+			<?php if ( ! empty( $all_slow_items ) && count( $all_slow_items ) > 5 ) : ?>
+				<div class="sp-card-footer">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wpsp_sitepulse&sp_view=performance' ) ); ?>" class="sp-btn sp-btn-ghost sp-btn-sm">
+						<?php echo esc_html__( 'View all', 'sitepulse' ); ?> →
+					</a>
+				</div>
+			<?php endif; ?>
+		</div>
+		
 		<div class="sp-pulse-card">
 			<div class="sp-pulse-card-header">
 				<div>
@@ -1151,54 +845,8 @@ if ( class_exists( 'Sitepulse_Pro_Alerts' ) ) :
 		</div>
 
 
-		<!-- Performance Warnings -->
-		<div class="sp-card">
-			<div class="sp-card-header">
-				<div>
-					<h3 class="sp-card-title">
-						<span class="dashicons dashicons-performance"></span>
-						<?php echo esc_html__( 'Speed Warnings', 'sitepulse' ); ?>
-					</h3>
-					<p class="sp-card-subtitle"><?php echo esc_html__( 'Plugins and connections that are slowing things down', 'sitepulse' ); ?></p>
-				</div>
-			</div>
-			<div class="sp-card-body sp-p-0">
-				<?php if ( ! empty( $all_slow_items ) ) : ?>
-					<?php foreach ( array_slice( $all_slow_items, 0, 5 ) as $slow ) : ?>
-						<div class="sp-list-item" style="padding:10px 20px;">
-							<div class="sp-list-item-icon" style="background:<?php echo $slow['severity'] === 'critical' ? 'var(--sp-danger-soft)' : 'var(--sp-warning-soft)'; ?>;">
-								<span class="dashicons dashicons-admin-plugins" style="color:<?php echo $slow['severity'] === 'critical' ? 'var(--sp-danger)' : 'var(--sp-warning)'; ?>;font-size:16px;width:16px;height:16px;"></span>
-							</div>
-							<div class="sp-list-item-body">
-								<p class="sp-list-item-title"><?php echo esc_html( $slow['name'] ); ?></p>
-							</div>
-							<div class="sp-list-item-right">
-								<span class="sp-badge <?php echo $slow['severity'] === 'critical' ? 'sp-badge-danger' : 'sp-badge-warning'; ?>">
-									<?php echo esc_html( number_format( $slow['time_ms'], 0 ) ); ?>ms
-								</span>
-							</div>
-						</div>
-					<?php endforeach; ?>
-				<?php else : ?>
-					<div class="sp-empty" style="padding:32px 20px;">
-						<div class="sp-empty-icon"><span class="dashicons dashicons-yes-alt" style="color:var(--sp-success);"></span></div>
-						<p class="sp-empty-title"><?php echo esc_html__( 'All Clear', 'sitepulse' ); ?></p>
-						<p class="sp-empty-desc"><?php echo esc_html__( 'Everything is running smoothly! No speed issues found.', 'sitepulse' ); ?></p>
-					</div>
-				<?php endif; ?>
-			</div>
-			<?php if ( ! empty( $all_slow_items ) && count( $all_slow_items ) > 5 ) : ?>
-				<div class="sp-card-footer">
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wpsp_sitepulse&sp_view=performance' ) ); ?>" class="sp-btn sp-btn-ghost sp-btn-sm">
-						<?php echo esc_html__( 'View all', 'sitepulse' ); ?> →
-					</a>
-				</div>
-			<?php endif; ?>
-		</div>
+		
 	</div>
-<?php endif; ?>
-
-
 </div><!-- END RIGHT COLUMN -->
 </div><!-- /sp-grid-2 MAIN COLUMNS -->
 
@@ -1257,7 +905,7 @@ if ( class_exists( 'Sitepulse_Pro_Alerts' ) ) :
 	</div>
 
 <!-- Quick Links -->
-		<div class="sp-grid sp-grid-3 sp-mb-16">
+	<div class="sp-grid sp-grid-3 sp-mb-16">
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wpsp_sitepulse&sp_view=insights' ) ); ?>" class="sp-card sp-card--link">
 			<div class="sp-card-body sp-flex sp-items-center sp-gap-12">
 				<span class="dashicons dashicons-performance" style="color:var(--sp-accent);font-size:24px;width:24px;height:24px;"></span>
@@ -1297,23 +945,9 @@ if ( class_exists( 'Sitepulse_Pro_Alerts' ) ) :
 					</p>
 				</div>
 			</div>
-			</a>
-		</div>
-
-		<!-- Pro is introduced after the user has received value from the free dashboard. -->
-		<div class="sp-promo-banner sp-mb-16">
-			<div class="sp-promo-content">
-				<h3><?php echo esc_html__( 'Need history, automation, and agency workflows?', 'sitepulse' ); ?></h3>
-				<p><?php echo esc_html__( 'Join the SitePulse Pro early-access list after you have explored the free monitoring tools.', 'sitepulse' ); ?></p>
-			</div>
-			<div class="sp-promo-action">
-				<a href="https://sitepulse.me/" target="_blank" rel="noopener noreferrer" class="sp-btn-early-access">
-					<span class="dashicons dashicons-star-filled"></span>
-					<?php echo esc_html__( 'Explore SitePulse Pro', 'sitepulse' ); ?>
-				</a>
-			</div>
-		</div>
-	</div><!-- /sp-zone--tools -->
+		</a>
+	</div>
+</div><!-- /sp-zone--tools -->
 
 
 </div><!-- /sp-dashboard-layout -->

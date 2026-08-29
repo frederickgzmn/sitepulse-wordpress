@@ -142,44 +142,6 @@
     margin-top: 4px;
 }
 
-.sp-deact-detail-helper {
-    margin: 5px 52px 0 0;
-    color: #646970;
-    font-size: 11px;
-    line-height: 1.4;
-}
-
-.sp-deact-recovery {
-    margin-top: 14px;
-    padding: 12px 14px;
-    border: 1px solid #c3d9ed;
-    border-radius: 8px;
-    background: #f0f6fc;
-}
-
-.sp-deact-recovery strong {
-    display: block;
-    color: #1d2327;
-    font-size: 13px;
-}
-
-.sp-deact-recovery p {
-    margin: 4px 0 10px;
-    color: #50575e;
-    font-size: 12px;
-    line-height: 1.45;
-}
-
-.sp-deact-recovery-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.sp-deact-recovery-actions .button-link {
-    text-decoration: none;
-}
-
 /* Star Rating */
 .sp-deact-rating-section {
     margin-top: 18px;
@@ -193,11 +155,6 @@
     font-weight: 500;
     color: #3c434a;
     margin-bottom: 8px;
-}
-
-.sp-deact-rating-label span {
-    color: #787c82;
-    font-weight: 400;
 }
 
 .sp-deact-stars {
@@ -222,13 +179,6 @@
 
 .sp-deact-star-active {
     color: #ffb900;
-}
-
-.sp-deact-validation {
-    min-height: 18px;
-    margin: 8px 0 0;
-    color: #b32d2e;
-    font-size: 12px;
 }
 
 /* Footer */

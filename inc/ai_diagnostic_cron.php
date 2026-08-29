@@ -65,7 +65,7 @@ class Sitepulse_AI_Diagnostic_Cron {
 	public static function maybe_schedule_on_init() {
 		// Check if external API is enabled
 		$sp_all_settings = get_option( 'sitepulse_settings', array() );
-		$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : false;
+		$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : true;
 		if ( ! $sp_external_api_enabled ) {
 			return;
 		}
@@ -102,7 +102,7 @@ class Sitepulse_AI_Diagnostic_Cron {
 	public static function check_status_callback() {
 		// Check if external API is enabled
 		$sp_all_settings = get_option( 'sitepulse_settings', array() );
-		$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : false;
+		$sp_external_api_enabled = isset( $sp_all_settings['external_api_enabled'] ) ? (bool) $sp_all_settings['external_api_enabled'] : true;
 		if ( ! $sp_external_api_enabled ) {
 			self::unschedule();
 			return;
@@ -118,13 +118,7 @@ class Sitepulse_AI_Diagnostic_Cron {
 		}
 
 		// Load the API service class if needed
-		if ( defined( 'SITEPULSE_PRO_IS_ACTIVE' ) && SITEPULSE_PRO_IS_ACTIVE ) {
-			if ( ! class_exists( 'Sitepulse_Pro_Api_Service' ) ) {
-				self::unschedule();
-				return;
-			}
-			$response = Sitepulse_Pro_Api_Service::check_ai_diagnostic_status();
-		} else {
+		if ( ! SITEPULSE_PRO_IS_ACTIVE ) {
 			if ( class_exists( 'Sitepulse_Api_Service' ) ) {
 				$response = Sitepulse_Api_Service::check_ai_diagnostic_status();
 			}
