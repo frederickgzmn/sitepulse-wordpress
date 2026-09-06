@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       SitePulse - Performance Monitor and AI Diagnostics
  * Description:       SitePulse gives you real-time insights into your WordPress site’s performance, slow queries, and bottlenecks - so you can keep your site fast, healthy, and optimized.
- * Version:           1.4.3
+ * Version:           1.4.4
  * Author:            Frederic Guzman
  * Author URI:        https://www.nilbug.com
  * Text Domain:       sitepulse
@@ -40,24 +40,15 @@ if ( ! defined( 'SITEPULSE_STRESS_MODE' ) ) {
 	define( 'SITEPULSE_STRESS_MODE', false );
 }
 
-define( 'SITEPULSE_VERSION',               '1.4.3' );
+define( 'SITEPULSE_VERSION',               '1.4.4' );
 define( 'SITEPULSE_NAME',                  'SitePulse' );
 define( 'SITEPULSE_SLUG',                  'sitepulse' );
 define( 'SITEPULSE_PREFIX',                'wpsp' );
 define( 'SITEPULSE_PREFIX_SEPARATOR',		 '_' );
 define( 'SITEPULSE_PATH',                  plugin_dir_path( __FILE__ ) . '/' );
 define( 'SITEPULSE_TEXT_DOMAIN_PATH',      SITEPULSE_PATH . 'languages/' . '/' );
-define( 'SITEPULSE_INC_PATH',              SITEPULSE_PATH . 'inc/' );
-define( 'SITEPULSE_FRONT_PATH',            SITEPULSE_PATH . 'front/' );
-define( 'SITEPULSE_ADMIN_PATH',            SITEPULSE_PATH . 'admin/' );
-define( 'SITEPULSE_ADDONS_PATH',           SITEPULSE_PATH . 'addons/' );
 define( 'SITEPULSE_CLASS_PATH',            SITEPULSE_PATH . 'class/' );
-define( 'SITEPULSE_LOGS_PATH',             wp_upload_dir()['basedir'] . '/sitepulse/sitepulse-logs' );
-define( 'SITEPULSE_WRITE_TEST_PATH',       wp_upload_dir()['basedir'] );
-define( 'SITEPULSE_VENDORS_PATH',          SITEPULSE_PATH . 'inc/vendors' );
 define( 'SITEPULSE_URL',        		   plugin_dir_url( __FILE__ ) );
-define( 'SITEPULSE_INC_URL',               SITEPULSE_URL . 'inc/' );
-define( 'SITEPULSE_ADMIN_URL',             SITEPULSE_INC_URL . 'admin/' );
 define( 'SITEPULSE_ADMIN_ASSETS_URL',      SITEPULSE_URL . 'assets/' );
 define( 'SITEPULSE_ADMIN_ASSETS_PATH',     SITEPULSE_PATH . 'assets/' );
 define( 'SITEPULSE_ADMIN_ASSETS_JS_URL',   SITEPULSE_ADMIN_ASSETS_URL . 'js/' );
@@ -109,33 +100,6 @@ function sitepulse_move_to_first_position(): void {
 	update_option( 'active_plugins', $plugins );
 }
 
-function sitepulse_is_second_position(): bool {
-	$sitepulse = plugin_basename( SITEPULSE_PLUGIN_FILE );
-	$plugins   = (array) get_option( 'active_plugins', array() );
-	$position  = array_search( $sitepulse, $plugins, true );
-
-	return isset( $plugins[1] ) && $plugins[1] === $sitepulse;
-}
-
-function sitepulse_move_to_second_position(): void {
-	if ( sitepulse_is_second_position() ) {
-		return;
-	}
-
-	$sitepulse = plugin_basename( SITEPULSE_PLUGIN_FILE );
-	$plugins   = (array) get_option( 'active_plugins', array() );
-	$position  = array_search( $sitepulse, $plugins, true );
-
-	if ( false === $position || 1 === $position ) {
-		return;
-	}
-	unset( $plugins[ $position] );
-	$plugins = array_values( $plugins );
-	array_splice( $plugins, 1, 0, $sitepulse );
-
-	update_option( 'active_plugins', $plugins );
-}
-
 /**
  * Detect another plugin displacing SitePulse from position zero.
  *
@@ -159,16 +123,40 @@ function sitepulse_detect_first_position_conflict(): ?string {
 // Conflict detector between SitePulse and other plugins
 define( 'SITEPULSE_CONFLICTING_PLUGIN', sitepulse_detect_first_position_conflict() );
 
+/**
+ * Move SitePulse to the first position in an active-plugins value.
+ *
+ * This is intentionally in-memory only; the active_plugins option is never
+ * updated from this callback.
+ *
+ * @param mixed $plugins Active plugin basenames.
+ * @return mixed
+ */
+function sitepulse_reorder_active_plugins_for_conflict( $pre_option ) {
+	$plugins = $pre_option;
+
+	if ( ! is_array( $plugins ) ) {
+		$all_options = wp_load_alloptions();
+		$plugins     = $all_options['active_plugins'] ?? $pre_option;
+	}
+
+	if ( ! is_array( $plugins ) ) {
+		return $pre_option;
+	}
+
+	$sitepulse = plugin_basename( SITEPULSE_PLUGIN_FILE );
+	$position  = array_search( $sitepulse, $plugins, true );
+
+	if ( false !== $position && 0 !== $position ) {
+		unset( $plugins[ $position ] );
+		array_unshift( $plugins, $sitepulse );
+	}
+
+	return array_values( $plugins );
+}
+
 if ( null !== SITEPULSE_CONFLICTING_PLUGIN ) {
-	sitepulse_move_to_second_position();
-    // Wordpress notifications to show the admin that SitePulse is not the first plugin in the active plugins list
-	add_action( 'admin_notices', function() {
-		?>
-		<div class="notice notice-warning">
-			<p><?php printf( esc_html__( 'SitePulse free is having conflict with %s. Sitepulse will ignore all metrics based on this plugin to avoid errors.', 'sitepulse' ), SITEPULSE_CONFLICTING_PLUGIN, SITEPULSE_CONFLICTING_PLUGIN ); ?></p>
-		</div>
-		<?php
-	} );
+	add_filter( 'pre_option_active_plugins', 'sitepulse_reorder_active_plugins_for_conflict' );
 }
 
 // Check if SitePulse is the first plugin in the active plugins list
@@ -227,20 +215,16 @@ class Sitepulse_Loader {
 			return;
 		}
 
-		$profiler = new Sitepulse_Profiler();
-
-		if ( class_exists('Sitepulse_Profiler') ) {
-			$profiler::init();
+		if ( class_exists( 'Sitepulse_Profiler' ) ) {
+			Sitepulse_Profiler::init();
 		}
 
-		$curLoader = new Sitepulse_CurLoader();
-		if ( class_exists('Sitepulse_CurLoader') ) {
-			$curLoader::init();
+		if ( class_exists( 'Sitepulse_CurLoader' ) ) {
+			Sitepulse_CurLoader::init();
 		}
 
-		$plugin_profiler = new Sitepulse_Plugin_Profiler();
-		if ( class_exists('Sitepulse_Plugin_Profiler') ) {
-			$plugin_profiler::init();
+		if ( class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
+			Sitepulse_Plugin_Profiler::init();
 		}
 
 		// Error handler is already initialized at the top of loader.php (before this constructor)

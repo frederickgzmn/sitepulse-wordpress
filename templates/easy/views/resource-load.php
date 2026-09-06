@@ -111,15 +111,21 @@ $sp_tracked_pid = get_option( 'sitepulse_current_tracked_pageid' );
 
 </div><!-- /sp-zone--health -->
 
+<div>
+	<div class="sp-zone-header sp-zone-header--info">
+		<span class="dashicons dashicons-info-outline"></span>
+		<span class="sp-zone-title"><?php echo sprintf( esc_html__( 'How it work: Active = Calls are contantly increasing, Inactive = Not more call recorded in the last %d seconds', 'sitepulse' ), SITEPULSE_SETTINGS_PROFILER_INACTIVE_AFTER_SECONDS ); ?></span>
+	</div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      ZONE 2: Event Footprint
      ═══════════════════════════════════════════════════════════════════════ -->
 <div class="sp-zone sp-zone--infra">
-<div class="sp-zone-header">
-	<span class="dashicons dashicons-performance"></span>
-	<span class="sp-zone-title"><?php echo esc_html__( 'Activity Details', 'sitepulse' ); ?></span>
-</div>
+	<div class="sp-zone-header">
+		<span class="dashicons dashicons-performance"></span>
+		<span class="sp-zone-title"><?php echo esc_html__( 'Activity Details', 'sitepulse' ); ?></span>
+	</div>
 
 <div class="sp-card sp-mb-16">
 	<div class="sp-card-body sp-p-0">

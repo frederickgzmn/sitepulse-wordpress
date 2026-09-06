@@ -464,17 +464,7 @@ if ( ! class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
 		 * @return string Formatted memory string
 		 */
 		public static function format_memory( $bytes ) {
-			// Use shared utility method
-			if ( class_exists( 'Sitepulse_Utils' ) ) {
-				return Sitepulse_Utils::format_memory( $bytes );
-			}
-			// Fallback if Utils not loaded
-			if ( $bytes >= 1048576 ) {
-				return number_format( $bytes / 1048576, 2 ) . ' MB';
-			} elseif ( $bytes >= 1024 ) {
-				return number_format( $bytes / 1024, 2 ) . ' KB';
-			}
-			return $bytes . ' B';
+			return Sitepulse_Utils::format_memory( $bytes );
 		}
 		
 		/**
@@ -484,27 +474,7 @@ if ( ! class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
 		 * @return string Formatted time string (e.g., "125.50 ms" or "2.35 s")
 		 */
 		public static function format_time( $ms ) {
-			// Use shared utility method
-			if ( class_exists( 'Sitepulse_Utils' ) ) {
-				return Sitepulse_Utils::format_time( $ms, 'ms' );
-			}
-			// Fallback if Utils not loaded
-			$ms = (float) $ms;
-			
-			if ( $ms < 0 ) {
-				return '0 ms';
-			}
-			
-			if ( $ms > 60000 ) {
-				return '60.00 s';
-			}
-			
-			if ( $ms >= 1000 ) {
-				$seconds = $ms / 1000;
-				return number_format( $seconds, 2, '.', '' ) . ' s';
-			}
-			
-			return number_format( $ms, 2, '.', '' ) . ' ms';
+			return Sitepulse_Utils::format_time( $ms, 'ms' );
 		}
 	}
 }

@@ -4,7 +4,7 @@ Tags: performance, speed, optimization, monitoring, profiler
 Requires at least: 5.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.3
+Stable tag: 1.4.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -191,6 +191,10 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 ---
 
 == Changelog ==
+= 1.4.4 =
+* Fixed an UI bug
+* Improved performance for plugins with hooks
+
 = 1.4.3 =
 * Hooks now display the url of the page that triggered it
 * Remove sitepulse pro dependencies
@@ -198,7 +202,7 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 * Auto increment profiler calls when persistent
 * Auto detect active hooks activately consuming resources
 * Fixed a bug where the hook report was not showing
-* 
+
 
 = 1.4.2 =
 * Hook and api hook bugs fixed
