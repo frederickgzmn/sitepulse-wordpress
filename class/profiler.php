@@ -267,18 +267,7 @@ if (!class_exists('Sitepulse_Profiler')) {
         }
 
         private static function shortpath($path) {
-            // Use shared utility method
-            if ( class_exists( 'Sitepulse_Utils' ) ) {
-                return Sitepulse_Utils::shortpath( $path );
-            }
-            // Fallback if Utils not loaded
-            if (!$path) return '(unknown)';
-            $abspath = wp_normalize_path(ABSPATH);
-            $p       = wp_normalize_path($path);
-            if (strpos($p, $abspath) === 0) {
-                return ltrim(substr($p, strlen($abspath)), '/');
-            }
-            return $p;
+            return Sitepulse_Utils::shortpath( $path );
         }
 
         /** Record one timing sample */
@@ -396,18 +385,12 @@ if (!class_exists('Sitepulse_Profiler')) {
             }
             
             self::$stats[$key]['calls']++;
-            // Average
+            self::$stats[$key]['total'] += $elapsed;
+            self::$stats[$key]['total_ms'] += $elapsed_ms;
             self::$stats[$key]['avg_ms'] = self::$stats[$key]['total_ms'] / self::$stats[$key]['calls'];
-            if ( $elapsed_ms > self::$stats[$key]['total_ms'] ) {
-                // Totals
-                self::$stats[$key]['total'] += $elapsed;
-                self::$stats[$key]['total_ms'] += $elapsed_ms;
-            }
-            // Load time
             self::$stats[$key]['current_load_time'] = $elapsed_ms; 
-            // Date Time
-            self::$stats[ $key ]['date_time'] = self::$request_date_time;
-            self::$stats[ $key ]['last_seen_at'] = microtime( true );
+            self::$stats[$key]['date_time'] = self::$request_date_time;
+            self::$stats[$key]['last_seen_at'] = microtime( true );
 
             // Max
             if ($elapsed > self::$stats[$key]['max']) {
@@ -422,16 +405,7 @@ if (!class_exists('Sitepulse_Profiler')) {
          * @return string Formatted time string
          */
         public static function format_time(float $seconds): string {
-            // Use shared utility method
-            if ( class_exists( 'Sitepulse_Utils' ) ) {
-                return Sitepulse_Utils::format_time( $seconds, 'seconds' );
-            }
-            // Fallback if Utils not loaded
-            if ($seconds >= 1.0) {
-                return number_format($seconds, 3) . 's';
-            } else {
-                return number_format($seconds * 1000, 2) . 'ms';
-            }
+            return Sitepulse_Utils::format_time( $seconds, 'seconds' );
         }
 
         /**

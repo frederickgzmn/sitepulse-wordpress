@@ -54,9 +54,6 @@ class Sitepulse_Setup {
 	public function upgrade() {
 		// Upgrade custom options
 		$this->upgradeOptions();
-
-		// Upgrade database
-		$this->upgradeDatabase();
 	}
 	/**
 	 * Storing custom options

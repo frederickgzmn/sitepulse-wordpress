@@ -20,14 +20,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<div class="sp-easy-main">
 			<?php require __DIR__ . '/partials/topbar.php'; ?>
 			<?php
-				if ( null !== SITEPULSE_CONFLICTING_PLUGIN ) {
+				// Deprecated: Not needed.
+				/* if ( null !== SITEPULSE_CONFLICTING_PLUGIN ) {
 					// Wordpress notifications to show the admin that SitePulse is not the first plugin in the active plugins list
 					?>
 					<div class="notice notice-error">
 						<p><?php printf( esc_html__( 'SitePulse free is having conflict with %s. Sitepulse will ignore all metrics based on this plugin to avoid errors.', 'sitepulse' ), SITEPULSE_CONFLICTING_PLUGIN ); ?></p>
-					</div>
+					</div> -->
 					<?php
-				}
+				}*/
 			?>
 
 			<div class="sp-easy-content">

@@ -649,11 +649,6 @@ class Sitepulse_Backend {
 		$mem = $this->plugin->sp_get_memory_info();
 		$disk_write = $this->plugin->sitepulse_disk_write_test( 1048576, 3 );
 
-		// Testing with Stress mode
-		if ( SITEPULSE_STRESS_MODE ) {
-			$this->plugin->sp_db_delay_test( 6.0, false );
-		}
-
 		// Skip slow queries calculation when pro is active (pro has its own SQL Monitor)
 		$slow_queries = [];
 		$slow_queries = $this->plugin->sp_get_slow_queries( 100.0, 50 );
@@ -784,10 +779,7 @@ class Sitepulse_Backend {
 		// Easy Mode dashboard/views
 		if ( class_exists( 'Sitepulse_Easy_Mode' ) && Sitepulse_Easy_Mode::is_enabled() ) {
 			$easy_view_name = Sitepulse_Easy_Mode::get_current_view();
-			$total_time = class_exists( 'Sitepulse_Plugin_Profiler' ) ? Sitepulse_Plugin_Profiler::get_total_load_time() : 0;
-			$autoload_metrics = ( class_exists( 'Sitepulse_Utils' ) && method_exists( 'Sitepulse_Utils', 'get_autoload_metrics' ) )
-				? Sitepulse_Utils::get_autoload_metrics()
-				: array();
+			$autoload_metrics = array();
 			$weekly_trends = array();
 
 			$sp_settings_saved = false;
@@ -826,7 +818,7 @@ class Sitepulse_Backend {
 				'sp_ai_external_api_enabled', 'ai_diagnostic_status',
 				'ai_diagnostic_requested_at', 'ai_diagnostic_queue_position',
 				'is_ai_pending', 'is_ai_failed', 'plugins_score', 'memory_score',
-				'plugin_profiler_stats', 'total_time', 'autoload_metrics',
+				'plugin_profiler_stats', 'autoload_metrics',
 				'sp_settings_saved', 'sitepulse_settings', 'current_settings',
 				'status_info', 'active_plugins',
 				'loadsentinel_score', 'api_score', 'load_time_score',
@@ -915,46 +907,11 @@ class Sitepulse_Backend {
 		}
 
 		// Handle form submission for SitePulse settings
-		if ( isset( $_POST['submit'] ) && isset( $_POST['sitepulse_settings_nonce'] ) ) {
-			// Verify user has permission to manage options
-			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'sitepulse' ) );
-			}
-
-			if ( wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['sitepulse_settings_nonce'] ) ), 'sitepulse_settings_action' ) ) {
-				$updated_settings = array();
-
-				// Email blocking settings
-				$updated_settings['email_blocking_enabled'] = isset( $_POST['sitepulse_email_blocking_enabled'] ) ? 1 : 0;
-				if ( isset( $_POST['sitepulse_email_blocking_mode'] ) ) {
-					$updated_settings['email_blocking_mode'] = sanitize_text_field( wp_unslash( $_POST['sitepulse_email_blocking_mode'] ) );
-				}
-
-				// Cron settings
-				$updated_settings['cron_disabled'] = isset( $_POST['sitepulse_cron_disabled'] ) ? 1 : 0;
-
-				// External API settings
-				$updated_settings['external_api_enabled'] = isset( $_POST['sitepulse_external_api_enabled'] ) ? 1 : 0;
-
-				// Recovery mode email address
-				if ( isset( $_POST['sitepulse_recovery_mode_email_addresses'] ) ) {
-					$recovery_email = sanitize_email( wp_unslash( $_POST['sitepulse_recovery_mode_email_addresses'] ) );
-					$updated_settings['recovery_mode_email_addresses'] = $recovery_email;
-
-					// Also update the error handler directly
-					if ( class_exists( 'Sitepulse_Error_Handler' ) ) {
-						Sitepulse_Error_Handler::set_recovery_email( $recovery_email );
-					}
-				}
-
-				// Update settings
-				if ( $sitepulse_settings->update_settings( $updated_settings ) ) {
-					echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'SitePulse settings updated successfully!', 'sitepulse' ) . '</p></div>';
-				} else {
-					echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Failed to update settings.', 'sitepulse' ) . '</p></div>';
-				}
+		if ( isset( $_POST['submit'] ) ) {
+			if ( $this->process_settings_form() ) {
+				echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'SitePulse settings updated successfully!', 'sitepulse' ) . '</p></div>';
 			} else {
-				echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Security check failed. Please try again.', 'sitepulse' ) . '</p></div>';
+				echo '<div class="notice notice-error is-dismissible"><p>' . esc_html__( 'Failed to update settings.', 'sitepulse' ) . '</p></div>';
 			}
 		}
 

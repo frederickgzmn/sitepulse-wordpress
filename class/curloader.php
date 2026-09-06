@@ -247,18 +247,8 @@ class Sitepulse_CurLoader {
         return explode('/', $rel)[0] ?? basename($path);
     }
 
-    private static function shortpath($path, $abspath) {
-        // Use shared utility method
-        if ( class_exists( 'Sitepulse_Utils' ) ) {
-            return Sitepulse_Utils::shortpath( $path );
-        }
-        // Fallback if Utils not loaded
-        if (!$path) return '(unknown)';
-        $p = wp_normalize_path($path);
-        if (0 === strncmp($p, $abspath, strlen($abspath))) {
-            return ltrim(substr($p, strlen($abspath)), '/');
-        }
-        return $p;
+    private static function shortpath($path, $abspath = '') {
+        return Sitepulse_Utils::shortpath( $path );
     }
 
     private static function push_event(array $event) {

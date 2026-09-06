@@ -83,10 +83,6 @@ function sitepulse_sanitize_param( $value, $type = 'text' ) {
 	}
 }
 
-// Register the REST API route for setting dark mode status
-
-use function Crontrol\Event\get;
-
 /**
  * Register all SitePulse REST API routes
  */
@@ -192,7 +188,7 @@ function sitepulse_enable_clear_load_events( WP_REST_Request $request ) {
  * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
  */
 function sitepulse_enable_save_queries( WP_REST_Request $request ) {
-	$sitepulse_Plugin = new Sitepulse_Plugin( [ '' ] );
+	$sitepulse_Plugin = new Sitepulse_Plugin();
 	$set_savequeries = $sitepulse_Plugin->sp_set_savequeries( true );
 
 	if ( isset( $set_savequeries['success'] ) && $set_savequeries['success'] ) {
@@ -267,7 +263,7 @@ function sitepulse_set_trackers_disabled_notice( WP_REST_Request $request ) {
 }
 
 /**
- * Sets the active status of dark mode.
+ * Sets the active status of the external requests tracker (curl/API).
  *
  * @param WP_REST_Request $request The request object.
  * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
@@ -338,7 +334,7 @@ function sitepulse_set_sp_profiler( WP_REST_Request $request ) {
 }
 
 /**
- * Sets the active status of the SP Profiler.
+ * Checks system memory usage and limit.
  *
  * @param WP_REST_Request $request The request object.
  * @return WP_REST_Response|WP_Error Response object on success, or WP_Error object on failure.
@@ -361,7 +357,7 @@ function sitepulse_check_memory( WP_REST_Request $request ) {
 	}
 
 	try {
-		$sitepulse_Plugin = new Sitepulse_Plugin( [ '' ] );
+		$sitepulse_Plugin = new Sitepulse_Plugin();
 
 		// Check method existence before calling
 		if ( ! method_exists( $sitepulse_Plugin, 'sp_get_memory_info' ) ) {
@@ -621,29 +617,23 @@ function sitepulse_get_memory_info( WP_REST_Request $request ) {
 		return new WP_Error( 'invalid_nonce', 'Invalid nonce', [ 'status' => 403 ] );
 	}
 
-	// Get memory usage
-	$memory_usage = memory_get_usage( true );
-	$memory_limit = ini_get( 'memory_limit' );
-
-	// Convert to MB
-	$memory_mb = round( $memory_usage / 1024 / 1024, 2 );
-
-	// Parse memory limit
-	$limit_value = preg_replace( '/[^0-9]/', '', $memory_limit );
-	$limit_unit = strtoupper( preg_replace( '/[0-9]/', '', $memory_limit ) );
-
-	if ( $limit_unit === 'G' ) {
-		$limit_mb = $limit_value * 1024;
-	} else {
-		$limit_mb = $limit_value;
+	if ( ! class_exists( 'Sitepulse_Plugin' ) ) {
+		return new WP_Error( 'missing_class', 'Sitepulse_Plugin class not found', [ 'status' => 500 ] );
 	}
 
+	$plugin = new Sitepulse_Plugin();
+	$mem    = $plugin->sp_get_memory_info();
+
+	$memory_mb     = round( (int) $mem['allocated'] / 1024 / 1024, 2 );
+	$limit_mb      = (int) $mem['limit_bytes'] > 0 ? round( (int) $mem['limit_bytes'] / 1024 / 1024, 2 ) : 0;
+	$usage_percent = is_numeric( rtrim( (string) $mem['percent'], '%' ) ) ? (float) rtrim( (string) $mem['percent'], '%' ) : 0;
+
 	return rest_ensure_response( [
-		'success' => true,
-		'memory' => $memory_mb,
-		'limit' => $limit_mb,
-		'usage_percent' => $limit_mb > 0 ? round( ( $memory_mb / $limit_mb ) * 100, 2 ) : 0,
-		'formatted' => $memory_mb . ' MB / ' . $memory_limit
+		'success'       => true,
+		'memory'        => $memory_mb,
+		'limit'         => $limit_mb,
+		'usage_percent' => $usage_percent,
+		'formatted'     => $mem['formatted'],
 	] );
 }
 
