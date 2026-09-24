@@ -19,3 +19,12 @@ No test files or test framework are present in the repository. Use the Playgroun
 ## Commit & Pull Request Guidelines
 
 Recent history contains short descriptive subjects and GitHub merge subjects; no consistent prefix convention is evident. No pull request template is present. Keep commit subjects descriptive and concise so they match the existing history.
+
+## graphify
+
+This project has a knowledge graph in `graphify-out/`. When `/graphify` is invoked, follow the installed graphify skill.
+
+- For codebase questions, run `graphify query "<question>"` first when `graphify-out/graph.json` exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for a focused concept.
+- Dirty `graphify-out/` files can result from updates; use the graph unless the question concerns stale graph output or the user declines it.
+- Use `graphify-out/wiki/index.md` for broad navigation when present. Read `graphify-out/GRAPH_REPORT.md` for broad architecture or when query, path, and explain lack context.
+- After modifying code, run `graphify update .` to refresh the graph.
