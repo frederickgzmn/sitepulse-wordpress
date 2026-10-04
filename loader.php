@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       SitePulse - Performance Monitor and AI Diagnostics
  * Description:       SitePulse gives you real-time insights into your WordPress site’s performance, slow queries, and bottlenecks - so you can keep your site fast, healthy, and optimized.
- * Version:           1.4.4
+ * Version:           1.4.5
  * Author:            Frederic Guzman
  * Author URI:        https://www.nilbug.com
  * Text Domain:       sitepulse
@@ -40,7 +40,7 @@ if ( ! defined( 'SITEPULSE_STRESS_MODE' ) ) {
 	define( 'SITEPULSE_STRESS_MODE', false );
 }
 
-define( 'SITEPULSE_VERSION',               '1.4.4' );
+define( 'SITEPULSE_VERSION',               '1.4.5' );
 define( 'SITEPULSE_NAME',                  'SitePulse' );
 define( 'SITEPULSE_SLUG',                  'sitepulse' );
 define( 'SITEPULSE_PREFIX',                'wpsp' );
@@ -286,7 +286,7 @@ class Sitepulse_Loader {
 	 * Deactivates the plugin and cleans up scheduled cron jobs.
 	 */
 	public function deactivate() {
-		// Unschedule the daily API request cron job
+		// Unschedule site status reports
 		if ( class_exists( 'Sitepulse_Cron_Manager' ) ) {
 			Sitepulse_Cron_Manager::unschedule_daily_api_request();
 		}
@@ -320,7 +320,7 @@ class Sitepulse_Loader {
 		// Set transient to trigger onboarding redirect
 		set_transient( 'sitepulse_activation_redirect', true, 30 );
 
-		// Schedule the daily API request cron job
+		// Schedule site status reports every six hours
 		if ( class_exists( 'Sitepulse_Cron_Manager' ) ) {
 			Sitepulse_Cron_Manager::schedule_daily_api_request();
 		}

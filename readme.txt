@@ -4,7 +4,7 @@ Tags: performance, speed, optimization, monitoring, profiler
 Requires at least: 5.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.4
+Stable tag: 1.4.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -191,6 +191,10 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 ---
 
 == Changelog ==
+= 1.4.5 =
+* Better reporting
+* Cron Fixes
+
 = 1.4.4 =
 * Fixed an UI bug
 * Improved performance for plugins with hooks

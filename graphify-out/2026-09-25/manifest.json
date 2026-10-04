@@ -186,22 +186,22 @@
     "semantic_hash": "606723f818f901d68d822bd1a2af14c9"
   },
   "inc/cron_fallback.php": {
-    "mtime": 1790339830.7372046,
-    "seen": 1790339834.5440269,
-    "ast_hash": "ce1e085a8aaf122e292f0b960bb2aa00",
-    "semantic_hash": ""
+    "mtime": 1787954836.7808979,
+    "seen": 1790214669.7171917,
+    "ast_hash": "8fa4b3593d39b107b5dfff9c2e78b70b",
+    "semantic_hash": "8fa4b3593d39b107b5dfff9c2e78b70b"
   },
   "inc/cron_manager.php": {
-    "mtime": 1790339830.7369087,
-    "seen": 1790339834.5440288,
-    "ast_hash": "191663db53818466c3930f329f54b8c9",
-    "semantic_hash": ""
+    "mtime": 1790213897.4972777,
+    "seen": 1790214669.7171924,
+    "ast_hash": "1f5fee4d923944c33c8aea931fffd8ed",
+    "semantic_hash": "1f5fee4d923944c33c8aea931fffd8ed"
   },
   "loader.php": {
-    "mtime": 1790339830.7375555,
-    "seen": 1790339834.5440302,
-    "ast_hash": "5844b940b554beb547bf1f2a11e188f2",
-    "semantic_hash": ""
+    "mtime": 1790213897.497571,
+    "seen": 1790214669.7171931,
+    "ast_hash": "61d7a1c233361b3f6adec9f68e7e05da",
+    "semantic_hash": "61d7a1c233361b3f6adec9f68e7e05da"
   },
   "templates/backend/curl_api.php": {
     "mtime": 1775352930.4573455,
@@ -342,10 +342,10 @@
     "semantic_hash": "0f0ea13a48fd9dc655eeb20a6b8a9f27"
   },
   "AGENTS.md": {
-    "mtime": 1790215172.384134,
-    "seen": 1790339834.5440605,
-    "ast_hash": "ef80cd34c43b57c7b7a68bd27e57e0de",
-    "semantic_hash": ""
+    "mtime": 1790214041.6445541,
+    "seen": 1790214669.7172186,
+    "ast_hash": "7512d1cfd3b80e5cf16166a98e59b91d",
+    "semantic_hash": "7512d1cfd3b80e5cf16166a98e59b91d"
   },
   "README.md": {
     "mtime": 1787972736.6579227,
