@@ -232,13 +232,36 @@ final class RestApiTest extends Sitepulse_Test_Case {
         $this->assertSame(array(), get_option(SITEPULSE_CURL_API_KEY));
     }
 
-    public function test_memory_info_returns_numeric_megabytes_and_usage_from_real_plugin(): void {
-        $result = sitepulse_get_memory_info($this->request())->get_data();
-        $this->assertTrue($result['success']);
-        $this->assertGreaterThan(0, $result['memory']);
-        $this->assertGreaterThanOrEqual(0, $result['limit']);
-        $this->assertIsFloat($result['usage_percent']);
-        $this->assertNotEmpty($result['formatted']);
+    public function test_memory_info_returns_numeric_megabytes_and_usage_for_a_bounded_limit(): void {
+        $original = ini_get('memory_limit');
+        try {
+            $this->assertNotFalse(ini_set('memory_limit', '1G'));
+            $result = sitepulse_get_memory_info($this->request())->get_data();
+            $this->assertTrue($result['success']);
+            $this->assertGreaterThan(0, $result['memory']);
+            $this->assertSame(1024.0, $result['limit']);
+            $this->assertIsFloat($result['usage_percent']);
+            $this->assertGreaterThan(0, $result['usage_percent']);
+            $this->assertLessThanOrEqual(100, $result['usage_percent']);
+            $this->assertStringContainsString('limit 1,024.00 MB', $result['formatted']);
+        } finally {
+            ini_set('memory_limit', $original);
+        }
+    }
+
+    public function test_memory_info_reports_zero_limit_and_usage_when_memory_is_unlimited(): void {
+        $original = ini_get('memory_limit');
+        try {
+            $this->assertNotFalse(ini_set('memory_limit', '-1'));
+            $result = sitepulse_get_memory_info($this->request())->get_data();
+            $this->assertTrue($result['success']);
+            $this->assertGreaterThan(0, $result['memory']);
+            $this->assertSame(0, $result['limit']);
+            $this->assertSame(0, $result['usage_percent']);
+            $this->assertStringContainsString('limit unlimited', $result['formatted']);
+        } finally {
+            ini_set('memory_limit', $original);
+        }
     }
 
     public function test_profiler_stats_expose_hook_names_and_http_stats_count_events(): void {

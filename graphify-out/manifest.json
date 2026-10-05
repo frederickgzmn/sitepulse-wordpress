@@ -540,9 +540,9 @@
     "semantic_hash": ""
   },
   "tests/php/RestApiTest.php": {
-    "mtime": 1791155932.8352604,
-    "seen": 1791156028.7593648,
-    "ast_hash": "8a8286d969a55f70f8da5332a7f5679a",
+    "mtime": 1791166470.859963,
+    "seen": 1791166672.4693182,
+    "ast_hash": "f40d3fb7e9641cf08b1f969ba1be5f4c",
     "semantic_hash": ""
   },
   "tests/php/SettingsTest.php": {
@@ -582,9 +582,9 @@
     "semantic_hash": ""
   },
   "tests/php/Support/WordPress.php": {
-    "mtime": 1791162965.5510504,
-    "seen": 1791163733.3605363,
-    "ast_hash": "e20312889edd8af061c52b83a31f39e4",
+    "mtime": 1791166624.2268229,
+    "seen": 1791166672.4693367,
+    "ast_hash": "006fc632d1aa6244ae453d8e1c651487",
     "semantic_hash": ""
   },
   "tests/php/TemplateTest.php": {
@@ -600,9 +600,9 @@
     "semantic_hash": ""
   },
   "tests/php/bootstrap.php": {
-    "mtime": 1791162552.1498208,
-    "seen": 1791163733.3605475,
-    "ast_hash": "a50b5c06d68d5c05e59371afb26c5c8e",
+    "mtime": 1791166624.2948222,
+    "seen": 1791166672.4693427,
+    "ast_hash": "165a40814b8477f19e524c758d6ce7a3",
     "semantic_hash": ""
   },
   "tests/php/fixtures/lifecycle.php": {
@@ -615,18 +615,6 @@
     "mtime": 1791163541.2547588,
     "seen": 1791163733.360569,
     "ast_hash": "9afcab182b77af8a65a48d1ef57b70c2",
-    "semantic_hash": ""
-  },
-  "tests/KNOWN_DEFECTS.md": {
-    "mtime": 1791163732.8443305,
-    "seen": 1791163733.3605795,
-    "ast_hash": "92188d99cf38728a8eebacc224d7b1fe",
-    "semantic_hash": ""
-  },
-  "tests/README.md": {
-    "mtime": 1791163968.0275798,
-    "seen": 1791163973.8024151,
-    "ast_hash": "d8da987d220a420e9552c9859c492d92",
     "semantic_hash": ""
   },
   "tests/js/browser-harness.test.cjs": {
@@ -786,9 +774,9 @@
     "semantic_hash": ""
   },
   "tests/php/PluginAdditionalBehaviorTest.php": {
-    "mtime": 1791163036.1378005,
-    "seen": 1791163733.3604898,
-    "ast_hash": "0380787de9a59c6f1db6079796133116",
+    "mtime": 1791166514.0566418,
+    "seen": 1791166672.4693053,
+    "ast_hash": "77dcaecdaf1f7d40f7f128ca124249fa",
     "semantic_hash": ""
   },
   "tests/php/PopulatedTemplateTest.php": {
@@ -879,6 +867,24 @@
     "mtime": 1791163241.421994,
     "seen": 1791163733.360561,
     "ast_hash": "f8bd8aaeac8f67564807eedf0f3e279e",
+    "semantic_hash": ""
+  },
+  "tests/php/HarnessIsolationTest.php": {
+    "mtime": 1791166590.706072,
+    "seen": 1791166672.4692924,
+    "ast_hash": "fd59386dd6350a86d2b107d9a029c75c",
+    "semantic_hash": ""
+  },
+  "docs/KNOWN_DEFECTS.md": {
+    "mtime": 1791163732.8443305,
+    "seen": 1791166672.4693666,
+    "ast_hash": "92188d99cf38728a8eebacc224d7b1fe",
+    "semantic_hash": ""
+  },
+  "docs/README.md": {
+    "mtime": 1791163968.0275798,
+    "seen": 1791166672.4693685,
+    "ast_hash": "d8da987d220a420e9552c9859c492d92",
     "semantic_hash": ""
   }
 }

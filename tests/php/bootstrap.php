@@ -43,7 +43,11 @@ spl_autoload_register(static function ($class) {
     if (strpos($class, 'Sitepulse_') !== 0 || strpos($class, 'Sitepulse_Test_') === 0) { return; }
     $file = strtolower(substr($class, strlen('Sitepulse_'))) . '.php';
     foreach (array(SITEPULSE_CLASS_PATH, SITEPULSE_PATH . 'inc/') as $directory) {
-        if (is_file($directory . $file)) { require_once $directory . $file; return; }
+        if (is_file($directory . $file)) {
+            require_once $directory . $file;
+            Sitepulse_Test_WP::rememberClassDefaults($class);
+            return;
+        }
     }
 });
 require_once __DIR__ . '/Support/TestCase.php';

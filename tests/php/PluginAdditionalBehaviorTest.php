@@ -31,15 +31,18 @@ final class PluginAdditionalBehaviorTest extends Sitepulse_Test_Case {
      * @dataProvider memoryUsageLevels
      */
     public function test_memory_badges_follow_actual_allocated_fraction($target_fraction, $expected_badge): void {
-        // Keep headroom above PHP's allocated pages while exercising the high-usage thresholds.
+        // Compile the real class before the 95% case leaves little room for autoloading.
+        $plugin = new Sitepulse_Plugin();
         $buffer = str_repeat('x', 20 * 1048576);
         $old = ini_get('memory_limit');
         try {
             $limit = (int) ceil(memory_get_usage(true) / $target_fraction);
             ini_set('memory_limit', (string) $limit);
-            $info = (new Sitepulse_Plugin())->sp_get_memory_info();
-            $this->assertSame($limit, $info['limit_bytes']); $this->assertSame($expected_badge, $info['percent_class']);
+            $info = $plugin->sp_get_memory_info();
         } finally { ini_set('memory_limit', $old); unset($buffer); }
+        // Assertion and coverage bookkeeping must run with the original memory headroom.
+        $this->assertSame($limit, $info['limit_bytes']);
+        $this->assertSame($expected_badge, $info['percent_class']);
     }
     public static function memoryUsageLevels(): array { return array(array(.6, 'bg-warning text-dark'), array(.8, 'bg-warning text-dark'), array(.95, 'bg-danger'), array(.3, 'bg-secondary')); }
     /**

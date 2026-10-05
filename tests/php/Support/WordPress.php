@@ -43,15 +43,23 @@ final class Sitepulse_Test_WP {
     public static $spawn_cron_calls = 0;
     public static $finished_requests = 0;
     public static $now = '2026-01-01 12:00:00';
+    public static function rememberClassDefaults($class) {
+        // PHP 7.4 reflection returns the current static values, not their
+        // declared defaults. Capture each class before tests can mutate it.
+        static $defaults = array();
+        if (!array_key_exists($class, $defaults)) {
+            $defaults[$class] = (new ReflectionClass($class))->getDefaultProperties();
+        }
+        return $defaults[$class];
+    }
     public static function reset() {
-        $reflection = new ReflectionClass(__CLASS__);
-        foreach ($reflection->getDefaultProperties() as $name => $value) { self::${$name} = $value; }
+        foreach (self::rememberClassDefaults(__CLASS__) as $name => $value) { self::${$name} = $value; }
         foreach (get_declared_classes() as $class) {
             if (strpos($class, 'Sitepulse_') !== 0 || strpos($class, 'Sitepulse_Test_') === 0) { continue; }
             $rc = new ReflectionClass($class);
+            $defaults = self::rememberClassDefaults($class);
             foreach ($rc->getProperties(ReflectionProperty::IS_STATIC) as $property) {
                 if ($property->getDeclaringClass()->getName() !== $class) { continue; }
-                $defaults = $rc->getDefaultProperties();
                 if (array_key_exists($property->getName(), $defaults)) {
                     if (PHP_VERSION_ID < 80100) { $property->setAccessible(true); }
                     $property->setValue(null, $defaults[$property->getName()]);
@@ -75,6 +83,7 @@ final class Sitepulse_Test_WP {
         return is_callable($response) ? $response($url, $args) : $response;
     }
 }
+Sitepulse_Test_WP::rememberClassDefaults(Sitepulse_Test_WP::class);
 class Sitepulse_Test_Hook { public $callbacks = array(); }
 class Sitepulse_Test_Json_Response extends RuntimeException {
     public $success; public $data; public $status;
