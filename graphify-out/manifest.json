@@ -684,9 +684,9 @@
     "semantic_hash": ""
   },
   "tests/php/BackendCoverageTest.php": {
-    "mtime": 1791162943.5362568,
-    "seen": 1791163733.3604424,
-    "ast_hash": "fba65596c82e277c97994ff0418e0afe",
+    "mtime": 1791166933.2455254,
+    "seen": 1791166969.4133182,
+    "ast_hash": "5562acbc218533f0eae21041aa03acab",
     "semantic_hash": ""
   },
   "tests/php/CoreAdditionalBehaviorTest.php": {

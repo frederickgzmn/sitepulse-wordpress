@@ -75,4 +75,23 @@ final class BackendCoverageTest extends Sitepulse_Test_Case {
         $this->assertSame(0, $scores['error_log_score']);
         $this->assertSame(array('other' => array()), $backend->filter_plugin_name_whitelabel(array('other' => array())));
     }
+
+    /** @dataProvider memoryPercentageScores */
+    public function test_memory_score_inverts_percentage_rounds_and_clamps_to_zero_through_one_hundred($formatted_memory, $expected_score): void {
+        $backend = new Sitepulse_Backend(new Sitepulse_Plugin());
+        $scores = $this->invoke($backend, 'calculate_performance_scores', array(), array(), array('formatted' => $formatted_memory), 0, array());
+
+        $this->assertEquals($expected_score, $scores['memory_score']);
+    }
+
+    public static function memoryPercentageScores(): array {
+        return array(
+            'normal utilization' => array('25%', 75),
+            'fractional utilization is rounded' => array('37.5 %', 63),
+            'zero utilization' => array('0%', 100),
+            'full utilization' => array('100%', 0),
+            'negative utilization is clamped' => array('-10%', 100),
+            'over-limit utilization is clamped' => array('125%', 0),
+        );
+    }
 }
