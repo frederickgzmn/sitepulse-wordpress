@@ -6,7 +6,7 @@
 
 ## Build, Test, and Development Commands
 
-There is no build step; the README says the assets ship pre-built. The repository has no package manifest, test runner, or linter configuration, so it defines no automated test command. For a manual runtime check, load `blueprint.json` in WordPress Playground and use its demo WordPress site.
+There is no build step; the browser assets ship pre-built. Install development dependencies with `composer install` and `npm ci`. Run PHP tests with `composer test` and JavaScript tests with `npm test`. See `tests/README.md` for focused runs, coverage, and harness boundaries. For a manual runtime check, load `blueprint.json` in WordPress Playground and use its demo WordPress site.
 
 ## Coding Style & Naming Conventions
 
@@ -14,7 +14,9 @@ No formatter or linter enforces a style. Existing PHP components use lowercase, 
 
 ## Testing Guidelines
 
-No test files or test framework are present in the repository. Use the Playground blueprint for disposable WordPress runtime checks when a change needs integration validation.
+PHPUnit tests live in `tests/php/`; Node test-runner tests live in `tests/js/`. PHP tests execute production code with isolated WordPress boundary doubles and a disposable filesystem. JavaScript tests execute the shipped scripts with jsdom and real jQuery. Keep test-only helpers out of production code, cover observable behavior and failure paths, and run both suites before submitting changes. These suites do not replace a real WordPress integration check; use the Playground blueprint when a change needs runtime validation.
+
+CI enforces 100% executable-line coverage for all first-party PHP (including templates, loader, and uninstall) and JavaScript. Run `XDEBUG_MODE=coverage composer test:coverage` with Xdebug 3 and `npm run test:coverage`. Preserve the complete production scope; branch and method/function metrics are separate from the line gate.
 
 ## Commit & Pull Request Guidelines
 

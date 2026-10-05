@@ -180,7 +180,7 @@ jQuery(function ($) {
             // Generate HTML for event details
             // Format time values to milliseconds with 3 decimal places
             function formatMs(val) {
-                return (parseFloat(val) * 1000).toFixed(3) + ' ms';
+                return parseFloat(val).toFixed(3) + ' ms';
             }
 
             const eventHtml = `
@@ -323,7 +323,8 @@ jQuery(function ($) {
             }
 
             if (result.success && result.real_time_status == false) {
-                stopTracking();
+                await stopTracking();
+                return;
 
             }
 

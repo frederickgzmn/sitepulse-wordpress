@@ -1,0 +1,73 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.1', '8.3', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, mbstring, xml, xmlwriter
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: PHP syntax
+        run: find class inc templates tests scripts -name '*.php' -print0 | xargs -0 -n1 php -l && php -l loader.php && php -l uninstall.php
+      - run: composer test
+
+  javascript:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: dom, mbstring, xml, xmlwriter
+          coverage: xdebug
+          tools: composer:v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: npm ci --ignore-scripts
+      - name: Require 100% PHP executable-line coverage
+        run: composer test:coverage
+        env:
+          XDEBUG_MODE: coverage
+      - name: Require 100% JavaScript executable-line coverage
+        run: npm run test:coverage
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore

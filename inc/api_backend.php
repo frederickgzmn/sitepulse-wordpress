@@ -356,28 +356,14 @@ function sitepulse_check_memory( WP_REST_Request $request ) {
 		return new WP_Error( 'missing_class', 'Sitepulse_Plugin class not found', [ 'status' => 500 ] );
 	}
 
+	$capture_buffer_level = ob_get_level();
 	try {
 		$sitepulse_Plugin = new Sitepulse_Plugin();
-
-		// Check method existence before calling
-		if ( ! method_exists( $sitepulse_Plugin, 'sp_get_memory_info' ) ) {
-			return new WP_Error( 'missing_method', 'sp_get_memory_info method not found', [ 'status' => 500 ] );
-		}
 
 		// Capture any output that might be generated
 		ob_start();
 		$mem = $sitepulse_Plugin->sp_get_memory_info();
 		$output = ob_get_clean();
-
-		// Validate memory data structure
-		if ( ! is_array( $mem ) ) {
-			return new WP_Error( 'invalid_memory_data', 'Memory info must be an array', [ 'status' => 500 ] );
-		}
-
-		// Ensure required keys exist
-		if ( ! isset( $mem['formatted'] ) || ! isset( $mem['percent'] ) ) {
-			return new WP_Error( 'invalid_memory_data', 'Memory info missing required fields', [ 'status' => 500 ] );
-		}
 
 		return rest_ensure_response( [
 			'success' => true,
@@ -385,6 +371,9 @@ function sitepulse_check_memory( WP_REST_Request $request ) {
 		] );
 
 	} catch (Exception $e) {
+		if ( ob_get_level() > $capture_buffer_level ) {
+			ob_end_clean();
+		}
 		return new WP_Error( 'memory_check_error', 'Error checking memory: ' . $e->getMessage(), [ 'status' => 500 ] );
 	}
 }

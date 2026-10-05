@@ -349,10 +349,6 @@ class Sitepulse_Cron_Fallback {
 		}
 
 		$timestamps = array_keys( $cron_array );
-		if ( empty( $timestamps ) ) {
-			return false;
-		}
-
 		$earliest = min( $timestamps );
 		$overdue  = time() - $earliest;
 

@@ -1297,11 +1297,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 												<span
 													class="badge <?php echo $total_load_time > 5000 ? 'bg-danger' : 'bg-warning text-dark'; ?> ms-2">
 													<?php
-													if ( $total_load_time >= 1000 ) {
-														echo esc_html( number_format( $total_load_time / 1000, 2 ) . ' seconds' );
-													} else {
-														echo esc_html( number_format( $total_load_time, 0 ) . ' ms' );
-													}
+													echo esc_html( number_format( $total_load_time / 1000, 2 ) . ' seconds' );
 													?>
 												</span>
 											</p>
@@ -1338,9 +1334,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 											<?php elseif ( $total_load_time > 2000 || $loadsentinel_score < 60 ) : ?>
 												<strong><?php echo esc_html__( 'Moderate Performance:', 'sitepulse' ); ?></strong>
 												<?php echo esc_html__( 'Your site load time is acceptable but could be improved. Aim for under 2 seconds for the best user experience and better search engine rankings.', 'sitepulse' ); ?>
-											<?php else : ?>
-												<strong><?php echo esc_html__( 'Performance Notice:', 'sitepulse' ); ?></strong>
-												<?php echo esc_html__( 'Your site performance could be optimized further. Consider the recommendations below to improve load times.', 'sitepulse' ); ?>
 											<?php endif; ?>
 										</p>
 										<div class="mt-3 small">
@@ -1366,17 +1359,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 									</div>
 								<?php endif; ?>
 
-								<?php if ( empty( $all_slow_items ) && $total_load_time <= 2000 && ! $is_overall_slow ) : ?>
-									<div class="alert alert-success mb-0">
-										<h6 class="alert-heading">
-											<span class="dashicons dashicons-yes-alt"></span>
-											<?php echo esc_html__( 'No Performance Issues Detected!', 'sitepulse' ); ?>
-										</h6>
-										<p class="mb-0">
-											<?php echo esc_html__( 'Great news! We haven\'t detected any plugins, themes, or processes that are significantly slowing down your site. Your site should be loading at a good speed.', 'sitepulse' ); ?>
-										</p>
-									</div>
-								<?php endif; ?>
 							</div>
 						</div>
 					</div>
@@ -2761,7 +2743,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<!-- Slow Queries Section -->
 							<div id="sp-slow-queries-section">
 								<div class="sp-widget-content">
-								<?php if ( ! empty( $slow_queries['success'] ) && ! $slow_queries['success'] ) : ?>
+								<?php if ( isset( $slow_queries['success'] ) && ! $slow_queries['success'] ) : ?>
 									<div class="sp-details-list">
 										<div class="sp-detail-item sp-empty-state">
 											<div class="sp-detail-content">
@@ -2770,6 +2752,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 													<strong><?php echo esc_html__( 'Error:', 'sitepulse' ); ?></strong>
 													<p><?php echo esc_html( $slow_queries['error'] ); ?></p>
 													<p><?php echo esc_html( $slow_queries['message'] ); ?></p>
+													<?php if ( 'savequeries_disabled' === ( $slow_queries['error'] ?? '' ) ) : ?>
+														<a href="javascript:;" class="sp-action-btn fix_enable_savequeries">
+															<span class="dashicons dashicons-admin-tools"></span>
+															<?php echo esc_html__( 'Fix Issue', 'sitepulse' ); ?>
+														</a>
+													<?php endif; ?>
 												</div>
 											</div>
 										</div>
@@ -2806,20 +2794,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 												<span><?php echo esc_html__( 'No slow queries detected.', 'sitepulse' ); ?></span>
 											</div>
 										</div>
-										<?php if ( isset( $slow_queries['error'] ) && $slow_queries['error'] == 'savequeries_disabled' ) : ?>
-											<div class="sp-detail-item sp-empty-state">
-												<div class="sp-detail-content">
-													<span class="dashicons dashicons-warning"></span>
-													<div>
-														<p><?php echo esc_html( $slow_queries['message'] ); ?></p>
-														<a href="javascript:;" class="sp-action-btn fix_enable_savequeries">
-															<span class="dashicons dashicons-admin-tools"></span>
-															<?php echo esc_html__( 'Fix Issue', 'sitepulse' ); ?>
-														</a>
-													</div>
-												</div>
-											</div>
-										<?php endif; ?>
 									</div>
 								<?php endif; ?>
 							</div>

@@ -473,7 +473,7 @@ jQuery(function ($) {
                 await new Promise(resolve => setTimeout(resolve, task.delay));
 
                 // Make actual API call
-                const data = await makeRequest(task.endpoint, {}).catch(() => null);
+                const data = await makeRequest(task.endpoint, {});
 
                 // Mark as complete
                 $(`.detail-item[data-task="${task.name}"]`)

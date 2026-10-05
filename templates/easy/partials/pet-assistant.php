@@ -9,6 +9,8 @@
  *  - Contextually explains each page
  *  - Shows a heartbeat-style vitals sidebar
  *
+ * @var string $system_php_version Optional host version supplied by the view context.
+ *
  * @package SitePulse
  */
 if ( ! defined( 'ABSPATH' ) ) {
@@ -461,7 +463,7 @@ switch ( $dr_view ) {
 
 	case 'system':
 		if ( function_exists( 'phpversion' ) ) {
-			$php_ver = phpversion();
+			$php_ver = isset( $system_php_version ) ? $system_php_version : phpversion();
 			if ( version_compare( $php_ver, '8.0', '<' ) ) {
 				$dr_page_recs[] = [
 					'icon' => '⬆️',

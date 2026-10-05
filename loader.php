@@ -272,12 +272,8 @@ class Sitepulse_Loader {
 	 * http://codex.wordpress.org/I18n_for_WordPress_Developers
 	 */
 	function load_plugin_textdomain() {
-		$domain			= 'sitepulse';
-		$plugin_folder	= SITEPULSE_URL;
-		$lang_folder	= $plugin_folder . '/' . SITEPULSE_TEXT_DOMAIN_PATH;
-		$mo_file 		= $lang_folder . '/' . SITEPULSE_SLUG . '-' . get_locale() . '.mo';
-
-		load_textdomain('sitepulse', $mo_file);
+		$mo_file = rtrim( SITEPULSE_TEXT_DOMAIN_PATH, '/' ) . '/' . SITEPULSE_SLUG . '-' . get_locale() . '.mo';
+		load_textdomain( 'sitepulse', $mo_file );
 		// Deprecated.
 		// load_plugin_textdomain('sitepulse', false, SITEPULSE_TEXT_DOMAIN_PATH . '/'); 
 	}

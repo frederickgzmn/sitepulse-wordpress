@@ -148,10 +148,6 @@ class Sitepulse_Plugin extends Sitepulse_Setup {
         // Map to WP_Filesystem path if possible
         $fs_dir = $test_dir;
 
-        if ( empty($fs_dir) ) {
-            $fs_dir = $test_dir; // fallback if find_folder can't map
-        }
-
         // Validate directory and writability via WP_Filesystem
         if ( ! $wp_filesystem->is_dir($fs_dir) || ( method_exists($wp_filesystem, 'is_writable') && ! $wp_filesystem->is_writable($fs_dir) ) ) {
             return [
@@ -328,7 +324,11 @@ class Sitepulse_Plugin extends Sitepulse_Setup {
         // detect existing define line and previous value if present
         $prev_value = null;
         $define_regex = "/define\\s*\\(\\s*(['\"])SAVEQUERIES\\1\\s*,\\s*(true|false)\\s*\\)\\s*;?/i";
-        if ( preg_match( $define_regex, $contents, $m ) ) {
+        $has_define = preg_match( $define_regex, $contents, $m );
+        if ( false === $has_define ) {
+            return [ 'success' => false, 'error' => 'compose_failed', 'message' => 'Failed to build new wp-config.php contents.' ];
+        }
+        if ( $has_define ) {
             $prev_value = ( strtolower( $m[2] ) === 'true' );
         }
 
@@ -347,7 +347,7 @@ class Sitepulse_Plugin extends Sitepulse_Setup {
         $new_define = "define('SAVEQUERIES', " . ( $enable ? 'true' : 'false' ) . ");";
 
         // If defined -> replace first occurrence, otherwise insert before wp-settings include
-        if ( preg_match( $define_regex, $contents ) ) {
+        if ( $has_define ) {
             $new_contents = preg_replace( $define_regex, $new_define, $contents, 1 );
         } else {
             // find require_once ABSPATH . 'wp-settings.php';
@@ -366,10 +366,6 @@ class Sitepulse_Plugin extends Sitepulse_Setup {
                     $new_contents = "<?php\n" . $new_define . "\n\n" . $contents;
                 }
             }
-        }
-
-        if ( $new_contents === null ) {
-            return [ 'success' => false, 'error' => 'compose_failed', 'message' => 'Failed to build new wp-config.php contents.' ];
         }
 
         // create backup

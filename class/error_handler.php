@@ -336,13 +336,13 @@ class Sitepulse_Error_Handler {
 
 		$message = sprintf(
 			/* translators: %1$s: Site name, %2$s: Site URL, %3$s: Error type, %4$s: Error message, %5$s: File, %6$s: Line, %7$s: Timestamp */
-			"A %3$s has been detected on your WordPress site.\n\n" .
-			"Site: %1$s (%2$s)\n" .
-			"Error Type: %3$s\n" .
-			"Error Message: %4$s\n" .
-			"File: %5$s\n" .
-			"Line: %6$s\n" .
-			"Timestamp: %7$s\n\n",
+			"A %3\$s has been detected on your WordPress site.\n\n" .
+			"Site: %1\$s (%2\$s)\n" .
+			"Error Type: %3\$s\n" .
+			"Error Message: %4\$s\n" .
+			"File: %5\$s\n" .
+			"Line: %6\$s\n" .
+			"Timestamp: %7\$s\n\n",
 			$site_name,
 			$site_url,
 			$error_type,
@@ -835,6 +835,17 @@ class Sitepulse_Error_Handler {
 	 * @return array|false Modified mail data or false to prevent sending
 	 */
 	public static function prevent_wordpress_fatal_error_wp_mail( $mail_data ) {
+		// Preserve our shutdown notification only for the configured recovery recipient.
+		// Its subject also contains the generic WordPress fatal-error pattern below.
+		$recovery_email = self::get_recovery_email();
+		$recipients = isset( $mail_data['to'] ) ? (array) $mail_data['to'] : array();
+		if ( $recovery_email && count( $recipients ) === 1
+			&& reset( $recipients ) === $recovery_email
+			&& isset( $mail_data['subject'] )
+			&& $mail_data['subject'] === sprintf( '[%s] SitePulse: Fatal Error Detected', get_bloginfo( 'name' ) ) ) {
+			return $mail_data;
+		}
+
 		// Check if this is a WordPress fatal error email
 		// WordPress fatal error emails typically have specific subject patterns
 		if ( isset( $mail_data['subject'] ) ) {
@@ -865,7 +876,6 @@ class Sitepulse_Error_Handler {
 			
 			// If email is going to admin and contains error-related content, block it
 			// unless it's going to our recovery email
-			$recovery_email = self::get_recovery_email();
 			if ( $to === $admin_email && $to !== $recovery_email ) {
 				if ( isset( $mail_data['message'] ) ) {
 					$message = $mail_data['message'];

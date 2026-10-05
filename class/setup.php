@@ -76,7 +76,8 @@ class Sitepulse_Setup {
 	 * Helper for using prefixes for all references.
 	 */
 	public function setPrefix($name) {
-		return ((strpos($name, SITEPULSE_PREFIX) === 0) ? '' : SITEPULSE_PREFIX) . SITEPULSE_PREFIX_SEPARATOR . $name;
+		$prefix = SITEPULSE_PREFIX . SITEPULSE_PREFIX_SEPARATOR;
+		return strpos($name, $prefix) === 0 ? $name : $prefix . $name;
 	}
 
 	/**
@@ -94,9 +95,7 @@ class Sitepulse_Setup {
 	 * Helper for adding/updating prefixed options.
 	 */
 	public function setOption( $name, $value ) {
-		return ($this->getOption($name, '') === '') ? 
-			add_option($this->setPrefix($name), $value, false, 'no') : 
-			update_option($this->setPrefix($name), $value, false);
+		return update_option($this->setPrefix($name), $value, false);
 	}
 
 	/**
