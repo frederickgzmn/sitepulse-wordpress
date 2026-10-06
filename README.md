@@ -168,6 +168,12 @@ There are various ways you can contribute:
 | WordPress | 5.5 | 7.0 |
 | PHP | 7.4 | 8.1 |
 
+## Development tests
+
+Install test dependencies with `composer install` and `npm ci`, then run `composer test` for PHP and `npm test` for JavaScript. Tests use an isolated WordPress harness and jsdom; they do not access the local site's database or external APIs. See [the testing guide](tests/README.md) for requirements, coverage, focused runs, and runtime-check limitations.
+
+Run `XDEBUG_MODE=coverage composer test:coverage` (Xdebug 3 required) and `npm run test:coverage` to enforce 100% executable-line coverage. PHP templates, loader, and uninstall are included. Branch and function coverage are reported separately.
+
 ## License
 
 SitePulse is licensed under the [GNU General Public License v2.0 or later](LICENSE).

@@ -68,7 +68,7 @@ class Sitepulse_Onboarding extends Sitepulse_Setup {
 	 * Mark onboarding as dismissed
 	 */
 	public function mark_onboarding_dismissed() {
-		update_option( self::ONBOARDING_DISMISSED_KEY, false );
+		update_option( self::ONBOARDING_DISMISSED_KEY, true );
 	}
 	
 	/**

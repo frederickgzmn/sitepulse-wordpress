@@ -142,12 +142,9 @@ class Sitepulse_Api_Service {
 			// Limit payload to 2MB to prevent timeouts (adjust if needed)
 			$max_payload_size = 2 * 1024 * 1024; // 2MB
 			if ( $payload_size > $max_payload_size ) {
-				// Reduce data size by limiting resources and api_requests
+				// API requests were already capped at ten; reduce the remaining resources.
 				if ( is_array( $payload['resources'] ) && count( $payload['resources'] ) > 50 ) {
 					$payload['resources'] = array_slice( $payload['resources'], -50 );
-				}
-				if ( is_array( $payload['api_requests'] ) && count( $payload['api_requests'] ) > 50 ) {
-					$payload['api_requests'] = array_slice( $payload['api_requests'], -50 );
 				}
 				$payload_json = wp_json_encode( $payload );
 			}
@@ -155,8 +152,10 @@ class Sitepulse_Api_Service {
 			// Send request to API
 			$response = self::make_api_request( $payload );
 
-			// Update last request timestamp
-			update_option( self::LAST_REQUEST_OPTION_KEY, current_time( 'timestamp' ), false );
+			// Fallback scheduling uses this timestamp to avoid duplicate successful sends.
+			if ( ! empty( $response['success'] ) ) {
+				update_option( self::LAST_REQUEST_OPTION_KEY, current_time( 'timestamp' ), false );
+			}
 
 			return $response;
 		} catch (Exception $e) {
@@ -587,13 +586,22 @@ class Sitepulse_Api_Service {
 	 */
 	public static function check_vulnerabilities() {
 		try {
-			// Get stored license key if available
-			$license_key = self::get_license_key();
+			// Respect the opt-out before registration can send any website data.
+			$settings = get_option( 'sitepulse_settings', array() );
+			if ( isset( $settings['external_api_enabled'] ) && ! $settings['external_api_enabled'] ) {
+				return array(
+					'success' => false,
+					'message' => __( 'External API data collection is disabled. If you want to enable it, please update your settings.', 'sitepulse' ),
+				);
+			}
 
 			// If it's the first time (no last request timestamp), send website data first
 			if ( self::get_last_request_timestamp() === null ) {
 				self::send_website_data();
 			}
+
+			// Registration may have issued a new key for this first scan.
+			$license_key = self::get_license_key();
 
 			// Collect website info
 			$website_info = self::get_website_info();
@@ -638,14 +646,6 @@ class Sitepulse_Api_Service {
 
 		// Use the defined vulnerability endpoint
 		$endpoint = self::API_ENDPOINT_VULNERABILITIES;
-
-		// Validate endpoint URL
-		if ( empty( $endpoint ) || ! filter_var( $endpoint, FILTER_VALIDATE_URL ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Invalid API endpoint URL', 'sitepulse' ),
-			);
-		}
 
 		// Encode payload
 		$payload_json = wp_json_encode( $payload );
@@ -758,6 +758,17 @@ class Sitepulse_Api_Service {
 			if ( ! empty( $new_license_key ) ) {
 				update_option( self::LICENSE_OPTION_KEY, $new_license_key, false );
 			}
+		}
+
+		// A queued scan has no new findings yet; let callers retain their last results.
+		if ( ! empty( $decoded_response['vuln_wait'] ) ) {
+			return array(
+				'success' => true,
+				'vuln_wait' => true,
+				'message' => isset( $decoded_response['message'] )
+					? sanitize_text_field( $decoded_response['message'] )
+					: __( 'Vulnerability scan is pending. Please check back later.', 'sitepulse' ),
+			);
 		}
 
 		// Parse vulnerabilities
@@ -987,14 +998,6 @@ class Sitepulse_Api_Service {
 	private static function make_ai_diagnostic_api_request( array $payload, $retry = false ) {
 		$endpoint = self::API_ENDPOINT_AI_DIAGNOSTIC;
 
-		// Validate endpoint URL
-		if ( empty( $endpoint ) || ! filter_var( $endpoint, FILTER_VALIDATE_URL ) ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Invalid API endpoint URL', 'sitepulse' ),
-			);
-		}
-
 		// Encode payload
 		$payload_json = wp_json_encode( $payload );
 		if ( false === $payload_json ) {
@@ -1146,4 +1149,3 @@ class Sitepulse_Api_Service {
 		return $result;
 	}
 }
-

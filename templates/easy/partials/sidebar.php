@@ -23,11 +23,8 @@ if ( class_exists( 'Sitepulse_Error_Handler' ) ) {
 	<div class="sp-sidebar-brand">
 		<?php
 		$logo_url = Sitepulse_Whitelabel_Service::get_logo_url( 'sidebar' );
-		if ( $logo_url ) : ?>
-			<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( Sitepulse_Whitelabel_Service::get_plugin_name() ); ?>">
-		<?php else : ?>
-			<span class="dashicons dashicons-chart-line" style="color:#3b82f6;font-size:24px;width:28px;height:28px;"></span>
-		<?php endif; ?>
+		?>
+		<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php echo esc_attr( Sitepulse_Whitelabel_Service::get_plugin_name() ); ?>">
 		<span class="sp-sidebar-brand-name"><?php echo esc_html( Sitepulse_Whitelabel_Service::get_plugin_name() ); ?></span>
 		<span class="sp-sidebar-brand-version"><?php echo esc_html( SITEPULSE_VERSION ); ?></span>
 	</div>

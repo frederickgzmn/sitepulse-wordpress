@@ -13,14 +13,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$sp_is_pending = false;
-if ( class_exists( 'Sitepulse_Api_Service' ) && method_exists( 'Sitepulse_Api_Service', 'get_pagespeed_request_id' ) ) {
-	$sp_pagespeed_request_id        = Sitepulse_Api_Service::get_pagespeed_request_id();
-	$sp_pagespeed_request_timestamp = method_exists( 'Sitepulse_Api_Service', 'get_pagespeed_request_timestamp' )
-		? Sitepulse_Api_Service::get_pagespeed_request_timestamp()
-		: null;
-	$sp_is_pending                  = ! empty( $sp_pagespeed_request_id ) && ! empty( $sp_pagespeed_request_timestamp );
-}
 ?>
 
 <!-- Page Header -->

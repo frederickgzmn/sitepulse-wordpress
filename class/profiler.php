@@ -335,17 +335,11 @@ if (!class_exists('Sitepulse_Profiler')) {
             string $sig,
             string $fileline,
             string $source,
-            float $elapsed,
-            bool $ignore = true
+            float $elapsed
         ): void {
 
             // Convert seconds to milliseconds for better readability
             $elapsed_ms = $elapsed * 1000;
-
-            // Ignore very fast callbacks and plugin loads (< 5ms)
-            if ( ! $ignore && $elapsed_ms < 1 ) {
-                return;
-            }
 
             // Use a stable key per callback (hook+priority+signature+fileline)
             $key = md5(implode('|', [$hook, $priority, $sig, $fileline]));

@@ -222,6 +222,7 @@ class Sitepulse_Easy_Mode {
 			'sp_settings_saved', 'sitepulse_settings', 'current_settings',
 			'status_info', 'active_plugins',
 			'loadsentinel_score', 'api_score', 'load_time_score',
+			'system_php_version',
 			'sql_queries', 'sql_statistics', 'sql_recent',
 			'single_curl_events', 'single_load_events',
 			'history', 'error_log', 'fatal_count', 'warning_count',

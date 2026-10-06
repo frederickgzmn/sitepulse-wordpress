@@ -378,7 +378,12 @@ jQuery(function ($) {
 
     $('.fix_enable_savequeries').on('click', async function () {
         if (confirm('Are you sure you want to enable SAVEQUERIES?')) {
-            enableSaveQueries();
+            try {
+                await enableSaveQueries();
+            } catch (err) {
+                console.error('Failed to enable SAVEQUERIES:', err);
+                showAlert('Could not enable SAVEQUERIES: ' + err.message, 'danger', 3000);
+            }
         }
     });
 

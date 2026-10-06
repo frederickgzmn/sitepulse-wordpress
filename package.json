@@ -1,0 +1,23 @@
+{
+  "name": "sitepulse-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Behavioral tests for SitePulse browser scripts",
+  "scripts": {
+    "test": "node --test --experimental-test-isolation=none tests/js/*.test.cjs",
+    "test:js": "node --test --experimental-test-isolation=none tests/js/*.test.cjs",
+    "coverage:js": "node scripts/js-coverage.cjs",
+    "test:coverage": "node scripts/js-coverage.cjs --check"
+  },
+  "engines": {
+    "node": ">=22.8.0"
+  },
+  "devDependencies": {
+    "istanbul-lib-coverage": "^3.2.2",
+    "istanbul-lib-instrument": "^6.0.3",
+    "istanbul-lib-report": "^3.0.1",
+    "istanbul-reports": "^3.2.0",
+    "jquery": "3.7.1",
+    "jsdom": "26.1.0"
+  }
+}

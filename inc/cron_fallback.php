@@ -7,7 +7,7 @@
  * so admin/frontend page loads are never delayed.
  *
  * Fires from both backend (admin_init) and frontend (template_redirect)
- * to ensure at least one execution per day regardless of traffic patterns.
+ * to recover overdue site status reports when traffic resumes.
  *
  * Performance strategy (3-tier caching):
  *  1. Static flag  — prevents duplicate work within the same PHP request (zero cost).
@@ -108,7 +108,7 @@ class Sitepulse_Cron_Fallback {
 	/**
 	 * Frontend fallback check — throttled, no capability requirement.
 	 *
-	 * Ensures the daily task fires even on sites with no admin visits.
+	 * Ensures the site status task fires even on sites with no admin visits.
 	 */
 	public static function maybe_run_fallback_frontend() {
 		// Static cache: already checked this request — zero cost return.
@@ -179,28 +179,28 @@ class Sitepulse_Cron_Fallback {
 	}
 
 	/**
-	 * Run the daily API task if it is overdue or if the cron system is failing.
+	 * Run the site status API task if it is overdue or if the cron system is failing.
 	 *
 	 * Trigger conditions (any ONE of these fires the fallback):
-	 *  1. SitePulse's own event is 3+ days overdue (DAILY_GRACE_SECONDS).
+	 *  1. SitePulse's own event is 2+ days overdue (DAILY_GRACE_SECONDS).
 	 *  2. Event is 10+ min overdue AND the cron system is failing
 	 *     (Action Scheduler has 10+ past-due actions, or WP-Cron queue is 1h+ stale).
 	 *
-	 * The last-run check (24h) always takes priority — if we already sent data
-	 * today, none of these conditions will trigger a duplicate send.
+	 * The last-run check (6h) always takes priority — if we already sent data
+	 * within six hours, none of these conditions will trigger a duplicate send.
 	 */
 	private static function maybe_run_daily_api_fallback() {
 		if ( ! class_exists( 'Sitepulse_Cron_Manager' ) ) {
 			return;
 		}
 
-		// Check if the task already ran successfully within the last 24 hours.
+		// Check if the task already ran successfully within the last six hours.
 		// This prevents double-sends when DISABLE_WP_CRON is true but a system
 		// cron is handling execution, or when both backend and frontend trigger.
 		// Note: the stored timestamp uses current_time('timestamp') (local offset),
 		// so we compare with the same function for consistency.
 		$last_run = get_option( 'sitepulse_last_api_request', 0 );
-		if ( is_numeric( $last_run ) && $last_run > 0 && ( current_time( 'timestamp' ) - (int) $last_run ) < DAY_IN_SECONDS ) {
+		if ( is_numeric( $last_run ) && $last_run > 0 && ( current_time( 'timestamp' ) - (int) $last_run ) < Sitepulse_Cron_Manager::API_INTERVAL_SECONDS ) {
 			set_transient( self::HEALTHY_CACHE_KEY, 1, self::HEALTHY_CACHE_TTL );
 			return;
 		}
@@ -222,13 +222,13 @@ class Sitepulse_Cron_Fallback {
 		$trigger     = '';
 
 		if ( $overdue >= self::DAILY_GRACE_SECONDS ) {
-			// Condition 1: Our own event is 3+ days overdue — definitely fire.
+			// Condition 1: Our own event is 2+ days overdue — definitely fire.
 			$should_fire = true;
 			$trigger     = 'overdue';
 		} elseif ( $overdue > 600 && self::is_cron_system_failing() ) {
 			// Condition 2: Event is at least 10 min past-due AND the broader
 			// cron system is clearly broken (AS past-due or WP-Cron stale).
-			// Don't wait 3 days when evidence already proves cron is dead.
+			// Don't wait 2 days when evidence already proves cron is dead.
 			$should_fire = true;
 			$trigger     = 'cron_system_failing';
 		}
@@ -254,7 +254,7 @@ class Sitepulse_Cron_Fallback {
 
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			error_log( sprintf(
-				'[SitePulse] Cron fallback triggered (%s): daily task was %d seconds overdue.',
+				'[SitePulse] Cron fallback triggered (%s): site status task was %d seconds overdue.',
 				$trigger,
 				$overdue
 			) );
@@ -349,10 +349,6 @@ class Sitepulse_Cron_Fallback {
 		}
 
 		$timestamps = array_keys( $cron_array );
-		if ( empty( $timestamps ) ) {
-			return false;
-		}
-
 		$earliest = min( $timestamps );
 		$overdue  = time() - $earliest;
 

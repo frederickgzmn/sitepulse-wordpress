@@ -84,16 +84,15 @@ class Sitepulse_Frontend {
 
         // $time_load seconds, minutes or hours formatting can be added here if needed
         $time_format_siteload = 'ms';
-        if ( $time_load > 1000 ) {
-            $time_load = number_format( $time_load / 1000, 1 );
-            $time_format_siteload = 's';
-        } elseif ( $time_load > 60000 ) {
-            $time_load = number_format( $time_load / 60000, 1 );
-            $time_format_siteload = 'min';
-        } elseif ( $time_load > 3600000 ) {
-            // Extreme conditions
-            $time_load = number_format( $time_load / 3600000, 1 );
+        if ( $time_load >= 3600000 ) {
+            $time_load /= 3600000;
             $time_format_siteload = 'hr';
+        } elseif ( $time_load >= 60000 ) {
+            $time_load /= 60000;
+            $time_format_siteload = 'min';
+        } elseif ( $time_load >= 1000 ) {
+            $time_load /= 1000;
+            $time_format_siteload = 's';
         }
 
         // Telemetry

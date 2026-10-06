@@ -128,9 +128,10 @@ class Sitepulse_AI_Diagnostic_Cron {
 		$is_successful = isset( $response['success'] ) && $response['success'];
 		$new_status = isset( $response['status'] ) ? $response['status'] : null;
 		$is_terminal_status = in_array( $new_status, array( 'completed', 'failed', 'none' ), true );
+		$is_pending_status = in_array( $new_status, array( 'pending', 'processing' ), true );
 
-		// Unschedule if the API call failed or if the diagnostic has reached a terminal state.
-		if ( ! $is_successful || $is_terminal_status ) {
+		// Transient transport and rate-limit errors preserve a pending status for retry.
+		if ( $is_terminal_status || ( ! $is_successful && ! $is_pending_status ) ) {
 		    self::unschedule();
 		}
 	}

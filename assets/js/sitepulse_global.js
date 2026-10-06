@@ -144,7 +144,10 @@ function showConfirm(message, callback, options) {
     $overlay.append($box);
     jQuery('body').append($overlay);
 
-    function cleanup() { $overlay.remove(); }
+    function cleanup() {
+        jQuery(document).off('keyup.sitepulse_confirm');
+        $overlay.remove();
+    }
 
     $btnCancel.on('click', function(){ cleanup(); if (typeof callback === 'function') callback(false); });
     $btnOk.on('click', function(){ cleanup(); if (typeof callback === 'function') callback(true); });
