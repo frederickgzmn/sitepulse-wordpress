@@ -1,7 +1,12 @@
 <?php
 /**
  * SitePulse Page Tracker Class
- * Handles single page tracking logic shared across profiler and curl loader
+ * Profiles one front-end request on behalf of a Page Analysis run.
+ *
+ * Page Analysis loads a page with a one-time token in its query string. When
+ * that request reaches WordPress, the tracker enables full profiling for that
+ * request only and stores what it measured as a sample the admin side reads.
+ * Any front-end URL can be analyzed: pages, posts, products, archives, search.
  *
  * @package SitePulse
  */
@@ -12,194 +17,286 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Class Sitepulse_Page_Tracker
- * Manages single page tracking state and transient storage
+ * Detects analysis requests and records a compact performance sample for them.
  */
 class Sitepulse_Page_Tracker {
 
 	/**
-	 * Option key for load status
+	 * Query argument that carries the one-time analysis token.
 	 */
-	const LOAD_STATUS_KEY = 'sitepulse_pageloadhttp_loadstatus';
+	const QUERY_VAR = 'sitepulse_analyze';
 
 	/**
-	 * Option key for curl status
+	 * Transient prefix for issued tokens (value: analysis ID)
 	 */
-	const CURL_STATUS_KEY = 'sitepulse_pageloadhttp_curlstatus';
+	const TOKEN_TRANSIENT_PREFIX = 'sitepulse_pa_token_';
 
 	/**
-	 * Option key for current tracked page ID
+	 * Transient prefix for samples stored by an analysis request
 	 */
-	const TRACKED_PAGE_KEY = 'sitepulse_current_tracked_pageid';
+	const SAMPLE_TRANSIENT_PREFIX = 'sitepulse_pa_sample_';
 
 	/**
-	 * Transient prefix for load events
+	 * Token length, in lowercase alphanumeric characters
 	 */
-	const LOAD_TRANSIENT_PREFIX = 'sitepulse_load_single_page_';
+	const TOKEN_LENGTH = 32;
 
 	/**
-	 * Transient prefix for curl events
+	 * Upper bounds that keep stored samples small
 	 */
-	const CURL_TRANSIENT_PREFIX = 'sitepulse_single_page_';
+	const MAX_HTTP_EVENTS = 30;
+	const MAX_SOURCES     = 25;
+	const MAX_CALLBACKS   = 15;
 
 	/**
-	 * Transient key for load page list
-	 */
-	const LOAD_PAGE_LIST_KEY = 'sitepulse_load_single_page_list';
-
-	/**
-	 * Transient key for curl page list
-	 */
-	const CURL_PAGE_LIST_KEY = 'sitepulse_single_page_list';
-
-	/**
-	 * Check if load tracking is enabled for current page
+	 * Validated token of the current request, or null when it is not an analysis request
 	 *
-	 * @return bool True if load tracking is active for current page
+	 * @var string|null
 	 */
-	public static function is_load_tracking_active() {
-		$loadstatus = get_option( self::LOAD_STATUS_KEY );
-		$page_id = get_option( self::TRACKED_PAGE_KEY );
+	private static $token = null;
 
-		if ( $loadstatus && $page_id ) {
-			// Check if the page_id matches the current page
-			if ( $page_id === get_the_ID() ) {
-				return true;
-			}
+	/**
+	 * Request start time in seconds
+	 *
+	 * @var float
+	 */
+	private static $started_at = 0.0;
+
+	/**
+	 * Outgoing HTTP requests made while building the analyzed page
+	 *
+	 * @var array
+	 */
+	private static $http_events = array();
+
+	/**
+	 * Detect an analysis request. Must run before the profilers initialize.
+	 */
+	public static function init() {
+		$token = self::token_from_request();
+
+		if ( '' === $token || false === get_transient( self::TOKEN_TRANSIENT_PREFIX . $token ) ) {
+			return;
 		}
 
-		return false;
+		self::$token       = $token;
+		self::$started_at  = isset( $_SERVER['REQUEST_TIME_FLOAT'] ) ? (float) $_SERVER['REQUEST_TIME_FLOAT'] : microtime( true );
+		self::$http_events = array();
+
+		// Keep page caches from storing the profiled response.
+		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+			define( 'DONOTCACHEPAGE', true );
+		}
+
+		add_action( 'shutdown', array( __CLASS__, 'store_sample' ), PHP_INT_MAX );
 	}
 
 	/**
-	 * Check if curl tracking is enabled for current page
+	 * Read a well-formed token from the query string.
 	 *
-	 * @return bool True if curl tracking is active for current page
+	 * @return string Token, or an empty string when absent or malformed
 	 */
-	public static function is_curl_tracking_active() {
-		$curlstatus = get_option( self::CURL_STATUS_KEY );
-		$page_id = get_option( self::TRACKED_PAGE_KEY );
-
-		if ( $curlstatus && $page_id ) {
-			// Check if the page_id matches the current page
-			if ( $page_id === get_the_ID() ) {
-				return true;
-			}
+	public static function token_from_request() {
+		if ( ! isset( $_GET[ self::QUERY_VAR ] ) || ! is_string( $_GET[ self::QUERY_VAR ] ) ) {
+			return '';
 		}
 
-		return false;
+		$token = sanitize_key( wp_unslash( $_GET[ self::QUERY_VAR ] ) );
+
+		return strlen( $token ) === self::TOKEN_LENGTH ? $token : '';
 	}
 
 	/**
-	 * Get the currently tracked page ID
+	 * Whether the current request is being profiled for a Page Analysis run
 	 *
-	 * @return int|null Page ID or null if not set
+	 * @return bool
 	 */
-	public static function get_tracked_page_id() {
-		$page_id = get_option( self::TRACKED_PAGE_KEY );
-		return $page_id ? (int) $page_id : null;
+	public static function is_analysis_request() {
+		return null !== self::$token;
 	}
 
 	/**
-	 * Get load tracking status
+	 * Record one outgoing HTTP request made by the analyzed page.
 	 *
-	 * @return bool Load tracking enabled
+	 * @param array $event Request details from the HTTP tracker
 	 */
-	public static function get_load_status() {
-		return (bool) get_option( self::LOAD_STATUS_KEY );
+	public static function record_http_event( array $event ) {
+		if ( self::is_analysis_request() && count( self::$http_events ) < self::MAX_HTTP_EVENTS ) {
+			self::$http_events[] = $event;
+		}
 	}
 
 	/**
-	 * Get curl tracking status
-	 *
-	 * @return bool Curl tracking enabled
+	 * Store this request's measurements for the admin side to collect.
 	 */
-	public static function get_curl_status() {
-		return (bool) get_option( self::CURL_STATUS_KEY );
+	public static function store_sample() {
+		if ( ! self::is_analysis_request() ) {
+			return;
+		}
+
+		$stats = class_exists( 'Sitepulse_Profiler' ) ? Sitepulse_Profiler::get_stats() : array();
+
+		$sample = array(
+			'server_ms'   => round( ( microtime( true ) - self::$started_at ) * 1000, 1 ),
+			'memory_peak' => memory_get_peak_usage( true ),
+			'queries'     => function_exists( 'get_num_queries' ) ? (int) get_num_queries() : 0,
+			'status'      => (int) http_response_code() ?: 200,
+			'page'        => self::describe_page(),
+			'sources'     => self::summarize_sources( $stats ),
+			'callbacks'   => self::top_callbacks( $stats ),
+			'http'        => self::$http_events,
+			'captured_at' => time(),
+		);
+
+		set_transient( self::SAMPLE_TRANSIENT_PREFIX . self::$token, $sample, 15 * MINUTE_IN_SECONDS );
 	}
 
 	/**
-	 * Check if single page tracking should be used for storing data
+	 * Describe the page WordPress rendered, in words a site owner recognizes.
 	 *
-	 * @param string $type Type of tracking: 'load' or 'curl'
-	 * @return array|false Array with page_id and transient_key if active, false otherwise
+	 * @return array Title and kind of page
 	 */
-	public static function should_use_single_page_storage( $type = 'load' ) {
-		$status_key = $type === 'curl' ? self::CURL_STATUS_KEY : self::LOAD_STATUS_KEY;
-		$status = get_option( $status_key );
-		$page_id = get_option( self::TRACKED_PAGE_KEY );
-
-		if ( ! $status || empty( $page_id ) ) {
-			return false;
-		}
-
-		$safe_page_id = sanitize_text_field( wp_unslash( $page_id ) );
-
-		if ( empty( $safe_page_id ) || ! is_numeric( $safe_page_id ) ) {
-			return false;
-		}
-
-		// Check if the page or post exists
-		if ( ! get_post_status( $safe_page_id ) ) {
-			return false;
-		}
-
-		$prefix = $type === 'curl' ? self::CURL_TRANSIENT_PREFIX : self::LOAD_TRANSIENT_PREFIX;
+	private static function describe_page() {
+		$title = function_exists( 'wp_get_document_title' ) ? wp_strip_all_tags( wp_get_document_title() ) : '';
 
 		return array(
-			'page_id'       => $safe_page_id,
-			'transient_key' => $prefix . $safe_page_id,
+			'title' => html_entity_decode( $title, ENT_QUOTES, 'UTF-8' ),
+			'kind'  => self::page_kind(),
 		);
 	}
 
 	/**
-	 * Save events to single page transient and update page list
+	 * Name the kind of page that was rendered.
 	 *
-	 * @param array  $events Events to save
-	 * @param string $type   Type of tracking: 'load' or 'curl'
-	 * @return bool True on success
+	 * @return string
 	 */
-	public static function save_single_page_events( $events, $type = 'load' ) {
-		$storage = self::should_use_single_page_storage( $type );
-
-		if ( ! $storage ) {
-			return false;
+	private static function page_kind() {
+		if ( is_404() ) {
+			return __( 'Not found (404)', 'sitepulse' );
+		}
+		if ( is_front_page() ) {
+			return __( 'Front page', 'sitepulse' );
+		}
+		if ( is_home() ) {
+			return __( 'Blog page', 'sitepulse' );
+		}
+		if ( is_singular() ) {
+			$post_type = get_post_type_object( (string) get_post_type() );
+			return $post_type ? $post_type->labels->singular_name : __( 'Single page', 'sitepulse' );
+		}
+		if ( is_search() ) {
+			return __( 'Search results', 'sitepulse' );
+		}
+		if ( is_archive() ) {
+			return __( 'Archive', 'sitepulse' );
 		}
 
-		$transient_key = $storage['transient_key'];
-		$list_key = $type === 'curl' ? self::CURL_PAGE_LIST_KEY : self::LOAD_PAGE_LIST_KEY;
-
-		// Save events to transient
-		set_transient( $transient_key, $events, DAY_IN_SECONDS );
-
-		// Update page list
-		$page_list = get_transient( $list_key );
-		$new_list = [];
-
-		if ( $page_list && is_array( $page_list ) ) {
-			$new_list = $page_list;
-		}
-
-		$new_list[] = $transient_key;
-		$new_list = array_unique( $new_list );
-
-		set_transient( $list_key, $new_list, false );
-
-		return true;
+		return __( 'Page', 'sitepulse' );
 	}
 
 	/**
-	 * Get single page events from transient
+	 * Total each plugin's and theme's own time for this request.
 	 *
-	 * @param int    $page_id Page ID
-	 * @param string $type    Type of tracking: 'load' or 'curl'
-	 * @return array|false Events array or false if not found
+	 * Uses exclusive (self) time so nested callbacks are not counted twice.
+	 *
+	 * @param array $stats Profiler stats for this request
+	 * @return array Sources, slowest first
 	 */
-	public static function get_single_page_events( $page_id, $type = 'load' ) {
-		$prefix = $type === 'curl' ? self::CURL_TRANSIENT_PREFIX : self::LOAD_TRANSIENT_PREFIX;
-		$transient_key = $prefix . $page_id;
+	private static function summarize_sources( array $stats ) {
+		$sources = array();
 
-		$events = get_transient( $transient_key );
+		foreach ( $stats as $stat ) {
+			$type = self::source_type( $stat );
+			if ( null === $type ) {
+				continue;
+			}
 
-		return $events ? $events : false;
+			$key = $type . ':' . $stat['source'];
+			if ( ! isset( $sources[ $key ] ) ) {
+				$sources[ $key ] = array(
+					'source'  => (string) $stat['source'],
+					'type'    => $type,
+					'self_ms' => 0.0,
+					'calls'   => 0,
+				);
+			}
+
+			$sources[ $key ]['self_ms'] += self::self_ms( $stat );
+			$sources[ $key ]['calls']   += (int) ( $stat['calls'] ?? 0 );
+		}
+
+		$sources = array_values( $sources );
+		usort( $sources, static function ( $a, $b ) {
+			return $b['self_ms'] <=> $a['self_ms'];
+		} );
+
+		return array_map( static function ( $source ) {
+			$source['self_ms'] = round( $source['self_ms'], 2 );
+			return $source;
+		}, array_slice( $sources, 0, self::MAX_SOURCES ) );
+	}
+
+	/**
+	 * Pick the callbacks that cost this request the most time.
+	 *
+	 * @param array $stats Profiler stats for this request
+	 * @return array Callbacks, slowest first
+	 */
+	private static function top_callbacks( array $stats ) {
+		$callbacks = array();
+
+		foreach ( $stats as $stat ) {
+			$type = self::source_type( $stat );
+			if ( null === $type ) {
+				continue;
+			}
+
+			$callbacks[] = array(
+				'hook'     => (string) ( $stat['hook'] ?? '' ),
+				'callback' => (string) ( $stat['sig'] ?? '' ),
+				'fileline' => (string) ( $stat['fileline'] ?? '' ),
+				'source'   => (string) $stat['source'],
+				'type'     => $type,
+				'calls'    => (int) ( $stat['calls'] ?? 0 ),
+				'self_ms'  => round( self::self_ms( $stat ), 2 ),
+				'total_ms' => round( (float) ( $stat['total_ms'] ?? 0 ), 2 ),
+			);
+		}
+
+		usort( $callbacks, static function ( $a, $b ) {
+			return $b['self_ms'] <=> $a['self_ms'];
+		} );
+
+		return array_slice( $callbacks, 0, self::MAX_CALLBACKS );
+	}
+
+	/**
+	 * Classify a stat as plugin, theme or core code; SitePulse's own work is skipped.
+	 *
+	 * @param array $stat Profiler stat
+	 * @return string|null
+	 */
+	private static function source_type( array $stat ) {
+		$fileline = (string) ( $stat['fileline'] ?? '' );
+		$source   = (string) ( $stat['source'] ?? '' );
+
+		if ( 0 === strpos( $fileline, 'wp-content/plugins/' ) ) {
+			return $source === basename( dirname( SITEPULSE_PLUGIN_FILE ) ) ? null : 'plugin';
+		}
+		if ( 0 === strpos( $fileline, 'wp-content/themes/' ) ) {
+			return 'theme';
+		}
+
+		return 'core';
+	}
+
+	/**
+	 * Exclusive time of a stat in milliseconds, falling back to inclusive time.
+	 *
+	 * @param array $stat Profiler stat
+	 * @return float
+	 */
+	private static function self_ms( array $stat ) {
+		return (float) ( $stat['self_total_ms'] ?? $stat['total_ms'] ?? 0 );
 	}
 }

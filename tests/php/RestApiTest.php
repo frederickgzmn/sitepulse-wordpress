@@ -39,7 +39,7 @@ final class RestApiTest extends Sitepulse_Test_Case {
     }
 
     public function test_registration_helper_retains_extra_argument_validation(): void {
-        sitepulse_register_route('/example', 'sitepulse_get_realtime_mode', 'GET', array('page_id' => array('type' => 'integer', 'required' => true)));
+        sitepulse_register_route('/example', 'sitepulse_pause_monitoring', 'GET', array('page_id' => array('type' => 'integer', 'required' => true)));
         $route = Sitepulse_Test_WP::$routes['/sitepulse/v1/example'];
         $this->assertSame('GET', $route['methods']);
         $this->assertSame(array('type' => 'integer', 'required' => true), $route['args']['page_id']);
@@ -115,39 +115,60 @@ final class RestApiTest extends Sitepulse_Test_Case {
 
     public static function missingParameters(): array {
         return array(
-            'report mode missing' => array('sitepulse_sp_report_mode', array(), 'missing_report_mode'),
-            'report mode empty' => array('sitepulse_sp_report_mode', array('report_mode' => ''), 'missing_report_mode'),
             'http tracker missing' => array('sitepulse_set_wpslowhttp', array(), 'missing_wpslowhttp'),
             'profiler missing' => array('sitepulse_set_sp_profiler', array(), 'missing_profiler_enabled'),
-            'page missing' => array('sitepulse_set_wpspageloadhttp', array('curlSwitch' => 1, 'loadSwitch' => 1), 'missing_params'),
-            'curl switch missing' => array('sitepulse_set_wpspageloadhttp', array('page_id' => 5, 'loadSwitch' => 1), 'missing_params'),
-            'load switch missing' => array('sitepulse_set_wpspageloadhttp', array('page_id' => 5, 'curlSwitch' => 1), 'missing_params'),
+            'dashboard view missing' => array('sitepulse_set_dashboard_view', array(), 'sitepulse_invalid_view'),
+            'dashboard view unknown' => array('sitepulse_set_dashboard_view', array('view' => 'expert'), 'sitepulse_invalid_view'),
+            'analysis url missing' => array('sitepulse_page_analysis_start', array(), 'sitepulse_missing_url'),
+            'analysis of another site' => array('sitepulse_page_analysis_start', array('url' => 'https://elsewhere.test/'), 'sitepulse_external_url'),
             'autoload missing' => array('sitepulse_update_autoload_option', array('option_id' => 4), 'missing_params'),
             'autoload invalid' => array('sitepulse_update_autoload_option', array('option_id' => 4, 'autoload' => 'invalid'), 'invalid_autoload'),
         );
     }
 
-    public function test_page_tracking_settings_preserve_zero_switches_and_normalize_page_id(): void {
-        $response = sitepulse_set_wpspageloadhttp($this->request(array('page_id' => '-42', 'curlSwitch' => '0', 'loadSwitch' => '1')))->get_data();
-        $this->assertSame(array('success' => true, 'page_id' => 42, 'curlSwitch' => 0, 'loadSwitch' => 1), $response);
-        $this->assertSame(42, get_option('sitepulse_current_tracked_pageid'));
-        $this->assertSame(0, get_option('sitepulse_pageloadhttp_curlstatus'));
-        $this->assertSame(1, get_option('sitepulse_pageloadhttp_loadstatus'));
+    public function test_retired_single_page_and_simulated_realtime_routes_are_gone(): void {
+        (self::$route_initializer)();
+        foreach (array('wpspageloadhttp/set_active', 'sp_report_mode/set_active', 'wpsprealtimemode/set_active', 'wpsprealtimemode/get_active') as $route) {
+            $this->assertArrayNotHasKey('/sitepulse/v1/' . $route, Sitepulse_Test_WP::$routes);
+        }
+        foreach (array('page_analysis/start' => 'sitepulse_page_analysis_start', 'page_analysis/sample' => 'sitepulse_page_analysis_sample', 'page_analysis/collect' => 'sitepulse_page_analysis_collect',
+            'page_analysis/report' => 'sitepulse_page_analysis_report', 'page_analysis/delete' => 'sitepulse_page_analysis_delete', 'monitoring/pause' => 'sitepulse_pause_monitoring',
+            'monitoring/resume' => 'sitepulse_resume_monitoring', 'dashboard_view' => 'sitepulse_set_dashboard_view', 'getting_started/dismiss' => 'sitepulse_dismiss_getting_started') as $route => $handler) {
+            $this->assertSame($handler, Sitepulse_Test_WP::$routes['/sitepulse/v1/' . $route]['callback']);
+        }
     }
 
-    public function test_report_mode_strips_markup_before_persistence(): void {
-        $response = sitepulse_sp_report_mode($this->request(array('report_mode' => '<b>single</b>')))->get_data();
-        $this->assertSame('single', $response['report_mode']);
-        $this->assertSame('single', get_option('sitepulse_report_mode_active'));
+    public function test_page_analysis_routes_start_report_and_remove_an_analysis(): void {
+        Sitepulse_Test_WP::$passwords = array('Analysis01AB');
+        $started = sitepulse_page_analysis_start($this->request(array('url' => '/shop/')))->get_data();
+        $this->assertSame(array('id' => 'analysis01ab', 'url' => 'https://example.test/shop/', 'samples' => 3), $started);
+        $this->assertSame(array('ok' => true, 'collected' => 0, 'samples' => 0), sitepulse_page_analysis_collect($this->request(array('id' => 'analysis01ab')))->get_data());
+        $this->assertFalse(sitepulse_page_analysis_report($this->request(array('id' => 'ANALYSIS01AB')))->get_data()['complete']);
+        $this->assertTrue(sitepulse_page_analysis_delete($this->request(array('id' => 'analysis01ab')))->get_data()['success']);
+        $this->assertFalse(sitepulse_page_analysis_delete($this->request(array('id' => 'analysis01ab')))->get_data()['success']);
+        $this->assertError(sitepulse_page_analysis_sample($this->request(array('id' => 'analysis01ab'))), 'sitepulse_analysis_not_found', 404);
+        $this->assertError(sitepulse_page_analysis_report($this->request()), 'sitepulse_analysis_not_found', 404);
     }
 
-    public function test_realtime_tracking_can_be_enabled_read_and_disabled(): void {
-        $response = sitepulse_realtime_mode($this->request(array('real_time_status' => true)))->get_data();
-        $this->assertTrue($response['success']);
-        $this->assertTrue(sitepulse_get_realtime_mode($this->request())->get_data()['real_time_status']);
-        sitepulse_realtime_mode($this->request(array('real_time_status' => false)));
-        $this->assertFalse(get_transient('sitepulse_realtime_tracking'));
-        $this->assertFalse(sitepulse_get_realtime_mode($this->request())->get_data()['real_time_status']);
+    public function test_monitoring_can_be_paused_and_resumed_over_rest(): void {
+        $this->assertSame(array('success' => true, 'paused' => true), sitepulse_pause_monitoring($this->request())->get_data());
+        $this->assertTrue(Sitepulse_Monitoring::is_paused());
+        $this->assertSame(array('success' => true, 'paused' => false), sitepulse_resume_monitoring($this->request())->get_data());
+        $this->assertFalse(Sitepulse_Monitoring::is_paused());
+    }
+
+    public function test_dashboard_view_and_getting_started_preferences_are_saved_per_user(): void {
+        $this->assertSame(array('success' => true, 'view' => 'basic'), sitepulse_set_dashboard_view($this->request(array('view' => 'BASIC')))->get_data());
+        $this->assertSame('basic', get_user_meta(1, 'sitepulse_dashboard_view', true));
+        $this->assertSame(array('success' => true), sitepulse_dismiss_getting_started($this->request())->get_data());
+        $this->assertSame(1, get_user_meta(1, 'sitepulse_getting_started_dismissed', true));
+    }
+
+    public function test_disabling_http_tracker_stores_a_real_false_that_stops_tracking(): void {
+        $result = sitepulse_set_wpslowhttp($this->request(array('wpslowhttp' => 'disabled')))->get_data();
+        $this->assertFalse($result['wpslowhttp']); $this->assertFalse(get_option('sitepulse_curl_api_enabled'));
+        Sitepulse_CurLoader::init();
+        $this->assertSame(array('timeout' => 5), Sitepulse_CurLoader::tag_start_time(array('timeout' => 5), 'https://api.test'));
     }
 
     public function test_enabling_http_tracker_resets_current_users_dismissal(): void {
@@ -191,6 +212,18 @@ final class RestApiTest extends Sitepulse_Test_Case {
         $this->assertTrue(sitepulse_complete_onboarding($this->request())->get_data()['success']);
         $this->assertTrue(get_option('sitepulse_onboarding_completed'));
         $this->assertFalse(get_option('sitepulse_onboarding_current_step'));
+        $this->assertSame(array(), Sitepulse_Test_WP::$user_meta[1] ?? array());
+    }
+
+    /** @dataProvider onboardingInterfaces */
+    public function test_onboarding_saves_the_chosen_interface($interface, $easy_mode, $view): void {
+        sitepulse_complete_onboarding($this->request(array('interface' => $interface)));
+        $this->assertSame($easy_mode, Sitepulse_Easy_Mode::is_enabled()); $this->assertSame($view, Sitepulse_Easy_Mode::get_dashboard_view());
+        $this->assertSame($easy_mode ? '1' : '0', get_user_meta(1, 'sitepulse_easy_mode', true));
+    }
+
+    public static function onboardingInterfaces(): array {
+        return array('simple' => array('simple', true, 'basic'), 'advanced' => array('advanced', false, 'developer'));
     }
 
     public function test_resetting_onboarding_clears_all_progress_and_current_users_notice(): void {

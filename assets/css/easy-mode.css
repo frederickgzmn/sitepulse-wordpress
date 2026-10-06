@@ -5599,3 +5599,156 @@ body.toplevel_page_wpsp_sitepulse #wpfooter {
   color: var(--sp-text-primary);
   margin-right: 6px;
 }
+/* ═══════════════════════════════════════════════════════════
+   GETTING STARTED CHECKLIST
+   ═══════════════════════════════════════════════════════════ */
+.sp-getting-started .sp-card-header {
+  border-bottom: 0;
+  padding-bottom: 8px;
+}
+
+.sp-getting-started-progress {
+  margin: 0 20px;
+}
+
+.sp-getting-started-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 16px 20px 20px;
+  list-style: none;
+}
+
+.sp-getting-started-step {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-md);
+  background: var(--sp-bg-input);
+}
+
+.sp-getting-started-step.is-done {
+  opacity: .65;
+}
+
+.sp-getting-started-step .sp-btn,
+.sp-getting-started-step .sp-badge {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.sp-easy .sp-getting-started-step .sp-btn {
+  border-color: var(--sp-accent);
+  color: var(--sp-accent);
+}
+
+.sp-easy .sp-getting-started-step .sp-btn:hover {
+  background: var(--sp-accent-soft);
+}
+
+.sp-getting-started-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--sp-border-light);
+  background: var(--sp-bg-card);
+  color: var(--sp-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sp-getting-started-step.is-done .sp-getting-started-check {
+  border-color: var(--sp-success);
+  background: var(--sp-success);
+  color: #fff;
+}
+
+.sp-getting-started-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-getting-started-text strong {
+  font-size: 13px;
+  color: var(--sp-text-primary);
+}
+
+.sp-getting-started-text span {
+  font-size: 12px;
+  color: var(--sp-text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   "WHY IS A PAGE SLOW?" BAR
+   ═══════════════════════════════════════════════════════════ */
+.sp-analyze-bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 20px;
+  border-color: var(--sp-border-active);
+  background: linear-gradient(120deg, var(--sp-accent-soft), transparent 60%), var(--sp-bg-card);
+}
+
+.sp-analyze-bar-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sp-analyze-bar-text strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  color: var(--sp-text-primary);
+}
+
+.sp-analyze-bar-text strong .dashicons {
+  color: var(--sp-accent);
+}
+
+.sp-analyze-bar-text span {
+  font-size: 12px;
+  color: var(--sp-text-secondary);
+}
+
+.sp-analyze-bar-field {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  min-width: 280px;
+}
+
+.sp-easy .sp-analyze-bar .sp-input {
+  flex: 1;
+  min-height: 40px;
+  margin: 0;
+  border: 1px solid var(--sp-border-light);
+  background: var(--sp-bg-input);
+  color: var(--sp-text-primary);
+  box-shadow: none;
+}
+
+.sp-easy .sp-analyze-bar .sp-input:focus {
+  border-color: var(--sp-accent);
+  box-shadow: 0 0 0 3px var(--sp-accent-soft);
+}
+
+@media screen and (max-width: 782px) {
+  .sp-analyze-bar,
+  .sp-analyze-bar-field {
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+  }
+}

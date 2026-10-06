@@ -1,7 +1,8 @@
 <?php
 /**
  * SitePulse Onboarding Template
- * Welcome wizard for first-time users
+ * Welcome wizard for first-time users: choose an interface, configure
+ * tracking, then get a real first check-up of the homepage.
  *
  * @package SitePulse
  */
@@ -13,7 +14,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 <div class="wrap sitepulse-onboarding-wrapper">
 	<div class="sitepulse-onboarding-container">
-		
 		<!-- Hero Header with Logo -->
 		<div class="onboarding-hero">
 			<div class="onboarding-hero-content">
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 				<div class="onboarding-hero-text">
 					<h1><?php echo esc_html__( 'Welcome to SitePulse!', 'sitepulse' ); ?></h1>
-					<p><?php echo esc_html__( 'Let\'s get your site performance monitoring set up in just a few steps', 'sitepulse' ); ?></p>
+					<p><?php echo esc_html__( 'Three quick steps, and you will know what slows your site down.', 'sitepulse' ); ?></p>
 				</div>
 			</div>
 		</div>
@@ -32,219 +32,190 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<ul class="stepper-steps">
 				<li class="stepper-step active" data-step="1">
 					<div class="stepper-step-number">1</div>
-					<div class="stepper-step-label"><?php echo esc_html__( 'Welcome', 'sitepulse' ); ?></div>
+					<div class="stepper-step-label"><?php echo esc_html__( 'Your dashboard', 'sitepulse' ); ?></div>
 				</li>
 				<li class="stepper-step" data-step="2">
 					<div class="stepper-step-number">2</div>
-					<div class="stepper-step-label"><?php echo esc_html__( 'Configuration', 'sitepulse' ); ?></div>
+					<div class="stepper-step-label"><?php echo esc_html__( 'Tracking', 'sitepulse' ); ?></div>
 				</li>
 				<li class="stepper-step" data-step="3">
 					<div class="stepper-step-number">3</div>
-					<div class="stepper-step-label"><?php echo esc_html__( 'Finish', 'sitepulse' ); ?></div>
+					<div class="stepper-step-label"><?php echo esc_html__( 'First check-up', 'sitepulse' ); ?></div>
 				</li>
 			</ul>
 		</div>
 
 		<!-- Onboarding Steps Content -->
 		<div class="onboarding-content">
-			
-			<!-- Step 1: Welcome & View Mode -->
+			<!-- Step 1: Interface -->
 			<div class="onboarding-step active" data-step="1">
 				<div class="step-header">
-					<h2><?php echo esc_html__( 'Welcome to SitePulse', 'sitepulse' ); ?></h2>
-					<p><?php echo esc_html__( 'Choose your dashboard experience level and get started.', 'sitepulse' ); ?></p>
+					<h2><?php echo esc_html__( 'How do you want to see your site\'s health?', 'sitepulse' ); ?></h2>
+					<p><?php echo esc_html__( 'Pick the dashboard that suits you. Both measure exactly the same things.', 'sitepulse' ); ?></p>
 				</div>
-				
+
 				<div class="step-body">
-					<div class="view-mode-selector">
-						<!-- Basic View Card -->
-						<div class="view-mode-card selected" data-view="basic">
+					<div class="view-mode-selector" role="radiogroup" aria-label="<?php echo esc_attr__( 'Dashboard', 'sitepulse' ); ?>">
+						<!-- Simple (Easy Mode) -->
+						<div class="view-mode-card selected" data-view="simple" role="radio" tabindex="0" aria-checked="true">
 							<div class="view-mode-header">
 								<div class="view-mode-icon dashicons dashicons-visibility"></div>
-								<h3><?php echo esc_html__( 'Basic View', 'sitepulse' ); ?></h3>
+								<h3><?php echo esc_html__( 'Simple', 'sitepulse' ); ?></h3>
 								<span class="badge bg-info"><?php echo esc_html__( 'Recommended', 'sitepulse' ); ?></span>
 							</div>
 							<div class="view-mode-body">
-								<p class="view-mode-description"><?php echo esc_html__( 'Simplified interface with essential metrics and insights.', 'sitepulse' ); ?></p>
+								<p class="view-mode-description"><?php echo esc_html__( 'A clear dashboard that explains what each number means and what to do next.', 'sitepulse' ); ?></p>
 								<ul class="view-mode-features">
-									<li><span class="dashicons dashicons-yes"></span><span><?php echo esc_html__( 'User-friendly dashboard', 'sitepulse' ); ?></span></li>
-									<li><span class="dashicons dashicons-yes"></span><span><?php echo esc_html__( 'Key performance metrics', 'sitepulse' ); ?></span></li>
-									<li><span class="dashicons dashicons-yes"></span><span><?php echo esc_html__( 'Actionable insights', 'sitepulse' ); ?></span></li>
+									<li><span class="dashicons dashicons-yes"></span><span><?php echo esc_html__( 'Health score at a glance', 'sitepulse' ); ?></span></li>
+									<li><span class="dashicons dashicons-yes"></span><span><?php echo esc_html__( 'Guided checklist and plain-English tips', 'sitepulse' ); ?></span></li>
+									<li><span class="dashicons dashicons-yes"></span><span><?php echo esc_html__( 'Light and dark themes', 'sitepulse' ); ?></span></li>
 								</ul>
-							</div>
-							<div class="view-mode-footer">
-								<button type="button" class="btn btn-primary select-view-btn" data-view="basic">
-									<span class="dashicons dashicons-yes" style="margin-right: 5px;"></span><?php echo esc_html__( 'Selected', 'sitepulse' ); ?>
-								</button>
 							</div>
 						</div>
-						
-						<!-- Developer View Card -->
-						<div class="view-mode-card" data-view="developer">
+
+						<!-- Advanced (classic) -->
+						<div class="view-mode-card" data-view="advanced" role="radio" tabindex="0" aria-checked="false">
 							<div class="view-mode-header">
 								<div class="view-mode-icon dashicons dashicons-editor-code"></div>
-								<h3><?php echo esc_html__( 'Developer View', 'sitepulse' ); ?></h3>
-								<span class="badge bg-primary"><?php echo esc_html__( 'Advanced', 'sitepulse' ); ?></span>
+								<h3><?php echo esc_html__( 'Advanced', 'sitepulse' ); ?></h3>
+								<span class="badge bg-primary"><?php echo esc_html__( 'For developers', 'sitepulse' ); ?></span>
 							</div>
 							<div class="view-mode-body">
-								<p class="view-mode-description"><?php echo esc_html__( 'Technical interface with detailed debugging tools.', 'sitepulse' ); ?></p>
+								<p class="view-mode-description"><?php echo esc_html__( 'Every metric on one screen, with the technical detail developers expect.', 'sitepulse' ); ?></p>
 								<ul class="view-mode-features">
-									<li><span class="dashicons dashicons-yes"></span><span><?php echo esc_html__( 'Technical metrics & hook timings', 'sitepulse' ); ?></span></li>
-									<li><span class="dashicons dashicons-yes"></span><span><?php echo esc_html__( 'Database & API monitoring', 'sitepulse' ); ?></span></li>
-									<li><span class="dashicons dashicons-yes"></span><span><?php echo esc_html__( 'Memory profiling scripts', 'sitepulse' ); ?></span></li>
+									<li><span class="dashicons dashicons-yes"></span><span><?php echo esc_html__( 'Hook-level timings', 'sitepulse' ); ?></span></li>
+									<li><span class="dashicons dashicons-yes"></span><span><?php echo esc_html__( 'Slow queries and autoloaded options', 'sitepulse' ); ?></span></li>
+									<li><span class="dashicons dashicons-yes"></span><span><?php echo esc_html__( 'Full PageSpeed data', 'sitepulse' ); ?></span></li>
 								</ul>
-							</div>
-							<div class="view-mode-footer">
-								<button type="button" class="btn btn-outline-primary select-view-btn" data-view="developer">
-									<?php echo esc_html__( 'Choose Developer View', 'sitepulse' ); ?>
-								</button>
 							</div>
 						</div>
 					</div>
-					
+
 					<div class="view-mode-notice">
 						<div class="alert alert-info">
 							<span class="dashicons dashicons-info"></span>
 							<div>
-								<strong><?php echo esc_html__( 'Note:', 'sitepulse' ); ?></strong>
-								<?php echo esc_html__( 'You can switch between Basic and Developer views anytime from the Settings page.', 'sitepulse' ); ?>
+								<?php echo esc_html__( 'You can switch at any time: "Advanced View" at the bottom of the Simple sidebar, "Simple view" at the top of the Advanced dashboard.', 'sitepulse' ); ?>
 							</div>
 						</div>
 					</div>
-					<input type="hidden" id="onboarding_view_mode" value="basic">
+
+					<input type="hidden" id="onboarding_view_mode" value="simple">
 				</div>
 			</div>
 
 			<!-- Step 2: Tracking & Configuration -->
 			<div class="onboarding-step" data-step="2">
 				<div class="step-header">
-					<h2><?php echo esc_html__( 'Configure Tracking', 'sitepulse' ); ?></h2>
-					<p><?php echo esc_html__( 'Select the monitoring features you want to activate and fine-tune your settings.', 'sitepulse' ); ?></p>
+					<h2><?php echo esc_html__( 'What should SitePulse watch?', 'sitepulse' ); ?></h2>
+					<p><?php echo esc_html__( 'Both trackers are on by default. You can pause them later without losing any data.', 'sitepulse' ); ?></p>
 				</div>
-				
+
 				<div class="step-body">
 					<div class="tracking-options mb-4">
 						<div class="row">
 							<div class="col-md-6 mb-3">
-								<div class="tracking-option-card h-100">
+								<label class="tracking-option-card h-100" for="onboarding_profiler_enabled">
 									<div class="tracking-option-header">
 										<div class="tracking-option-icon dashicons dashicons-performance"></div>
 										<div class="tracking-option-toggle">
-											<label class="form-switch">
+											<span class="form-switch">
 												<input type="checkbox" class="form-check-input" id="onboarding_profiler_enabled" checked>
-											</label>
+											</span>
 										</div>
 									</div>
-									<h3><?php echo esc_html__( 'LoadSentinel', 'sitepulse' ); ?></h3>
-									<p class="small text-muted"><?php echo esc_html__( 'Track hooks and execution times.', 'sitepulse' ); ?></p>
-								</div>
+									<h3><?php echo esc_html__( 'Performance Monitor', 'sitepulse' ); ?></h3>
+									<p class="small text-muted"><?php echo esc_html__( 'Measures how long each plugin and your theme take while pages load.', 'sitepulse' ); ?></p>
+								</label>
 							</div>
 							<div class="col-md-6 mb-3">
-								<div class="tracking-option-card h-100">
+								<label class="tracking-option-card h-100" for="onboarding_curl_enabled">
 									<div class="tracking-option-header">
-										<div class="tracking-option-icon dashicons dashicons-admin-plugins"></div>
+										<div class="tracking-option-icon dashicons dashicons-rest-api"></div>
 										<div class="tracking-option-toggle">
-											<label class="form-switch">
+											<span class="form-switch">
 												<input type="checkbox" class="form-check-input" id="onboarding_curl_enabled" checked>
-											</label>
+											</span>
 										</div>
 									</div>
-									<h3><?php echo esc_html__( 'API Monitor', 'sitepulse' ); ?></h3>
-									<p class="small text-muted"><?php echo esc_html__( 'Monitor HTTP requests and API calls.', 'sitepulse' ); ?></p>
-								</div>
+									<h3><?php echo esc_html__( 'External Requests', 'sitepulse' ); ?></h3>
+									<p class="small text-muted"><?php echo esc_html__( 'Records slow calls your site makes to outside services and APIs.', 'sitepulse' ); ?></p>
+								</label>
 							</div>
 						</div>
 					</div>
 
 					<div class="configuration-section">
-						<h3><?php echo esc_html__( 'Advanced Settings', 'sitepulse' ); ?></h3>
+						<h3><?php echo esc_html__( 'Optional', 'sitepulse' ); ?></h3>
 						<div class="config-option mb-3">
 							<label class="form-switch">
 								<input type="checkbox" class="form-check-input" id="onboarding_savequeries">
-								<span class="form-check-label"><?php echo esc_html__( 'Enable Query Tracking', 'sitepulse' ); ?></span>
+								<span class="form-check-label"><?php echo esc_html__( 'Track slow database queries', 'sitepulse' ); ?></span>
 							</label>
-							<p class="small text-muted"><?php echo esc_html__( 'Track slow database queries (modifies wp-config.php).', 'sitepulse' ); ?></p>
+							<p class="small text-muted"><?php echo esc_html__( 'Turns on WordPress query logging (adds SAVEQUERIES to wp-config.php). Best for troubleshooting sessions.', 'sitepulse' ); ?></p>
 						</div>
 						<div class="config-option mb-3">
 							<label class="form-switch">
 								<input type="checkbox" class="form-check-input" id="onboarding_external_api_enabled" checked>
-								<span class="form-check-label"><?php echo esc_html__( 'Enable PageSpeed & AI Reports', 'sitepulse' ); ?></span>
+								<span class="form-check-label"><?php echo esc_html__( 'PageSpeed and AI reports', 'sitepulse' ); ?></span>
 							</label>
-							<p class="small text-muted"><?php echo esc_html__( 'Receive AI-powered diagnostics based on performance metrics.', 'sitepulse' ); ?></p>
-						</div>
-					</div>
-
-					<div class="tips-section mt-4 pt-3 border-top">
-						<div class="tip-card py-2 px-3">
-							<p class="mb-0 small"><span class="dashicons dashicons-lightbulb text-warning" style="vertical-align: middle;"></span> <strong><?php echo esc_html__( 'Tip:', 'sitepulse' ); ?></strong> <?php echo esc_html__( 'You can manage these settings anytime from the SitePulse Settings page.', 'sitepulse' ); ?></p>
+							<p class="small text-muted"><?php echo esc_html__( 'Sends performance metrics (never content or personal data) to api.sitepulse.me for PageSpeed scores and AI recommendations.', 'sitepulse' ); ?></p>
 						</div>
 					</div>
 				</div>
 			</div>
 
-			<!-- Step 3: Data Collection & Finish -->
+			<!-- Step 3: First check-up of the homepage -->
 			<div class="onboarding-step" data-step="3">
-				<div class="step-header text-center">
-					<h2><?php echo esc_html__( 'Finalizing Setup', 'sitepulse' ); ?></h2>
-					<p><?php echo esc_html__( 'Gathering initial performance insights for your site...', 'sitepulse' ); ?></p>
+				<div class="step-header">
+					<h2><?php echo esc_html__( 'Your first check-up', 'sitepulse' ); ?></h2>
+					<p><?php echo esc_html__( 'SitePulse is loading your homepage as a visitor would and measuring everything WordPress does to build it.', 'sitepulse' ); ?></p>
 				</div>
-				
+
 				<div class="step-body">
-					<!-- Data Collection (Initially Visible) -->
-					<div class="data-collection-container">
-						<div class="collection-status text-center">
-							<div class="collection-icon mb-3">
-								<div class="spinner-border text-primary" role="status"></div>
+					<div class="onboarding-checkup">
+						<div class="checkup-progress">
+							<div class="checkup-progress-head">
+								<span class="checkup-spinner" aria-hidden="true"></span>
+								<strong class="checkup-progress-text" aria-live="polite"><?php echo esc_html__( 'Getting ready…', 'sitepulse' ); ?></strong>
 							</div>
-							<h3 class="collection-title"><?php echo esc_html__( 'Preparing data...', 'sitepulse' ); ?></h3>
+							<div class="checkup-bar"><div class="checkup-bar-fill"></div></div>
 						</div>
-						
-						<div class="collection-progress my-4">
-							<div class="progress" style="height: 10px;">
-								<div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-							</div>
-							<p class="progress-text text-center mt-2 small text-muted"><?php echo esc_html__( 'Initializing...', 'sitepulse' ); ?></p>
-						</div>
-						
-						<div class="collection-details small">
-							<div class="detail-item" data-task="profiler">
-								<span class="detail-text"><?php echo esc_html__( 'Loading profiler data...', 'sitepulse' ); ?></span>
-								<span class="detail-status pending float-end"><?php echo esc_html__( 'Pending', 'sitepulse' ); ?></span>
-							</div>
-							<div class="detail-item" data-task="hooks">
-								<span class="detail-text"><?php echo esc_html__( 'Analyzing hooks and filters...', 'sitepulse' ); ?></span>
-								<span class="detail-status pending float-end"><?php echo esc_html__( 'Pending', 'sitepulse' ); ?></span>
-							</div>
-							<div class="detail-item" data-task="http">
-								<span class="detail-text"><?php echo esc_html__( 'Checking HTTP requests...', 'sitepulse' ); ?></span>
-								<span class="detail-status pending float-end"><?php echo esc_html__( 'Pending', 'sitepulse' ); ?></span>
-							</div>
-							<div class="detail-item" data-task="memory">
-								<span class="detail-text"><?php echo esc_html__( 'Gathering memory usage...', 'sitepulse' ); ?></span>
-								<span class="detail-status pending float-end"><?php echo esc_html__( 'Pending', 'sitepulse' ); ?></span>
-							</div>
-							<div class="detail-item" data-task="plugins">
-								<span class="detail-text"><?php echo esc_html__( 'Profiling installed plugins...', 'sitepulse' ); ?></span>
-								<span class="detail-status pending float-end"><?php echo esc_html__( 'Pending', 'sitepulse' ); ?></span>
+
+						<div class="checkup-result" hidden></div>
+
+						<div class="checkup-unavailable" hidden>
+							<span class="dashicons dashicons-info-outline" aria-hidden="true"></span>
+							<div>
+								<strong><?php echo esc_html__( 'The quick check could not run on this server.', 'sitepulse' ); ?></strong>
+								<p class="checkup-unavailable-reason"></p>
+								<p><?php echo esc_html__( 'No problem: you can analyze any page from Page Analysis, and it can measure your own visit instead.', 'sitepulse' ); ?></p>
 							</div>
 						</div>
-						
-						<!-- Completion Message (Initially Hidden) -->
-						<div class="collection-complete text-center mt-4" style="display: none;">
-							<div class="completion-icon dashicons dashicons-yes-alt mb-3"></div>
-							<h3><?php echo esc_html__( 'You\'re All Set!', 'sitepulse' ); ?></h3>
-							<p><?php echo esc_html__( 'SitePulse is now monitoring your site.', 'sitepulse' ); ?></p>
-							
-							<div class="completion-actions mt-4">
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wpsp_sitepulse' ) ); ?>" class="btn btn-primary btn-lg px-5">
-									<?php echo esc_html__( 'Go to Dashboard', 'sitepulse' ); ?>
+
+						<div class="checkup-next" hidden>
+							<h3><?php echo esc_html__( 'What next?', 'sitepulse' ); ?></h3>
+							<div class="checkup-next-grid">
+								<a class="checkup-next-item" href="<?php echo esc_url( Sitepulse_Page_Analysis::admin_link() ); ?>">
+									<span class="dashicons dashicons-search" aria-hidden="true"></span>
+									<strong><?php echo esc_html__( 'Analyze another page', 'sitepulse' ); ?></strong>
+									<span><?php echo esc_html__( 'A product, a post, your shop: any page that feels slow.', 'sitepulse' ); ?></span>
+								</a>
+								<a class="checkup-next-item" href="<?php echo esc_url( admin_url( 'admin.php?page=wpsp_sitepulse&sp_view=resource-load' ) ); ?>">
+									<span class="dashicons dashicons-admin-plugins" aria-hidden="true"></span>
+									<strong><?php echo esc_html__( 'Find your heaviest plugins', 'sitepulse' ); ?></strong>
+									<span><?php echo esc_html__( 'Rankings across your whole site, updated as visitors browse.', 'sitepulse' ); ?></span>
+								</a>
+								<a class="checkup-next-item" href="<?php echo esc_url( admin_url( 'admin.php?page=wpsp_sitepulse' ) ); ?>">
+									<span class="dashicons dashicons-dashboard" aria-hidden="true"></span>
+									<strong><?php echo esc_html__( 'Open your dashboard', 'sitepulse' ); ?></strong>
+									<span><?php echo esc_html__( 'Health score, PageSpeed results and AI recommendations.', 'sitepulse' ); ?></span>
 								</a>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-
 		</div>
 
 		<!-- Navigation Buttons -->
@@ -260,11 +231,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<?php echo esc_html__( 'Next', 'sitepulse' ); ?>
 				</button>
 				<button type="button" class="btn btn-success" id="finishOnboarding" style="display: none;">
-					<?php echo esc_html__( 'Finish Setup', 'sitepulse' ); ?>
+					<?php echo esc_html__( 'Finish and open dashboard', 'sitepulse' ); ?>
 				</button>
 			</div>
 		</div>
-
 	</div>
 </div>
-

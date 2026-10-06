@@ -11,18 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 $current_view = Sitepulse_Easy_Mode::get_current_view();
 $theme        = Sitepulse_Easy_Mode::get_theme();
 
-$view_labels = array(
-	'home'          => __( 'Dashboard', 'sitepulse' ),
-	'performance'   => __( 'Speed & Performance', 'sitepulse' ),
-	'resource-load' => __( 'Activity Monitor', 'sitepulse' ),
-	'security'      => __( 'Security & Stability', 'sitepulse' ),
-	'insights'      => __( 'Speed Test Results', 'sitepulse' ),
-	'api-monitor'   => __( 'Outgoing Connections', 'sitepulse' ),
-	'system'        => __( 'Site Info', 'sitepulse' ),
-	'settings'      => __( 'Settings', 'sitepulse' ),
-);
-
-$current_label = isset( $view_labels[ $current_view ] ) ? $view_labels[ $current_view ] : __( 'Dashboard', 'sitepulse' );
+// Breadcrumb uses the same names as the sidebar navigation.
+$current_label = __( 'Dashboard', 'sitepulse' );
+foreach ( Sitepulse_Easy_Mode::get_nav_items() as $nav_item ) {
+	if ( $nav_item['slug'] === $current_view ) {
+		$current_label = $nav_item['label'];
+	}
+}
 ?>
 <div class="sp-easy-topbar">
 	<div class="sp-topbar-left">

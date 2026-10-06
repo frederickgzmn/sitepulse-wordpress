@@ -32,7 +32,30 @@
     initPetAssistant();
     initErrorLogActions();
     initSaveQueriesToggle();
+    initGettingStarted();
   });
+
+  /* ======================================================
+   * Getting Started checklist
+   * ====================================================== */
+  function initGettingStarted() {
+    $(document).on('click', '.sp-getting-started-dismiss', function () {
+      var $card = $(this).closest('.sp-getting-started');
+      $card.slideUp(200);
+
+      $.ajax({
+        url: SP.rest_url + 'sitepulse/v1/getting_started/dismiss',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ _wpnonce: SP.nonce }),
+        beforeSend: function (xhr) {
+          xhr.setRequestHeader('X-WP-Nonce', SP.nonce);
+        }
+      }).fail(function () {
+        $card.slideDown(200);
+      });
+    });
+  }
 
   /* ======================================================
    * Theme (dark / light)

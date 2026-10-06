@@ -330,15 +330,24 @@ switch ( $dr_view ) {
 				'text' => sprintf( __( '%d hooks tracked. Look for items above 500ms.', 'sitepulse' ), count( $stats ) ),
 			];
 		}
-		if ( ! empty( $single_load_events ) ) {
-			$dr_page_recs[] = [
-				'icon' => '🎯',
-				'text' => __( 'Single-page profile active — most accurate data.', 'sitepulse' ),
-			];
-		}
+		$dr_page_recs[] = [
+			'icon' => '🎯',
+			'text' => __( 'One page feels slow? Page Analysis shows what runs on that page only.', 'sitepulse' ),
+		];
 		$dr_page_recs[] = [
 			'icon' => '💡',
 			'text' => __( 'Sort by "Time" to find slowest items first.', 'sitepulse' ),
+		];
+		break;
+
+	case 'page-analysis':
+		$dr_page_recs[] = [
+			'icon' => '🛒',
+			'text' => __( 'Start with the pages that earn money: product, cart and checkout.', 'sitepulse' ),
+		];
+		$dr_page_recs[] = [
+			'icon' => '🔁',
+			'text' => __( 'Re-run an analysis after changing a plugin to see the difference.', 'sitepulse' ),
 		];
 		break;
 
@@ -542,7 +551,7 @@ $dr_page_help = [
 		'tip'   => __( 'Items in red or above 500ms are your main bottlenecks.', 'sitepulse' ),
 	],
 	'resource-load' => [
-		'where' => __( '📍 Load Profiler', 'sitepulse' ),
+		'where' => __( '📍 Plugin Activity', 'sitepulse' ),
 		'what'  => __( 'Step-by-step breakdown of everything that runs during a page load.', 'sitepulse' ),
 		'tip'   => __( 'Sort by Time column to find the slowest items.', 'sitepulse' ),
 	],
@@ -557,7 +566,7 @@ $dr_page_help = [
 		'tip'   => __( 'Aim for 80+. Check the Opportunities section for fixes.', 'sitepulse' ),
 	],
 	'api-monitor'   => [
-		'where' => __( '📍 API Monitor', 'sitepulse' ),
+		'where' => __( '📍 External Requests', 'sitepulse' ),
 		'what'  => __( 'External connections your site makes — payment, email, analytics services.', 'sitepulse' ),
 		'tip'   => __( 'Slow or failing connections can delay your entire page load.', 'sitepulse' ),
 	],

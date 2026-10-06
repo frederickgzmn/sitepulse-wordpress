@@ -1,10 +1,11 @@
 <?php
 /**
- * Easy Mode — New premium dashboard experience for SitePulse.
+ * Easy Mode — the default SitePulse dashboard experience.
  *
  * Controls template routing, user preference storage, and asset loading
- * for the optional modern UI layer. All data-gathering logic is reused
- * from Sitepulse_Backend — this class only handles presentation.
+ * for the modern UI layer. The classic dashboard remains available as the
+ * "Advanced view". All data-gathering logic is reused from Sitepulse_Backend;
+ * this class only handles presentation.
  *
  * @package SitePulse
  */
@@ -19,6 +20,9 @@ class Sitepulse_Easy_Mode {
 
 	/** User meta key for color scheme (dark / light). */
 	const THEME_META_KEY = 'sitepulse_easy_mode_theme';
+
+	/** User meta key for the classic dashboard view (basic / developer). */
+	const DASHBOARD_VIEW_META_KEY = 'sitepulse_dashboard_view';
 
 	/** Base path for Easy Mode templates. */
 	private static $template_base = '';
@@ -38,7 +42,10 @@ class Sitepulse_Easy_Mode {
 	}
 
 	/**
-	 * Check whether the current user has Easy Mode enabled.
+	 * Check whether the current user uses Easy Mode.
+	 *
+	 * Easy Mode is the default; only an explicit choice of the advanced
+	 * (classic) view turns it off.
 	 *
 	 * @return bool
 	 */
@@ -46,7 +53,50 @@ class Sitepulse_Easy_Mode {
 		if ( ! is_user_logged_in() ) {
 			return false;
 		}
-		return (bool) get_user_meta( get_current_user_id(), self::META_KEY, true );
+
+		$user_id = get_current_user_id();
+		$value   = get_user_meta( $user_id, self::META_KEY, true );
+
+		if ( '' === $value && ! metadata_exists( 'user', $user_id, self::META_KEY ) ) {
+			return true;
+		}
+
+		return (bool) $value;
+	}
+
+	/**
+	 * Store the current user's choice between Easy Mode and the advanced view.
+	 *
+	 * @param bool $enabled True for Easy Mode
+	 */
+	public static function set_enabled( bool $enabled ) {
+		update_user_meta( get_current_user_id(), self::META_KEY, $enabled ? '1' : '0' );
+	}
+
+	/**
+	 * The classic dashboard view the current user prefers.
+	 *
+	 * @return string "basic" or "developer"
+	 */
+	public static function get_dashboard_view(): string {
+		$view = get_user_meta( get_current_user_id(), self::DASHBOARD_VIEW_META_KEY, true );
+
+		return 'basic' === $view ? 'basic' : 'developer';
+	}
+
+	/**
+	 * Store the classic dashboard view the current user prefers.
+	 *
+	 * @param string $view "basic" or "developer"
+	 * @return bool False for an unknown view
+	 */
+	public static function set_dashboard_view( string $view ): bool {
+		if ( ! in_array( $view, array( 'basic', 'developer' ), true ) ) {
+			return false;
+		}
+
+		update_user_meta( get_current_user_id(), self::DASHBOARD_VIEW_META_KEY, $view );
+		return true;
 	}
 
 	/**
@@ -72,16 +122,14 @@ class Sitepulse_Easy_Mode {
 			wp_send_json_error( array( 'message' => 'Insufficient permissions.' ), 403 );
 		}
 
-		$current = self::is_enabled();
-		$new_val = ! $current;
-
-		update_user_meta( get_current_user_id(), self::META_KEY, $new_val ? '1' : '' );
+		$new_val = ! self::is_enabled();
+		self::set_enabled( $new_val );
 
 		wp_send_json_success( array(
 			'enabled' => $new_val,
 			'message' => $new_val
-				? __( 'New experience enabled. Refreshing…', 'sitepulse' )
-				: __( 'Classic view restored. Refreshing…', 'sitepulse' ),
+				? __( 'Simple view enabled. Refreshing…', 'sitepulse' )
+				: __( 'Advanced view enabled. Refreshing…', 'sitepulse' ),
 		) );
 	}
 
@@ -199,6 +247,8 @@ class Sitepulse_Easy_Mode {
 			$view      = 'home';
 		}
 
+		Sitepulse_Getting_Started::mark_visited( $view );
+
 		// Make data available to templates
 		$easy_view  = $view;
 		$easy_theme = self::get_theme();
@@ -228,6 +278,8 @@ class Sitepulse_Easy_Mode {
 			'history', 'error_log', 'fatal_count', 'warning_count',
 			'last_vulnerability_check', 'mem_usage_percent',
 			'plugin_percent', 'disk_write',
+			'analysis_suggestions', 'analysis_recent', 'analysis_request',
+			'getting_started_steps', 'show_getting_started',
 		);
 		foreach ( $sp_allowed_vars as $sp_var_name ) {
 			if ( array_key_exists( $sp_var_name, $data ) ) {
@@ -255,6 +307,12 @@ class Sitepulse_Easy_Mode {
 				'url'   => $base_url,
 			),
 			array(
+				'slug'  => 'page-analysis',
+				'label' => __( 'Page Analysis', 'sitepulse' ),
+				'icon'  => 'dashicons-search',
+				'url'   => Sitepulse_Page_Analysis::admin_link(),
+			),
+			array(
 				'slug'  => 'performance',
 				'label' => __( 'Performance', 'sitepulse' ),
 				'icon'  => 'dashicons-performance',
@@ -262,15 +320,15 @@ class Sitepulse_Easy_Mode {
 			),
 			array(
 				'slug'  => 'resource-load',
-				'label' => __( 'Load Profiler', 'sitepulse' ),
-				'icon'  => 'dashicons-search',
+				'label' => __( 'Plugin Activity', 'sitepulse' ),
+				'icon'  => 'dashicons-admin-plugins',
 				'url'   => $base_url . '&sp_view=resource-load',
 			),
 			array(
-				'slug'  => 'security',
-				'label' => __( 'Security', 'sitepulse' ),
-				'icon'  => 'dashicons-shield',
-				'url'   => $base_url . '&sp_view=security',
+				'slug'  => 'api-monitor',
+				'label' => __( 'External Requests', 'sitepulse' ),
+				'icon'  => 'dashicons-rest-api',
+				'url'   => $base_url . '&sp_view=api-monitor',
 			),
 			array(
 				'slug'  => 'insights',
@@ -279,14 +337,14 @@ class Sitepulse_Easy_Mode {
 				'url'   => $base_url . '&sp_view=insights',
 			),
 			array(
-				'slug'  => 'api-monitor',
-				'label' => __( 'API Monitor', 'sitepulse' ),
-				'icon'  => 'dashicons-rest-api',
-				'url'   => $base_url . '&sp_view=api-monitor',
+				'slug'  => 'security',
+				'label' => __( 'Security', 'sitepulse' ),
+				'icon'  => 'dashicons-shield',
+				'url'   => $base_url . '&sp_view=security',
 			),
 			array(
 				'slug'  => 'system',
-				'label' => __( 'System', 'sitepulse' ),
+				'label' => __( 'Site Info', 'sitepulse' ),
 				'icon'  => 'dashicons-info-outline',
 				'url'   => $base_url . '&sp_view=system',
 			),
@@ -321,6 +379,9 @@ class Sitepulse_Easy_Mode {
 		}
 
 		// Legacy admin page mapping fallback
+		if ( strpos( $page, 'page_analysis' ) !== false ) {
+			return 'page-analysis';
+		}
 		if ( strpos( $page, 'resource_load' ) !== false ) {
 			return 'resource-load';
 		}

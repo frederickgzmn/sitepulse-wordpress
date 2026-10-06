@@ -1,6 +1,7 @@
 /**
  * SitePulse Onboarding JavaScript
- * Handles the interactive onboarding wizard
+ * Handles the interactive onboarding wizard: interface choice, tracking
+ * configuration, and a real first check-up of the homepage.
  *
  * @package SitePulse
  */
@@ -8,14 +9,17 @@
 jQuery(function ($) {
     'use strict';
 
+    var data = window.SitePulseOnboarding || {};
+    var i18n = data.i18n || {};
+
     // Onboarding state
-    let currentStep = 1;
-    const totalSteps = 3;
-    let dataCollectionComplete = false;
+    var currentStep = 1;
+    var totalSteps = 3;
+    var checkupStarted = false;
 
     // Configuration state
-    const config = {
-        view_mode: 'basic',
+    var config = {
+        interface: 'simple',
         profiler_enabled: true,
         curl_enabled: true,
         savequeries: false,
@@ -26,26 +30,8 @@ jQuery(function ($) {
      * Initialize onboarding
      */
     function init() {
-        // Load view mode from localStorage (same key used in backend.js)
-        const savedViewMode = localStorage.getItem('sitepulse_dashboard_view') || 'basic';
-        if (savedViewMode === 'basic' || savedViewMode === 'developer') {
-            config.view_mode = savedViewMode;
-            $('#onboarding_view_mode').val(savedViewMode);
-
-            // Update UI to reflect saved preference
-            $('.view-mode-card').removeClass('selected');
-            $(`.view-mode-card[data-view="${savedViewMode}"]`).addClass('selected');
-
-            $('.select-view-btn').removeClass('btn-primary').addClass('btn-outline-primary');
-            $(`.select-view-btn[data-view="${savedViewMode}"]`)
-                .removeClass('btn-outline-primary')
-                .addClass('btn-primary')
-                .html('<span class="dashicons dashicons-yes" style="margin-right: 5px;"></span> Selected');
-        }
-
-        updateUI();
         bindEvents();
-        updateProgress();
+        goToStep(1);
     }
 
     /**
@@ -58,16 +44,14 @@ jQuery(function ($) {
         $('#finishOnboarding').on('click', handleFinish);
         $('#skipOnboarding').on('click', handleSkip);
 
-        // View mode selection
-        $('.select-view-btn').on('click', function () {
-            const selectedView = $(this).data('view');
-            selectViewMode(selectedView);
-        });
-
-        $('.view-mode-card').on('click', function (e) {
-            if (!$(e.target).hasClass('select-view-btn')) {
-                const selectedView = $(this).data('view');
-                selectViewMode(selectedView);
+        // Interface selection (cards behave like radio buttons)
+        $('.view-mode-card').on('click', function () {
+            selectInterface($(this).data('view'));
+        }).on('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                selectInterface($(this).data('view'));
             }
         });
 
@@ -92,30 +76,23 @@ jQuery(function ($) {
             config.external_api_enabled = $(this).is(':checked');
         });
 
-        // Stepper navigation (click on completed or current steps)
+        // Stepper navigation: completed steps can be revisited
         $('.stepper-step').on('click', function () {
-            const targetStep = parseInt($(this).data('step'));
-            if (targetStep <= currentStep || $(this).hasClass('completed')) {
+            var targetStep = parseInt($(this).data('step'), 10);
+            if (targetStep < currentStep) {
                 goToStep(targetStep);
             }
         });
+
+        $(document).on('keydown', handleKeys);
     }
 
     /**
      * Handle next button click
      */
-    async function handleNext() {
+    function handleNext() {
         if (currentStep < totalSteps) {
-            // Mark current step as completed
-            $(`.stepper-step[data-step="${currentStep}"]`).addClass('completed');
-
-            currentStep++;
-            goToStep(currentStep);
-
-            // If moving to step 3 (data collection), trigger collection
-            if (currentStep === 3 && !dataCollectionComplete) {
-                await startDataCollection();
-            }
+            goToStep(currentStep + 1);
         }
     }
 
@@ -124,8 +101,7 @@ jQuery(function ($) {
      */
     function handlePrev() {
         if (currentStep > 1) {
-            currentStep--;
-            goToStep(currentStep);
+            goToStep(currentStep - 1);
         }
     }
 
@@ -135,112 +111,83 @@ jQuery(function ($) {
     function goToStep(step) {
         currentStep = step;
 
-        // Hide all steps
-        $('.onboarding-step').removeClass('active');
+        $('.onboarding-step').removeClass('active').filter('[data-step="' + step + '"]').addClass('active');
 
-        // Show current step
-        $(`.onboarding-step[data-step="${currentStep}"]`).addClass('active');
-
-        // Update progress bar and dots
-        updateProgress();
-        updateUI();
-    }
-
-    /**
-     * Update stepper UI
-     */
-    function updateProgress() {
-        // Update stepper steps
-        $('.stepper-step').removeClass('active');
-        $(`.stepper-step[data-step="${currentStep}"]`).addClass('active');
-
-        // Mark previous steps as completed
         $('.stepper-step').each(function () {
-            const stepNum = parseInt($(this).data('step'));
-            if (stepNum < currentStep) {
-                $(this).addClass('completed');
-            } else if (stepNum > currentStep) {
-                $(this).removeClass('completed');
+            var stepNum = parseInt($(this).data('step'), 10);
+            $(this).toggleClass('active', stepNum === step).toggleClass('completed', stepNum < step);
+        });
+
+        $('#prevStep').toggle(step > 1);
+        $('#nextStep').toggle(step < totalSteps);
+        $('#finishOnboarding').toggle(step === totalSteps);
+        $('#skipOnboarding').toggle(step < totalSteps);
+
+        if (step === totalSteps && !checkupStarted) {
+            runCheckup();
+        }
+    }
+
+    /**
+     * Select the dashboard interface
+     */
+    function selectInterface(view) {
+        config.interface = view;
+        $('#onboarding_view_mode').val(view);
+
+        $('.view-mode-card').removeClass('selected').attr('aria-checked', 'false');
+        $('.view-mode-card[data-view="' + view + '"]').addClass('selected').attr('aria-checked', 'true');
+    }
+
+    /**
+     * Analyze the homepage with the Page Analysis engine and show the result.
+     */
+    function runCheckup() {
+        var analysis = window.SitePulsePageAnalysis;
+        var blockedReason = '';
+
+        checkupStarted = true;
+
+        if (!analysis) {
+            return Promise.resolve(showUnavailable(i18n.checkup_failed));
+        }
+
+        return analysis.run(data.home_url, {
+            progress: function (text, percent) {
+                $('.checkup-progress-text').text(text);
+                $('.checkup-bar-fill').css('width', percent + '%');
+            },
+            fallback: function (result) {
+                // The wizard does not wait for a manual visit; Page Analysis offers that later.
+                blockedReason = result.message;
+            },
+            cancelled: function () {
+                return blockedReason !== '';
             }
+        }).then(function (report) {
+            $('.checkup-progress').prop('hidden', true);
+            $('.checkup-result').empty().append(analysis.renderReport(report, { compact: true })).prop('hidden', false);
+            $('.checkup-next').prop('hidden', false);
+        }).catch(function (error) {
+            showUnavailable(blockedReason || error.message || i18n.checkup_failed);
         });
     }
 
     /**
-     * Update UI elements based on current step
+     * Explain that the check-up could not run and point to the next steps.
      */
-    function updateUI() {
-        // Show/hide navigation buttons
-        if (currentStep === 1) {
-            $('#prevStep').hide();
-        } else {
-            $('#prevStep').show();
-        }
-
-        // Step 3 is data collection - hide prev/next initially
-        if (currentStep === 3 && !dataCollectionComplete) {
-            $('#prevStep').hide();
-            $('#nextStep').prop('disabled', true).text('Please wait...');
-        } else if (currentStep === 3 && dataCollectionComplete) {
-            $('#prevStep').show();
-            $('#nextStep').prop('disabled', false).text('Next');
-        }
-
-        // Reset button text for other steps
-        if (currentStep !== 3) {
-            $('#nextStep').text('Next');
-        }
-
-        if (currentStep === totalSteps) {
-            $('#nextStep').hide();
-            $('#finishOnboarding').show();
-        } else {
-            $('#nextStep').show();
-            $('#finishOnboarding').hide();
-        }
-
-        // Update skip button text
-        if (currentStep === totalSteps || currentStep === 3) {
-            $('#skipOnboarding').hide();
-        } else {
-            $('#skipOnboarding').show();
-        }
-    }
-
-    /**
-     * Select view mode
-     */
-    function selectViewMode(viewMode) {
-        config.view_mode = viewMode;
-        $('#onboarding_view_mode').val(viewMode);
-
-        // Save to localStorage (same key used in backend.js)
-        localStorage.setItem('sitepulse_dashboard_view', viewMode);
-
-        // Update UI
-        $('.view-mode-card').removeClass('selected');
-        $(`.view-mode-card[data-view="${viewMode}"]`).addClass('selected');
-
-        // Update button states
-        $('.select-view-btn').removeClass('btn-primary').addClass('btn-outline-primary');
-        $('.select-view-btn').html(function () {
-            const view = $(this).data('view');
-            return view === 'basic' ? 'Choose Basic View' : 'Choose Developer View';
-        });
-
-        $(`.select-view-btn[data-view="${viewMode}"]`)
-            .removeClass('btn-outline-primary')
-            .addClass('btn-primary')
-            .html('<span class="dashicons dashicons-yes" style="margin-right: 5px;"></span> Selected');
-
-        // Show confirmation
-        showNotification(`${viewMode === 'basic' ? 'Basic' : 'Developer'} View selected`, 'success');
+    function showUnavailable(reason) {
+        $('.checkup-progress').prop('hidden', true);
+        $('.checkup-unavailable-reason').text(reason);
+        $('.checkup-unavailable').prop('hidden', false);
+        $('.checkup-next').prop('hidden', false);
     }
 
     /**
      * Handle skip button
      */
     function handleSkip() {
-        if (confirm('Are you sure you want to skip the setup? You can always configure SitePulse later from the Settings page.')) {
+        if (confirm(i18n.skip_confirm)) {
             dismissOnboarding();
         }
     }
@@ -249,27 +196,25 @@ jQuery(function ($) {
      * Handle finish button
      */
     async function handleFinish() {
-        const $btn = $('#finishOnboarding');
+        var $btn = $('#finishOnboarding');
         $btn.addClass('loading').prop('disabled', true);
 
         try {
             // Save configuration
             await saveConfiguration();
 
-            // Mark onboarding as completed
-            await completeOnboarding();
+            // Mark onboarding as completed and save the chosen interface
+            await makeRequest('sitepulse/v1/onboarding/complete', { interface: config.interface });
 
-            // Show success message
-            showNotification('Setup completed successfully! Redirecting to dashboard...', 'success');
+            showNotification(i18n.finished, 'success');
 
             // Redirect to dashboard
             setTimeout(function () {
-                window.location.href = SitePulseOnboarding.admin_url;
-            }, 1500);
-
+                window.location.href = data.admin_url;
+            }, 1000);
         } catch (error) {
             console.error('Error completing onboarding:', error);
-            showNotification('Error completing setup. Please try again.', 'error');
+            showNotification(i18n.finish_error, 'error');
             $btn.removeClass('loading').prop('disabled', false);
         }
     }
@@ -278,39 +223,30 @@ jQuery(function ($) {
      * Save configuration via REST API
      */
     async function saveConfiguration() {
-        const promises = [];
-
-        // Ensure view mode is saved to localStorage (already saved on selection)
-        localStorage.setItem('sitepulse_dashboard_view', config.view_mode);
+        var promises = [];
 
         // Save profiler status
         if (config.profiler_enabled !== true) {
-            promises.push(
-                makeRequest('sitepulse/v1/sp_profiler/set_active', {
-                    sitepulse_profiler_enabled: config.profiler_enabled ? 'enabled' : 'disabled'
-                })
-            );
+            promises.push(makeRequest('sitepulse/v1/sp_profiler/set_active', {
+                sitepulse_profiler_enabled: 'disabled'
+            }));
         }
 
         // Save CURL API status
         if (config.curl_enabled !== true) {
-            promises.push(
-                makeRequest('sitepulse/v1/wpslowhttp/set_active', {
-                    wpslowhttp: config.curl_enabled ? 'enabled' : 'disabled'
-                })
-            );
+            promises.push(makeRequest('sitepulse/v1/wpslowhttp/set_active', {
+                wpslowhttp: 'disabled'
+            }));
         }
 
         // Enable SAVEQUERIES if requested
         if (config.savequeries) {
-            promises.push(
-                makeRequest('sitepulse/v1/save_queries/enable', {})
-            );
+            promises.push(makeRequest('sitepulse/v1/save_queries/enable', {}));
         }
 
         // Save settings (email blocking, external API, etc)
-        const settingsToUpdate = {};
-        let hasSettings = false;
+        var settingsToUpdate = {};
+        var hasSettings = false;
 
         if (config.email_blocking) {
             settingsToUpdate.email_blocking_enabled = config.email_blocking;
@@ -318,27 +254,16 @@ jQuery(function ($) {
             hasSettings = true;
         }
 
-        // Always save external API setting (defaults to true)
         if (typeof config.external_api_enabled !== 'undefined') {
             settingsToUpdate.external_api_enabled = config.external_api_enabled;
             hasSettings = true;
         }
 
         if (hasSettings) {
-            promises.push(
-                makeRequest('sitepulse/v1/settings/update', settingsToUpdate)
-            );
+            promises.push(makeRequest('sitepulse/v1/settings/update', settingsToUpdate));
         }
 
-        // Wait for all promises to complete
         await Promise.all(promises);
-    }
-
-    /**
-     * Mark onboarding as completed
-     */
-    async function completeOnboarding() {
-        return makeRequest('sitepulse/v1/onboarding/complete', {});
     }
 
     /**
@@ -347,35 +272,32 @@ jQuery(function ($) {
     async function dismissOnboarding() {
         try {
             await makeRequest('sitepulse/v1/onboarding/dismiss', {});
-            window.location.href = SitePulseOnboarding.admin_url;
         } catch (error) {
             console.error('Error dismissing onboarding:', error);
-            // Fallback: just redirect
-            window.location.href = SitePulseOnboarding.admin_url;
         }
+        window.location.href = data.admin_url;
     }
 
     /**
      * Make REST API request
      */
-    async function makeRequest(endpoint, data) {
-        const url = SitePulseOnboarding.rest_url.replace(/\/$/, '') + '/' + endpoint;
+    async function makeRequest(endpoint, payload) {
+        var url = data.rest_url.replace(/\/$/, '') + '/' + endpoint;
 
-        const response = await fetch(url, {
+        var response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-WP-Nonce': SitePulseOnboarding.nonce
+                'X-WP-Nonce': data.nonce
             },
-            body: JSON.stringify({
-                ...data,
-                _wpnonce: SitePulseOnboarding.nonce
-            })
+            body: JSON.stringify($.extend({}, payload, { _wpnonce: data.nonce }))
         });
 
         if (!response.ok) {
-            const error = await response.json().catch(() => null);
-            throw new Error(error?.message || 'Request failed: ' + response.status);
+            var error = await response.json().catch(function () {
+                return null;
+            });
+            throw new Error((error && error.message) || 'Request failed: ' + response.status);
         }
 
         return response.json();
@@ -385,35 +307,13 @@ jQuery(function ($) {
      * Show notification message
      */
     function showNotification(message, type) {
-        // Create notification element
-        const $notification = $('<div>')
-            .addClass('onboarding-notification')
-            .addClass('notification-' + type)
-            .text(message)
-            .css({
-                position: 'fixed',
-                top: '20px',
-                right: '20px',
-                padding: '15px 25px',
-                borderRadius: '8px',
-                color: 'white',
-                fontWeight: '600',
-                zIndex: 9999999,
-                boxShadow: '0 8px 25px rgba(0,0,0,0.3)',
-                animation: 'slideInRight 0.3s ease'
-            });
+        var $notification = $('<div>')
+            .addClass('onboarding-notification notification-' + type)
+            .attr('role', 'status')
+            .text(message);
 
-        // Set background color based on type
-        if (type === 'success') {
-            $notification.css('background', 'linear-gradient(135deg, #38d39f, #00c2a8)');
-        } else if (type === 'error') {
-            $notification.css('background', 'linear-gradient(135deg, #ff6b6b, #ee5a6f)');
-        }
-
-        // Append to body
         $('body').append($notification);
 
-        // Auto remove after 3 seconds
         setTimeout(function () {
             $notification.fadeOut(300, function () {
                 $(this).remove();
@@ -422,197 +322,26 @@ jQuery(function ($) {
     }
 
     /**
-     * Start data collection process
+     * Keyboard navigation (ignored while typing or on focused controls)
      */
-    async function startDataCollection() {
-        // Update status
-        $('.collection-title').text('Collecting Data...');
-        $('.collection-message').text('Please wait while we gather initial insights');
-
-        // First, ensure profiler is enabled for data collection
-        try {
-            await makeRequest('sitepulse/v1/sp_profiler/set_active', {
-                sitepulse_profiler_enabled: 'enabled'
-            });
-            // Give profiler a moment to initialize
-            await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (error) {
-            console.warn('Could not enable profiler:', error);
-            // Continue anyway
-        }
-
-        const tasks = [
-            { name: 'profiler', label: 'Loading profiler data...', endpoint: 'sitepulse/v1/profiler_stats', delay: 200 },
-            { name: 'hooks', label: 'Analyzing plugin activity...', endpoint: 'sitepulse/v1/profiler_stats', delay: 300 },
-            { name: 'http', label: 'Checking external requests...', endpoint: 'sitepulse/v1/curl_stats', delay: 200 },
-            { name: 'memory', label: 'Gathering memory usage...', endpoint: 'sitepulse/v1/memory_info', delay: 300 },
-            { name: 'plugins', label: 'Profiling installed plugins...', endpoint: 'sitepulse/v1/plugin_profiler_stats', delay: 400 }
-        ];
-
-        let progress = 0;
-        const progressIncrement = 100 / tasks.length;
-
-        // Execute tasks sequentially
-        for (let i = 0; i < tasks.length; i++) {
-            const task = tasks[i];
-
-            // Mark as loading
-            $(`.detail-item[data-task="${task.name}"]`).addClass('active');
-            $(`.detail-item[data-task="${task.name}"] .detail-status`)
-                .removeClass('pending')
-                .addClass('loading')
-                .text('Loading...');
-
-            // Update progress bar
-            progress += progressIncrement;
-            $('.progress-bar').css('width', progress + '%').attr('aria-valuenow', progress);
-            $('.progress-text').text(task.label);
-
-            try {
-                // Simulate API call with delay for better UX
-                await new Promise(resolve => setTimeout(resolve, task.delay));
-
-                // Make actual API call
-                const data = await makeRequest(task.endpoint, {});
-
-                // Mark as complete
-                $(`.detail-item[data-task="${task.name}"]`)
-                    .removeClass('active')
-                    .addClass('completed');
-                $(`.detail-item[data-task="${task.name}"] .detail-status`)
-                    .removeClass('loading')
-                    .addClass('complete')
-                    .text('Complete');
-
-                // Update stats if we got data
-                if (data) {
-                    updateCollectionStats(task.name, data);
-                }
-
-            } catch (error) {
-                console.error(`Error collecting ${task.name} data:`, error);
-
-                // Mark as error (but continue)
-                $(`.detail-item[data-task="${task.name}"]`)
-                    .removeClass('active');
-                $(`.detail-item[data-task="${task.name}"] .detail-status`)
-                    .removeClass('loading')
-                    .addClass('error')
-                    .text('Error');
-            }
-        }
-
-        // Complete progress bar
-        $('.progress-bar').css('width', '100%').attr('aria-valuenow', 100);
-        $('.progress-text').text('Collection complete!');
-
-        // Wait a moment then show completion
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Hide collection status and show completion
-        $('.collection-status').fadeOut(300);
-        $('.collection-progress').fadeOut(300);
-        $('.collection-details').fadeOut(300, function () {
-            $('.collection-complete').fadeIn(500);
-            dataCollectionComplete = true;
-
-            // Enable next button and update UI after a short delay
-            setTimeout(() => {
-                $('#nextStep').prop('disabled', false).text('Next');
-                $('#prevStep').show();
-                updateUI();
-            }, 1000);
-        });
-    }
-
-    /**
-     * Update collection statistics display
-     */
-    function updateCollectionStats(taskName, data) {
-        try {
-            switch (taskName) {
-                case 'profiler':
-                case 'hooks':
-                    if (data && data.count !== undefined) {
-                        $('#stat-hooks').text(data.count);
-                    } else if (data && data.data && Array.isArray(data.data)) {
-                        $('#stat-hooks').text(data.data.length);
-                    } else {
-                        // Show "Ready" if no data yet
-                        $('#stat-hooks').text('0');
-                    }
-                    break;
-
-                case 'http':
-                    if (data && data.count !== undefined) {
-                        $('#stat-http').text(data.count);
-                    } else if (data && data.events && Array.isArray(data.events)) {
-                        $('#stat-http').text(data.events.length);
-                    } else {
-                        $('#stat-http').text('0');
-                    }
-                    break;
-
-                case 'memory':
-                    if (data && data.memory) {
-                        const memoryMB = parseFloat(data.memory);
-                        $('#stat-memory').text(memoryMB.toFixed(2) + ' MB');
-                    } else {
-                        $('#stat-memory').text('N/A');
-                    }
-                    break;
-
-                case 'plugins':
-                    if (data && data.count !== undefined) {
-                        $('#stat-plugins').text(data.count);
-                    } else if (data && data.stats && typeof data.stats === 'object') {
-                        $('#stat-plugins').text(Object.keys(data.stats).length);
-                    } else {
-                        $('#stat-plugins').text('0');
-                    }
-                    break;
-            }
-        } catch (error) {
-            console.error('Error updating stats:', error);
-            // Set default values on error
-            if (taskName === 'memory') {
-                $('#stat-memory').text('N/A');
-            } else {
-                $('#stat-' + (taskName === 'profiler' || taskName === 'hooks' ? 'hooks' : 'http')).text('0');
-            }
-        }
-    }
-
-    /**
-     * Keyboard navigation
-     */
-    $(document).on('keydown', function (e) {
-        // Disable keyboard navigation during data collection
-        if (currentStep === 3 && !dataCollectionComplete) {
+    function handleKeys(e) {
+        if ($(e.target).is('input, textarea, select, button, a, [role="radio"]')) {
             return;
         }
 
-        // Left arrow - previous step
-        if (e.keyCode === 37 && currentStep > 1) {
+        if (e.key === 'ArrowLeft') {
             handlePrev();
-        }
-
-        // Right arrow - next step
-        if (e.keyCode === 39 && currentStep < totalSteps) {
+        } else if (e.key === 'ArrowRight') {
             handleNext();
-        }
-
-        // Enter key - next/finish
-        if (e.keyCode === 13) {
+        } else if (e.key === 'Enter') {
             if (currentStep === totalSteps) {
                 handleFinish();
             } else {
                 handleNext();
             }
         }
-    });
+    }
 
     // Initialize when document is ready
     init();
 });
-

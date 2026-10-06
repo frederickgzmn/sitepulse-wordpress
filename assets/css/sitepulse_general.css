@@ -1,164 +1,3 @@
-#wp-admin-bar-wpsp_view_report .switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 24px;
-    margin-right: 8px;
-    vertical-align: middle;
-}
-
-/* Rainbow border animation class */
-#wp-admin-bar-wpsp_view_report .rainbow-border,
-.sitepulse_css_class .rainbow-border {
-    position: relative;
-    border-radius: 24px;
-    overflow: hidden;
-}
-
-#wp-admin-bar-wpsp_view_report .rainbow-border::before,
-.sitepulse_css_class .rainbow-border::before {
-    content: '';
-    position: absolute;
-    top: -4px;
-    left: -2px;
-    right: -2px;
-    bottom: -4px;
-    background: conic-gradient(
-        #80ff00 0deg,
-        #00ff00 120deg,
-        #00ff80 150deg,
-        #00ffff 180deg,
-        #0080ff 210deg,
-        #0000ff 240deg
-    );
-    border-radius: 26px;
-    z-index: -1;
-    animation: rainbow-rotate 0.5s linear infinite;
-    transition: all 0.3s ease;
-}
-
-#wp-admin-bar-wpsp_view_report .rainbow-border::after,
-.sitepulse_css_class .rainbow-border::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    right: 2px;
-    bottom: 2px;
-    background: #212529;
-    border-radius: 24px;
-    z-index: -1;
-}
-
-#wp-admin-bar-wpsp_view_report .rainbow-border:hover::before,
-.sitepulse_css_class .rainbow-border:hover::before {
-    animation-duration: 1s;
-    top: -6px;
-    left: -3px;
-    right: -3px;
-    bottom: -6px;
-}
-
-@keyframes rainbow-rotate {
-    20% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-#wp-admin-bar-wpsp_view_report .switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-#wp-admin-bar-wpsp_view_report .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #555555;
-    border: 1px solid #777777;
-    transition: .3s;
-}
-
-#wp-admin-bar-wpsp_view_report .slider:before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 2px;
-    top: 2px;
-    background-color: #ffffff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-    transition: .3s;
-}
-
-#wp-admin-bar-wpsp_view_report input:checked + .slider {
-    background-color: #00d4aa;
-    border-color: #00b894;
-}
-
-#wp-admin-bar-wpsp_view_report input:focus + .slider {
-    box-shadow: 0 0 2px #00d4aa;
-    outline: none;
-}
-
-#wp-admin-bar-wpsp_view_report input:checked + .slider:before {
-    -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
-    transform: translateX(26px);
-}
-
-#wp-admin-bar-wpsp_view_report .slider.round {
-    border-radius: 24px;
-}
-
-#wp-admin-bar-wpsp_view_report .slider.round:before {
-    border-radius: 50%;
-}
-
-#wp-admin-bar-wpsp_view_report .switch-container {
-    display: flex;
-    margin: 0;
-    background: transparent;
-    border: none;
-    min-width: 200px;
-}
-
-#wp-admin-bar-wpsp_view_report .sitepulse-container .sitepulse-ontracking {
-    text-align: center;
-}
-
-#wp-admin-bar-wpsp_view_report .switch-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 4px;
-    font-size: 13px;
-    font-weight: 400;
-    color: #eee;
-    line-height: 24px;
-}
-
-#wp-admin-bar-wpsp_view_report .switch-item:last-child {
-    border-bottom: none;
-}
-
-#wp-admin-bar-wpsp_view_report .switch-item:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
-#wp-admin-bar-wpsp_view_report .switch-label {
-    flex-grow: 1;
-    margin-right: 5px;
-    margin-left: 5px;
-}
-
 /* Admin Bar Sitepulse */
 /* Constrain admin bar node to 130x30px */
 #wp-admin-bar-wpsp > .ab-item {
@@ -415,4 +254,36 @@
     border: none;
     background: #0d6efd;
     color: #fff;
+}
+/* Paused monitoring badge */
+#wp-admin-bar-wpsp .wshp-paused {
+    display: inline-block;
+    height: 16px;
+    line-height: 16px;
+    font-size: 10px;
+    padding: 0 6px;
+    margin-left: 6px;
+    border-radius: 7px;
+    background: #f59e0b;
+    color: #1f1300;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+}
+
+/* "Analyze this page" stands out as the main action */
+#wp-admin-bar-wpsp .wshp-analyze > .ab-item {
+    color: #8fe9ff !important;
+    font-weight: 600;
+}
+
+#wp-admin-bar-wpsp .wshp-analyze > .ab-item::before {
+    content: "\f179";
+    font-family: dashicons;
+    font-size: 16px;
+    line-height: 1;
+    position: relative;
+    top: 3px;
+    margin-right: 6px;
+    color: inherit;
 }

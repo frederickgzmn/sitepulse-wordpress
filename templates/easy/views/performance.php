@@ -37,7 +37,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<?php
 		// Ring 1: LoadSentinel
 		$ring_score = isset( $loadsentinel_score ) ? (int) $loadsentinel_score : 0;
-		$ring_label = __( 'LoadSentinel', 'sitepulse' );
+		$ring_label = __( 'Plugin Activity', 'sitepulse' );
 		$ring_size  = 'lg'; // Larger for impact
 		require __DIR__ . '/../partials/score-ring.php';
 
@@ -171,7 +171,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<div>
 				<h3 class="sp-card-title">
 					<span class="dashicons dashicons-rest-api"></span>
-					<?php echo esc_html__( 'Slow Outgoing Connections', 'sitepulse' ); ?>
+					<?php echo esc_html__( 'Slow External Requests', 'sitepulse' ); ?>
 				</h3>
 				<p class="sp-card-subtitle"><?php echo esc_html__( 'Connections to other services taking too long', 'sitepulse' ); ?></p>
 			</div>

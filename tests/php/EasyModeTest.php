@@ -1,18 +1,29 @@
 <?php
 final class EasyModeTest extends Sitepulse_Test_Case {
     public function test_preferences_are_per_user_and_anonymous_users_keep_defaults(): void {
-        update_user_meta(1, 'sitepulse_easy_mode', '1'); update_user_meta(1, 'sitepulse_easy_mode_theme', 'light');
-        $this->assertTrue(Sitepulse_Easy_Mode::is_enabled()); $this->assertSame('light', Sitepulse_Easy_Mode::get_theme());
-        Sitepulse_Test_WP::$user_id = 2; $this->assertFalse(Sitepulse_Easy_Mode::is_enabled()); $this->assertSame('dark', Sitepulse_Easy_Mode::get_theme());
+        update_user_meta(1, 'sitepulse_easy_mode', '0'); update_user_meta(1, 'sitepulse_easy_mode_theme', 'light');
+        $this->assertFalse(Sitepulse_Easy_Mode::is_enabled()); $this->assertSame('light', Sitepulse_Easy_Mode::get_theme());
+        Sitepulse_Test_WP::$user_id = 2; $this->assertTrue(Sitepulse_Easy_Mode::is_enabled()); $this->assertSame('dark', Sitepulse_Easy_Mode::get_theme());
         update_user_meta(2, 'sitepulse_easy_mode_theme', 'invalid'); $this->assertSame('dark', Sitepulse_Easy_Mode::get_theme());
         Sitepulse_Test_WP::$user_id = 0; $this->assertFalse(Sitepulse_Easy_Mode::is_enabled()); $this->assertSame('dark', Sitepulse_Easy_Mode::get_theme());
+    }
+    public function test_easy_mode_is_the_default_until_someone_chooses_the_advanced_view(): void {
+        $this->assertTrue(Sitepulse_Easy_Mode::is_enabled());
+        update_user_meta(1, 'sitepulse_easy_mode', ''); $this->assertFalse(Sitepulse_Easy_Mode::is_enabled(), 'An explicit classic choice stored by earlier versions is kept.');
+        Sitepulse_Easy_Mode::set_enabled(true); $this->assertSame('1', get_user_meta(1, 'sitepulse_easy_mode', true)); $this->assertTrue(Sitepulse_Easy_Mode::is_enabled());
+    }
+    public function test_classic_dashboard_view_defaults_to_developer_and_accepts_only_known_views(): void {
+        $this->assertSame('developer', Sitepulse_Easy_Mode::get_dashboard_view());
+        $this->assertTrue(Sitepulse_Easy_Mode::set_dashboard_view('basic')); $this->assertSame('basic', Sitepulse_Easy_Mode::get_dashboard_view());
+        $this->assertFalse(Sitepulse_Easy_Mode::set_dashboard_view('expert')); $this->assertSame('basic', Sitepulse_Easy_Mode::get_dashboard_view());
+        update_user_meta(1, 'sitepulse_dashboard_view', 'tampered'); $this->assertSame('developer', Sitepulse_Easy_Mode::get_dashboard_view());
     }
     public function test_ajax_toggle_persists_both_directions_for_current_user(): void {
         $_POST['nonce'] = 'nonce-wp_rest';
         $response = $this->ajaxResponse(array('Sitepulse_Easy_Mode', 'ajax_toggle_mode'));
-        $this->assertTrue($response->success); $this->assertTrue($response->data['enabled']); $this->assertSame('1', get_user_meta(1, 'sitepulse_easy_mode', true));
+        $this->assertTrue($response->success); $this->assertFalse($response->data['enabled']); $this->assertSame('0', get_user_meta(1, 'sitepulse_easy_mode', true)); $this->assertSame('Advanced view enabled. Refreshing…', $response->data['message']);
         $response = $this->ajaxResponse(array('Sitepulse_Easy_Mode', 'ajax_toggle_mode'));
-        $this->assertFalse($response->data['enabled']); $this->assertSame('', get_user_meta(1, 'sitepulse_easy_mode', true));
+        $this->assertTrue($response->data['enabled']); $this->assertSame('1', get_user_meta(1, 'sitepulse_easy_mode', true)); $this->assertSame('Simple view enabled. Refreshing…', $response->data['message']);
     }
     /** @dataProvider themes */
     public function test_ajax_theme_allows_known_values_and_defaults_invalid_input($input, $expected): void {

@@ -1,9 +1,9 @@
 <?php
 /**
- * Easy Mode — Resource Load (LoadSentinel) view.
+ * Easy Mode — Plugin Activity view (site-wide hook and plugin profiler).
  *
  * Zones:
- *  1. Controls & Stats — Profiler toggle, single-page mode, key stats
+ *  1. Controls & Stats — Profiler toggle, link to Page Analysis, key stats
  *  2. Event Footprint  — Detailed hook events table
  *
  * @package SitePulse
@@ -13,24 +13,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $sp_stats = isset( $stats ) ? $stats : array();
-$sp_single = isset( $single_load_events ) ? $single_load_events : false;
 $sp_snap   = isset( $snapshot_time ) ? $snapshot_time : null;
 $sp_pi_count = isset( $active_plugins_count ) ? (int) $active_plugins_count : 0;
 $sp_profiler_on = get_option( 'sitepulse_profiler_enabled', null );
-$sp_report_mode = get_option( 'sitepulse_report_mode_active' );
-$sp_tracked_pid = get_option( 'sitepulse_current_tracked_pageid' );
 ?>
 
 <!-- Page Header -->
 <div class="sp-page-header sp-dashboard-header">
 	<div class="sp-dashboard-header-left">
-		<h2 class="sp-page-title"><?php echo esc_html__( 'Activity Monitor', 'sitepulse' ); ?></h2>
-		<p class="sp-page-subtitle"><?php echo esc_html__( 'Track what\'s running behind the scenes and how long each action takes', 'sitepulse' ); ?></p>
-	</div>
-	<div class="sp-dashboard-header-right">
-		<?php if ( $sp_single ) : ?>
-			<span class="sp-badge sp-badge-warning"><?php echo esc_html__( 'Single Page Mode', 'sitepulse' ); ?></span>
-		<?php endif; ?>
+		<h2 class="sp-page-title"><?php echo esc_html__( 'Plugin Activity', 'sitepulse' ); ?></h2>
+		<p class="sp-page-subtitle"><?php echo esc_html__( 'Which plugins and theme code run behind the scenes across your site, and how long each takes', 'sitepulse' ); ?></p>
 	</div>
 </div>
 
@@ -50,7 +42,7 @@ $sp_tracked_pid = get_option( 'sitepulse_current_tracked_pageid' );
 			<!-- Profiler Toggle -->
 			<div class="sp-flex sp-justify-between sp-items-center sp-mb-16">
 				<div>
-					<p class="sp-text-sm sp-fw-500 sp-mb-0"><?php echo esc_html__( 'Activity Tracker', 'sitepulse' ); ?></p>
+					<p class="sp-text-sm sp-fw-500 sp-mb-0"><?php echo esc_html__( 'Performance Monitor', 'sitepulse' ); ?></p>
 					<p class="sp-text-xs sp-text-muted sp-mb-0"><?php echo esc_html__( 'Record how long each action takes', 'sitepulse' ); ?></p>
 				</div>
 				<label class="sp-toggle">
@@ -59,26 +51,15 @@ $sp_tracked_pid = get_option( 'sitepulse_current_tracked_pageid' );
 				</label>
 			</div>
 
-			<!-- Single Page Mode -->
-			<div class="sp-flex sp-justify-between sp-items-center sp-mb-16">
+			<!-- One page instead of the whole site -->
+			<div class="sp-alert sp-alert-info">
+				<span class="dashicons dashicons-search"></span>
 				<div>
-					<p class="sp-text-sm sp-fw-500 sp-mb-0"><?php echo esc_html__( 'Focus on One Page', 'sitepulse' ); ?></p>
-					<p class="sp-text-xs sp-text-muted sp-mb-0"><?php echo esc_html__( 'Only track activity on a specific page', 'sitepulse' ); ?></p>
+					<strong><?php echo esc_html__( 'Looking at one slow page?', 'sitepulse' ); ?></strong>
+					<span class="sp-text-xs" style="display:block;"><?php echo esc_html__( 'This list covers your whole site. Page Analysis shows what runs on one page and how long each part takes.', 'sitepulse' ); ?></span>
+					<a class="sp-text-xs sp-fw-600" href="<?php echo esc_url( Sitepulse_Page_Analysis::admin_link() ); ?>"><?php echo esc_html__( 'Analyze a page', 'sitepulse' ); ?> &rarr;</a>
 				</div>
-				<span class="sp-badge <?php echo $sp_report_mode ? 'sp-badge-success' : 'sp-badge-neutral'; ?>">
-					<?php echo $sp_report_mode ? esc_html__( 'Active', 'sitepulse' ) : esc_html__( 'Off', 'sitepulse' ); ?>
-				</span>
 			</div>
-
-			<?php if ( $sp_report_mode && $sp_tracked_pid ) : ?>
-				<div class="sp-alert sp-alert-info">
-					<span class="dashicons dashicons-admin-page"></span>
-					<div>
-						<strong><?php echo esc_html__( 'Watching Page:', 'sitepulse' ); ?></strong>
-						<span class="sp-text-xs" style="display:block;"><?php echo esc_html( get_the_title( (int) $sp_tracked_pid ) ); ?> (ID: <?php echo esc_html( $sp_tracked_pid ); ?>)</span>
-					</div>
-				</div>
-			<?php endif; ?>
 		</div>
 	</div>
 
@@ -114,7 +95,7 @@ $sp_tracked_pid = get_option( 'sitepulse_current_tracked_pageid' );
 <div>
 	<div class="sp-zone-header sp-zone-header--info">
 		<span class="dashicons dashicons-info-outline"></span>
-		<span class="sp-zone-title"><?php echo sprintf( esc_html__( 'How it work: Active = Calls are contantly increasing, Inactive = Not more call recorded in the last %d seconds', 'sitepulse' ), SITEPULSE_SETTINGS_PROFILER_INACTIVE_AFTER_SECONDS ); ?></span>
+		<span class="sp-zone-title"><?php /* translators: %d: number of seconds */ echo esc_html( sprintf( __( 'Active means the callback ran recently; Inactive means it has not run in the last %d seconds.', 'sitepulse' ), SITEPULSE_SETTINGS_PROFILER_INACTIVE_AFTER_SECONDS ) ); ?></span>
 	</div>
 </div>
 
@@ -240,7 +221,7 @@ $sp_tracked_pid = get_option( 'sitepulse_current_tracked_pageid' );
 			<div class="sp-empty" style="padding: 48px;">
 				<div class="sp-empty-icon"><span class="dashicons dashicons-performance" style="font-size:36px;width:36px;height:36px;color:var(--sp-info);"></span></div>
 				<p class="sp-empty-title"><?php echo esc_html__( 'No Activity Recorded Yet', 'sitepulse' ); ?></p>
-				<p class="sp-empty-desc"><?php echo esc_html__( 'Turn on the Activity Monitor to start tracking what happens behind the scenes.', 'sitepulse' ); ?></p>
+				<p class="sp-empty-desc"><?php echo esc_html__( 'Turn on the Performance Monitor to start tracking what happens behind the scenes.', 'sitepulse' ); ?></p>
 			</div>
 		<?php endif; ?>
 	</div>

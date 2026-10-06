@@ -27,23 +27,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<label class="form-switch me-2">
 							<input type="checkbox" <?php checked( $sitepulse_lowhttp_enabled, '1' ); ?> id="sp-http-load"
 								class="form-check-input sp_http_load">
-							<span class="form-check-label"><?php echo esc_html__( 'API & Request', 'sitepulse' ); ?></span>
+							<span class="form-check-label"><?php echo esc_html__( 'External Requests', 'sitepulse' ); ?></span>
 						</label>
 						<label class="form-switch me-2">
 							<input type="checkbox" <?php checked( $sitepulse_profiler_enabled, '1' ); ?> id="sp-profiler"
 								class="form-check-input sp_profiler">
-							<span class="form-check-label"><?php echo esc_html__( 'LoadSentinel', 'sitepulse' ); ?></span>
+							<span class="form-check-label"><?php echo esc_html__( 'Performance Monitor', 'sitepulse' ); ?></span>
 						</label>
 					</div>
 				</div>
 
-				<!-- View Toggle Button -->
+				<!-- View Toggle Button: switches to the view that is not showing -->
+				<?php $sp_is_basic_view = 'basic' === $sp_dashboard_view; ?>
 				<div class="sp-view-toggle">
-					<button type="button" id="sp-toggle-view" class="sp-view-toggle-btn" data-view="basic">
+					<button type="button" id="sp-toggle-view" class="sp-view-toggle-btn" data-view="<?php echo $sp_is_basic_view ? 'developer' : 'basic'; ?>"
+						data-label-basic="<?php echo esc_attr__( 'Basic View', 'sitepulse' ); ?>"
+						data-label-developer="<?php echo esc_attr__( 'Developer View', 'sitepulse' ); ?>">
 						<span class="sp-view-toggle-icon">
-							<span class="dashicons dashicons-admin-users"></span>
+							<span class="dashicons <?php echo $sp_is_basic_view ? 'dashicons-editor-code' : 'dashicons-admin-users'; ?>"></span>
 						</span>
-						<span class="sp-view-label"><?php echo esc_html__( 'Basic View', 'sitepulse' ); ?></span>
+						<span class="sp-view-label"><?php echo $sp_is_basic_view ? esc_html__( 'Developer View', 'sitepulse' ) : esc_html__( 'Basic View', 'sitepulse' ); ?></span>
 						<span class="sp-view-toggle-arrow dashicons dashicons-arrow-right-alt2"></span>
 					</button>
 				</div>
@@ -52,38 +55,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		<?php require_once( SITEPULSE_PATH . '/templates/backend/header.php' ); ?>
 
-		<?php if ( $loadstatus || $curlstatus ) { ?>
-			<hr>
-			<div class="row  justify-content-center align-items-center">
-				<div class="col-12 text-center">
-					<span class="badge bg-danger">
-						<?php echo esc_html__( 'Single Track Mode Enabled For: ', 'sitepulse' ); ?>
-						<a href="<?php echo esc_url( get_permalink( $sitepulse_current_tracked_pageid ) ); ?>"
-							class="link-light link-underline-opacity-0 link-underline-opacity-75-hover">
-							<?php echo esc_html( get_the_title( $sitepulse_current_tracked_pageid ) ); ?>
-						</a>
-					</span>
-				</div>
+		<!-- Analyze a specific page -->
+		<form class="sp-analyze-card" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
+			<input type="hidden" name="page" value="<?php echo esc_attr( Sitepulse_Page_Analysis::ADMIN_PAGE ); ?>">
+			<input type="hidden" name="autorun" value="1">
+			<div class="sp-analyze-card-text">
+				<strong><?php echo esc_html__( 'Why is a page slow?', 'sitepulse' ); ?></strong>
+				<span><?php echo esc_html__( 'Analyze any address on your site: a product, a post, your shop or an archive.', 'sitepulse' ); ?></span>
 			</div>
-			<hr>
-		<?php } ?>
+			<div class="sp-analyze-card-field">
+				<label class="screen-reader-text" for="sp-analyze-card-url"><?php echo esc_html__( 'Page address', 'sitepulse' ); ?></label>
+				<input type="text" id="sp-analyze-card-url" name="url" class="form-control" value="<?php echo esc_attr( home_url( '/' ) ); ?>" spellcheck="false">
+				<button type="submit" class="btn btn-primary"><?php echo esc_html__( 'Analyze page', 'sitepulse' ); ?></button>
+			</div>
+		</form>
 
 		<!-- Basic View - Simplified Dashboard -->
-		<div id="sp-basic-view" class="sp-view-mode" style="display: none;">
-			<!-- Early Access Promo Banner -->
-			<div class="sp-promo-banner mt-3">
-				<div class="sp-promo-content">
-					<h3><?php echo esc_html__( 'Claim Your Early Access', 'sitepulse' ); ?></h3>
-					<p><?php echo esc_html__( 'Experience the future of WordPress performance today. SitePulse Pro is now open for early access. Secure your spot and start optimizing with elite tools.', 'sitepulse' ); ?></p>
-				</div>
-				<div class="sp-promo-action">
-					<a href="https://sitepulse.me/" target="_blank" class="sp-btn-early-access sp-pulse">
-						<span class="dashicons dashicons-star-filled me-2"></span>
-						<?php echo esc_html__( 'Secure My Spot', 'sitepulse' ); ?>
-					</a>
-				</div>
-			</div>
-
+		<div id="sp-basic-view" class="sp-view-mode"<?php echo $sp_is_basic_view ? '' : ' style="display: none;"'; ?>>
 			<div class="row g-3">
 				<!-- AI Diagnostic Report Widget (Basic View) -->
 				<?php if ( $sp_ai_external_api_enabled ) :
@@ -474,6 +462,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 									</div>
 								</div>
 							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-12">
+					<!-- Early Access Promo Banner -->
+					<div class="sp-promo-banner">
+						<div class="sp-promo-content">
+							<h3><?php echo esc_html__( 'Claim Your Early Access', 'sitepulse' ); ?></h3>
+							<p><?php echo esc_html__( 'Experience the future of WordPress performance today. SitePulse Pro is now open for early access. Secure your spot and start optimizing with elite tools.', 'sitepulse' ); ?></p>
+						</div>
+						<div class="sp-promo-action">
+							<a href="https://sitepulse.me/" target="_blank" class="sp-btn-early-access sp-pulse">
+								<span class="dashicons dashicons-star-filled me-2"></span>
+								<?php echo esc_html__( 'Secure My Spot', 'sitepulse' ); ?>
+							</a>
 						</div>
 					</div>
 				</div>
@@ -1470,7 +1474,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 
 		<!-- Developer View - Technical Dashboard -->
-		<div id="sp-developer-view" class="sp-view-mode">
+		<div id="sp-developer-view" class="sp-view-mode"<?php echo $sp_is_basic_view ? ' style="display: none;"' : ''; ?>>
 			<!-- Status Section - PageSpeed Insights Style -->
 			<div class="row g-3 mb-3">
 				<div class="col-12">
@@ -1510,7 +1514,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 						<div class="card-body sp-pagespeed-body">
 							<div class="row g-3 justify-content-center">
-								<!-- LoadSentinel Metric -->
+								<!-- Plugin Activity Metric -->
 								<div class="col-6 col-md-2">
 									<div class="sp-pagespeed-metric" data-score="<?php echo esc_attr( $loadsentinel_score ); ?>">
 										<div class="sp-circular-progress">
@@ -1521,7 +1525,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 										</div>
 										<div class="sp-metric-label">
 											<span class="dashicons dashicons-chart-line"></span>
-											<?php echo esc_html__( 'LoadSentinel Score', 'sitepulse' ); ?>
+											<?php echo esc_html__( 'Plugin Activity Score', 'sitepulse' ); ?>
 										</div>
 										<div class="sp-metric-status">
 											<span
@@ -1555,7 +1559,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 									</div>
 								<?php endif; ?>
 
-								<!-- API & Request Metric -->
+								<!-- External Requests Metric -->
 								<div class="col-6 col-md-2">
 									<div class="sp-pagespeed-metric" data-score="<?php echo esc_attr( $api_score ); ?>">
 										<div class="sp-circular-progress">
@@ -1566,7 +1570,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 										</div>
 										<div class="sp-metric-label">
 											<span class="dashicons dashicons-networking"></span>
-											<?php echo esc_html__( 'API & Request Score', 'sitepulse' ); ?>
+											<?php echo esc_html__( 'External Requests Score', 'sitepulse' ); ?>
 										</div>
 										<div class="sp-metric-status">
 											<span

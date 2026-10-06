@@ -8,10 +8,19 @@ final class BackendCoverageTest extends Sitepulse_Test_Case {
     }
 
     public function test_admin_assets_follow_screen_and_mode_and_notices_are_suppressed_only_on_plugin_pages(): void {
+        update_user_meta(1, 'sitepulse_easy_mode', '0');
         $backend = new Sitepulse_Backend(new Sitepulse_Plugin());
         Sitepulse_Test_WP::$screen = (object) array('id' => 'plugins');
         $backend->enqueue_styles_and_scripts();
         $this->assertArrayHasKey('sitepulse-deactivation-modal', Sitepulse_Test_WP::$scripts);
+        $deactivation = Sitepulse_Test_WP::$localized['sitepulse-deactivation-modal']['SitePulseDeactivationData'];
+        $this->assertSame('https://example.test/wp-json/', $deactivation['rest_url']); $this->assertSame('nonce-wp_rest', $deactivation['nonce']);
+        $this->assertSame('https://wordpress.org/support/plugin/sitepulse/', $deactivation['support_url']);
+        $this->assertSame('https://example.test/wp-admin/admin.php?page=wpsp_sitepulse_page_analysis&url=https%3A%2F%2Fexample.test%2F&autorun=1', $deactivation['page_analysis_url']);
+        foreach (array('no_longer_needed', 'found_better', 'not_working', 'too_slow', 'confusing', 'temporary', 'missing_feature', 'other') as $reason) {
+            $this->assertNotEmpty($deactivation['i18n']['reason_' . $reason]); $this->assertNotEmpty($deactivation['i18n']['prompt_' . $reason]);
+        }
+        $this->assertArrayNotHasKey('sitepulse-page-analysis', Sitepulse_Test_WP::$scripts);
         $backend->register_admin_menu();
         Sitepulse_Test_WP::$screen->id = 'toplevel_page_wpsp_sitepulse';
         $backend->wpdocs_this_screen();
@@ -33,10 +42,45 @@ final class BackendCoverageTest extends Sitepulse_Test_Case {
         $backend->suppress_admin_notices();
     }
 
+    /** @dataProvider interfaces */
+    public function test_page_analysis_screen_loads_its_engine_in_either_interface($easy): void {
+        update_user_meta(1, 'sitepulse_easy_mode', $easy ? '1' : '0');
+        $backend = new Sitepulse_Backend(new Sitepulse_Plugin());
+        Sitepulse_Test_WP::$screen = (object) array('id' => 'sitepulse_page_wpsp_sitepulse_page_analysis');
+        $backend->wpdocs_this_screen(); $backend->enqueue_styles_and_scripts();
+        $this->assertSame(array('jquery'), Sitepulse_Test_WP::$scripts['sitepulse-page-analysis']['deps']); $this->assertTrue(Sitepulse_Test_WP::$scripts['sitepulse-page-analysis']['args']);
+        $this->assertSame(SITEPULSE_ADMIN_ASSETS_CSS_URL . 'page-analysis.css', Sitepulse_Test_WP::$styles['sitepulse-page-analysis']['src']);
+        $data = Sitepulse_Test_WP::$localized['sitepulse-page-analysis']['SitePulsePageAnalysisData'];
+        $this->assertSame('https://example.test/wp-json/sitepulse/v1/page_analysis/', $data['rest_url']); $this->assertSame(3, $data['samples']);
+        $this->assertSame('https://example.test/wp-admin/admin.php?page=wpsp_sitepulse_page_analysis', $data['admin_link']); $this->assertSame('Loading the page as a visitor (%1$d of %2$d)…', $data['i18n']['loading']);
+        $this->assertSame($easy, isset(Sitepulse_Test_WP::$scripts['sitepulse-easy-mode-script']));
+    }
+    public static function interfaces(): array { return array('easy' => array(true), 'classic' => array(false)); }
+
+    public function test_menu_uses_plain_names_and_adds_page_analysis(): void {
+        $backend = new Sitepulse_Backend(new Sitepulse_Plugin()); $backend->register_admin_menu();
+        $titles = array(); foreach (Sitepulse_Test_WP::$menus as $slug => $menu) { $titles[$slug] = $menu['menu_title']; }
+        $this->assertSame(array('wpsp_sitepulse' => 'Dashboard', 'wpsp_sitepulse_page_analysis' => 'Page Analysis', 'wpsp_sitepulse_resource_load' => 'Plugin Activity', 'wpsp_sitepulse_curl_api' => 'External Requests', 'wpsp_sitepulse_settings' => 'Settings'), $titles);
+    }
+
+    public function test_page_analysis_screen_receives_the_requested_page_and_history(): void {
+        $_GET = array('url' => 'shop/<b>', 'autorun' => '1', 'analysis' => 'A1');
+        $sample = array('server_ms' => 450.0, 'memory_peak' => 1048576, 'queries' => 12, 'status' => 200, 'page' => array('title' => 'Cart <page>', 'kind' => 'Page'), 'sources' => array(), 'callbacks' => array(), 'http' => array());
+        update_option('sitepulse_page_analyses', array(array('id' => 'a1', 'url' => 'https://example.test/shop/', 'created_at' => time() - 120, 'samples' => array(), 'pending_tokens' => array()),
+            array('id' => 'a2', 'url' => 'https://example.test/cart/', 'created_at' => time() - 7200, 'samples' => array($sample), 'pending_tokens' => array())));
+        update_user_meta(1, 'sitepulse_easy_mode', '0');
+        Sitepulse_Test_WP::$screen = (object) array('id' => 'sitepulse_page_wpsp_sitepulse_page_analysis');
+        ob_start(); (new Sitepulse_Backend(new Sitepulse_Plugin()))->render_page_analysis(); $html = ob_get_clean();
+        $this->assertStringContainsString('class="sp-pa-classic"', $html); $this->assertStringContainsString('data-autorun="1"', $html); $this->assertStringContainsString('data-analysis="a1"', $html);
+        $this->assertStringContainsString('value="shop/"', $html); $this->assertStringContainsString('https://example.test/shop/', $html); $this->assertStringContainsString('2 mins ago', $html);
+        $this->assertStringContainsString('Cart &lt;page&gt;', $html); $this->assertStringContainsString('<strong>450 ms</strong>', $html); $this->assertStringContainsString('sp-pa-dot--good', $html); $this->assertStringContainsString('sp-pa-dot--none', $html);
+        $this->assertStringContainsString('<div class="sp-pa-intro" hidden>', $html);
+    }
+
     public function test_menu_and_rendering_capabilities_are_enforced(): void {
         Sitepulse_Test_WP::$capabilities = array();
         $backend = new Sitepulse_Backend(new Sitepulse_Plugin());
-        foreach (array('render_resource_load', 'render_curl_api', 'render_page_sitepulse_settings') as $method) {
+        foreach (array('render_resource_load', 'render_curl_api', 'render_page_sitepulse_settings', 'render_page_analysis') as $method) {
             ob_start(); $backend->$method(); $this->assertSame('', ob_get_clean());
         }
         $this->expectException(Sitepulse_Test_Die::class);

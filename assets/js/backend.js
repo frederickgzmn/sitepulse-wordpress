@@ -106,25 +106,6 @@ jQuery(function ($) {
         return res.json();
     }
 
-    async function setSPReportMode(report_mode) {
-        const url = SitePulse.rest_url.replace(/\/$/, '') + '/sitepulse/v1/sp_report_mode/set_active';
-        const res = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-WP-Nonce': SitePulse.nonce
-            },
-            body: JSON.stringify({ report_mode, _wpnonce: SitePulse.nonce })
-        });
-
-        if (!res.ok) {
-            const err = await res.json().catch(() => null);
-            throw new Error('Request failed: ' + (err?.message || res.status));
-        }
-
-        return res.json();
-    }
-
     async function enableSaveQueries() {
         const url = SitePulse.rest_url.replace(/\/$/, '') + '/sitepulse/v1/save_queries/enable';
         const res = await fetch(url, {
@@ -354,25 +335,21 @@ jQuery(function ($) {
 
     // Send AJAX request when clicking .sp_profiler
     $('.sp_profiler').on('click', async function () {
-        var sitepulse_profiler_enabled = $(this).is(':checked');
-
-        if (sitepulse_profiler_enabled) {
-            sitepulse_profiler_enabled = 'enabled';
-        } else {
-            sitepulse_profiler_enabled = 'disabled';
-        }
+        // Read the switch that was clicked; the classic and Simple dashboards use different IDs.
+        const $toggle = $(this);
+        const enabled = $toggle.is(':checked');
 
         try {
-            const result = await setSPProfilerActive(sitepulse_profiler_enabled);
-            // Optionally handle success, e.g. show a message or update UI
-            if (jQuery('#sp-profiler').is(':checked')) {
+            await setSPProfilerActive(enabled ? 'enabled' : 'disabled');
+            if (enabled) {
                 showAlert('Performance Monitor is enabled and tracking the site.', 'success', 2000);
             } else {
                 showAlert('Performance Monitor is disabled.', 'warning', 2000);
             }
         } catch (err) {
-            // Optionally handle error, e.g. show error message
+            $toggle.prop('checked', !enabled);
             console.error('Failed to update Profiler Load:', err);
+            showAlert('Could not change the Performance Monitor. Please try again.', 'danger', 3000);
         }
     });
 
@@ -398,7 +375,7 @@ jQuery(function ($) {
         const nonce = String($button.data('nonce') || SitePulse.nonce || '');
 
         if (!ajaxUrl || !nonce) {
-            showAlert('Could not start the new experience switch.', 'danger', 2500);
+            showAlert('Could not switch to the simple view.', 'danger', 2500);
             return;
         }
 
@@ -423,76 +400,38 @@ jQuery(function ($) {
                 throw new Error(responseData?.data?.message || responseData?.message || String(response.status));
             }
 
-            showAlert('New experience enabled. Reloading dashboard...', 'success', 1200);
+            showAlert('Simple view enabled. Reloading...', 'success', 1200);
             setTimeout(() => {
                 window.location.reload();
             }, 1200);
         } catch (err) {
             console.error('Failed to switch to new experience:', err);
-            showAlert('Could not switch experience. Please try again.', 'danger', 2500);
+            showAlert('Could not switch to the simple view. Please try again.', 'danger', 2500);
             $button.removeClass('is-loading').prop('disabled', false);
-        }
-    });
-
-    // Send AJAX request when clicking .sp_report_mode
-    $('.sp_report_mode').on('click', async function () {
-        var sp_report_status = $(this).is(':checked');
-
-        if (sp_report_status) {
-            sp_report_status = 1;
-        } else {
-            sp_report_status = 0;
-        }
-
-        try {
-            const result = await setSPReportMode(sp_report_status);
-            // Optionally handle success, e.g. show a message or update UI
-
-            if (result.report_mode == 1) {
-                showAlert('Single Page Report is enabled.', 'success', 1000);
-                $('.sitepulse_report_single_mode').show();
-                // toggle sitepulse_report_mode
-                $('.sitepulse_report_mode').toggleClass('rainbow-border');
-            } else {
-                showAlert('Single Page Report is disabled.', 'warning', 1000);
-                $('.sitepulse_report_single_mode').hide();
-                $('.sitepulse_report_mode').toggleClass('rainbow-border');
-            }
-
-            setTimeout(() => {
-                location.reload();
-            }, 2000);
-        } catch (err) {
-            // Optionally handle error, e.g. show error message
-            console.error('Failed to update TP Load:', err);
         }
     });
 
     // Send AJAX request when clicking .sp_http_load
     $('.sp_http_load').on('click', async function () {
-        var wpslowhttp = $(this).is(':checked');
-
-        if (wpslowhttp) {
-            wpslowhttp = 'enabled';
-        } else {
-            wpslowhttp = 'disabled';
-        }
+        // Read the switch that was clicked; the classic and Simple dashboards use different IDs.
+        const $toggle = $(this);
+        const enabled = $toggle.is(':checked');
 
         try {
-            const result = await setTPLoadActive(wpslowhttp);
-            // Optionally handle success, e.g. show a message or update UI
-            if (jQuery('#sp-http-load').is(':checked')) {
-                showAlert('API & Request is enabled and tracking the site.', 'success', 2000);
+            await setTPLoadActive(enabled ? 'enabled' : 'disabled');
+            if (enabled) {
+                showAlert('External Requests tracking is enabled.', 'success', 2000);
             } else {
-                showAlert('API & Request is disabled.', 'warning', 2000);
+                showAlert('External Requests tracking is disabled.', 'warning', 2000);
             }
 
             setTimeout(() => {
                 location.reload();
             }, 2000);
         } catch (err) {
-            // Optionally handle error, e.g. show error message
+            $toggle.prop('checked', !enabled);
             console.error('Failed to update TP Load:', err);
+            showAlert('Could not change External Requests tracking. Please try again.', 'danger', 3000);
         }
     });
 
@@ -1280,64 +1219,38 @@ jQuery(function ($) {
     });
 });
 
-// View Mode Helper Functions
-
-
+// View Mode: Basic or Developer. The server renders the saved view; switching saves it per user.
 (function () {
-    // Get saved view preference or default to 'developer'
-    const savedView = localStorage.getItem('sitepulse_dashboard_view') || 'developer';
     const toggleButton = document.getElementById('sp-toggle-view');
     const basicView = document.getElementById('sp-basic-view');
     const developerView = document.getElementById('sp-developer-view');
 
+    if (!toggleButton || !basicView || !developerView) return;
+
     function setView(view) {
-        if (view === 'basic') {
-            if (basicView != null) {
-                basicView.style.display = 'block';
-            }
+        const isBasic = view === 'basic';
+        basicView.style.display = isBasic ? 'block' : 'none';
+        developerView.style.display = isBasic ? 'none' : 'block';
 
-            if (developerView != null) {
-                developerView.style.display = 'none';
-            }
-
-            if (!toggleButton) return;
-
-            toggleButton.setAttribute('data-view', 'developer');
-            toggleButton.querySelector('.sp-view-label').textContent = 'Developer View';
-            const iconElement = toggleButton.querySelector('.sp-view-toggle-icon .dashicons');
-            if (iconElement) {
-                iconElement.className = 'dashicons dashicons-editor-code';
-            }
-            localStorage.setItem('sitepulse_dashboard_view', 'basic');
-        } else {
-            if (basicView != null) {
-                basicView.style.display = 'none';
-            }
-
-            if (developerView != null) {
-                developerView.style.display = 'block';
-            }
-
-            if (!toggleButton) return;
-
-            toggleButton.setAttribute('data-view', 'basic');
-            toggleButton.querySelector('.sp-view-label').textContent = 'Basic View';
-            const iconElement = toggleButton.querySelector('.sp-view-toggle-icon .dashicons');
-            if (iconElement) {
-                iconElement.className = 'dashicons dashicons-admin-users';
-            }
-            localStorage.setItem('sitepulse_dashboard_view', 'developer');
-        }
+        // The button always offers the other view.
+        toggleButton.setAttribute('data-view', isBasic ? 'developer' : 'basic');
+        toggleButton.querySelector('.sp-view-label').textContent = toggleButton.getAttribute(isBasic ? 'data-label-developer' : 'data-label-basic');
+        toggleButton.querySelector('.sp-view-toggle-icon .dashicons').className = 'dashicons ' + (isBasic ? 'dashicons-editor-code' : 'dashicons-admin-users');
     }
 
-    // Set initial view
-    setView(savedView);
-
-    if (!toggleButton) return;
-
-    // Toggle on button click
     toggleButton.addEventListener('click', function () {
-        const currentView = this.getAttribute('data-view');
-        setView(currentView);
+        const view = this.getAttribute('data-view');
+        setView(view);
+
+        fetch(SitePulse.rest_url.replace(/\/$/, '') + '/sitepulse/v1/dashboard_view', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': SitePulse.nonce
+            },
+            body: JSON.stringify({ view: view, _wpnonce: SitePulse.nonce })
+        }).catch(function (err) {
+            console.error('Failed to save dashboard view:', err);
+        });
     });
 })();

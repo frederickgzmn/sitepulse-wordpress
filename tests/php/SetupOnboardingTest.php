@@ -5,7 +5,7 @@ final class SetupOnboardingTest extends Sitepulse_Test_Case {
         if ($version !== null) { update_option('wpsp_version', $version); }
         $setup = new Sitepulse_Setup(); $setup->activate(); $this->assertSame($expected, get_option('wpsp_version'));
     }
-    public static function versions(): array { return array(array(null, '1.4.5'), array('1.0.0', '1.4.5'), array('1.4.5', '1.4.5'), array('99.0.0', '99.0.0')); }
+    public static function versions(): array { return array(array(null, '1.4.6'), array('1.0.0', '1.4.6'), array('1.4.5', '1.4.6'), array('1.4.6', '1.4.6'), array('99.0.0', '99.0.0')); }
     public function test_options_are_namespaced_without_affecting_unrelated_options(): void {
         $setup = new Sitepulse_Setup(); update_option('theme', 'unrelated'); $setup->setOption('theme', 'dark');
         $this->assertSame('dark', get_option('wpsp_theme')); $this->assertSame('unrelated', get_option('theme'));

@@ -35,10 +35,11 @@ The PHP suite executes the production classes, functions, loader, uninstall scri
 | --- | --- |
 | Loader and uninstall | Active-plugin ordering, Pro guard, activation flags, deactivation cron cleanup, notices, selective option/user-meta cleanup |
 | Settings and setup | Defaults, validation, persistence, hook refresh, email/cron controls, overdue cron detection, option prefixes, body classes |
-| Onboarding and Easy Mode | Completion, reset, redirect gates, preference persistence, permissions, AJAX validation |
+| Onboarding and Easy Mode | Completion, reset, redirect gates, interface choice, Easy Mode default, per-user preferences, getting-started checklist, permissions, AJAX validation |
 | Utilities and branding | Unit formatting, sensitive URL parameters, paths, branding sanitization and fallbacks |
 | Analytics | Event allowlist, property sanitization, payloads, permission/nonce checks |
-| Profilers and tracking | Enablement, source classification, aggregation, thresholds, event storage, page tracking and cleanup |
+| Profilers and tracking | Enablement, source classification, aggregation, exclusive (self) timing, thresholds, event storage |
+| Page Analysis | URL validation, one-time tokens, isolated per-request samples, loopback and browser-visit fallback, report findings, history, pause/resume monitoring |
 | REST | Registered routes, permissions, nonces, malformed requests, settings/flags, statistics, API responses and autoload changes |
 | API and cron | Report payloads, response errors, licenses, caching, diagnostic states, scheduling, locks and fallback behavior |
 | Plugin diagnostics | Slow-query filtering/sorting, memory reporting, temporary config backups and write failures, disk benchmark cleanup |
@@ -67,7 +68,7 @@ Normal `composer test` does not require a coverage extension. Xdebug is required
 
 The Node test runner loads each original script into a fresh jsdom window with real jQuery. The shared browser helper controls time, fetch responses, and jQuery's network transport. Tests interact with DOM events and assert rendered content, request payloads, state changes, loading states, and error recovery.
 
-All six first-party browser scripts have dedicated tests: shared alerts/confirmations/notices, backend controls, frontend tracking, onboarding, deactivation feedback, and Easy Mode. Each test closes its window so event handlers, timers, and storage cannot leak to the next test. Bundled Bootstrap is an upstream dependency and is not retested here.
+All six first-party browser scripts have dedicated tests: shared alerts/confirmations/notices, backend controls, Page Analysis, onboarding, deactivation feedback, and Easy Mode. Each test closes its window so event handlers, timers, and storage cannot leak to the next test. Bundled Bootstrap is an upstream dependency and is not retested here.
 
 ```sh
 npm run test:coverage

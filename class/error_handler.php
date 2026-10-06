@@ -287,7 +287,7 @@ class Sitepulse_Error_Handler {
 			E_USER_ERROR        => 'User Error',
 			E_USER_WARNING      => 'User Warning',
 			E_USER_NOTICE       => 'User Notice',
-			E_STRICT            => 'Strict Notice',
+			2048                => 'Strict Notice', // E_STRICT; the constant is deprecated since PHP 8.4.
 			E_RECOVERABLE_ERROR => 'Recoverable Error',
 			E_DEPRECATED        => 'Deprecated',
 			E_USER_DEPRECATED   => 'User Deprecated',
