@@ -217,6 +217,7 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 * Fixed: switching off External Requests tracking now really stops it (it kept recording before), and the dashboard switches confirm the right state.
 * Fixed: single-file plugins (such as Hello Dolly) appear under their own name in Plugin Activity.
 * Fixed: a deprecation notice from the error handler on PHP 8.4 and newer.
+* Fixed: PHP warnings and errors (such as "Undefined array key avg_ms") when a site still holds data saved by earlier versions or damaged data.
 * Removed: the simulated "Real-Time Tracking" modal on the front end.
 
 = 1.4.5 =

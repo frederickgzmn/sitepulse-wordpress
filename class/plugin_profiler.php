@@ -38,6 +38,15 @@ if ( ! class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
 		 * Option key for storing actual measured total load time
 		 */
 		const OPTION_TOTAL_TIME = 'sitepulse_plugin_profiler_total_time';
+
+		/**
+		 * Every field the screens read from a plugin stat. Earlier versions stored another shape.
+		 */
+		const STAT_DEFAULTS = [
+			'plugin_file' => '', 'plugin_name' => '', 'plugin_version' => '', 'plugin_slug' => '', 'file_size' => 0,
+			'hook' => 'plugin_bootstrap', 'priority' => 0, 'sig' => 'include', 'fileline' => '', 'source' => '',
+			'calls' => 0, 'total' => 0.0, 'total_ms' => 0.0, 'avg_ms' => 0.0, 'max' => 0.0, 'max_ms' => 0.0, 'current_load_time' => 0.0,
+		];
 		
 		/**
 		 * Profiling data storage
@@ -140,7 +149,7 @@ if ( ! class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
 		}
 		
 		// Load persisted stats and enabled flag
-		self::$stats = get_option( self::OPTION_KEY, [] );
+		self::$stats = array_filter( (array) get_option( self::OPTION_KEY, [] ), 'is_array' );
 		self::$measured_total_time = (float) get_option( self::OPTION_TOTAL_TIME, 0.0 );			// Validate and clean loaded stats - remove entries with invalid values
 			if ( ! empty( self::$stats ) && is_array( self::$stats ) ) {
 				foreach ( self::$stats as $key => $stat ) {

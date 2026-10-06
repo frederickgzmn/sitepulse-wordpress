@@ -46,6 +46,20 @@ class Sitepulse_Error_Handler {
 	private const MAX_ERROR_LOG_ENTRIES = 100;
 
 	/**
+	 * Every field a stored error entry may be read for.
+	 */
+	private const ERROR_DEFAULTS = array(
+		'type'       => 'Unknown',
+		'message'    => '',
+		'file'       => '',
+		'line'       => 0,
+		'date'       => '',
+		'timestamp'  => 0,
+		'is_fatal'   => false,
+		'call_stack' => array(),
+	);
+
+	/**
 	 * Minimum time between error notifications (in seconds)
 	 * Prevents email spam from repeated errors
 	 *
@@ -145,7 +159,8 @@ class Sitepulse_Error_Handler {
 			'last_error_date' => null,
 		) );
 
-		if ( ! empty( $error_log['errors'] ) ) {
+		// A broken entry list is left for get_error_log() to repair.
+		if ( ! empty( $error_log['errors'] ) && is_array( $error_log['errors'] ) ) {
 			$cleaned_log = self::cleanup_old_errors( $error_log );
 			// Only update if something was removed
 			if ( count( $cleaned_log['errors'] ) < count( $error_log['errors'] ) ) {
@@ -454,6 +469,11 @@ class Sitepulse_Error_Handler {
 			);
 		}
 
+		// A broken entry list loses its entries but keeps the lifetime count.
+		if ( ! is_array( $error_log['errors'] ) ) {
+			$error_log['errors'] = array();
+		}
+
 		// Clean up old errors before adding new one
 		// Warnings/notices removed after 1 hour, fatal errors after 2 days
 		$error_log = self::cleanup_old_errors( $error_log );
@@ -505,14 +525,10 @@ class Sitepulse_Error_Handler {
 	 * Warnings/notices are removed after 1 hour
 	 * Fatal errors are kept for 2 days
 	 *
-	 * @param array $error_log Error log array
+	 * @param array $error_log Error log array whose 'errors' entry is an array
 	 * @return array Cleaned error log
 	 */
 	private static function cleanup_old_errors( $error_log ) {
-		if ( ! is_array( $error_log ) || ! isset( $error_log['errors'] ) || ! is_array( $error_log['errors'] ) ) {
-			return $error_log;
-		}
-
 		$one_hour_ago = current_time( 'timestamp' ) - HOUR_IN_SECONDS;
 		$two_days_ago = current_time( 'timestamp' ) - ( 2 * DAY_IN_SECONDS );
 		$filtered_errors = array();
@@ -536,7 +552,8 @@ class Sitepulse_Error_Handler {
 
 			// Keep error if it's within its retention period
 			if ( $error_timestamp >= $retention_threshold ) {
-				$filtered_errors[] = $error;
+				// Entries written by earlier versions may lack fields the screens read.
+				$filtered_errors[] = array_merge( self::ERROR_DEFAULTS, $error );
 			}
 		}
 
@@ -573,6 +590,11 @@ class Sitepulse_Error_Handler {
 				'total_count' => 0,
 				'last_error_date' => null,
 			);
+		}
+
+		// A broken entry list loses its entries but keeps the lifetime count.
+		if ( ! is_array( $error_log['errors'] ) ) {
+			$error_log['errors'] = array();
 		}
 
 		// Clean up old errors before returning

@@ -20,7 +20,7 @@ class Sitepulse_Frontend {
     public static function admin_bar_node($wp_admin_bar) {
         if ( ! current_user_can('manage_options' ) ) return;
 
-        $stats = get_option(SITEPULSE_PROFILER_KEY, [] );
+        $stats = Sitepulse_Profiler::get_stored_stats();
         $sitepulse_stats_count = count( $stats );
         $count = count( Sitepulse_CurLoader::get_events() );
         $paused = Sitepulse_Monitoring::is_paused();

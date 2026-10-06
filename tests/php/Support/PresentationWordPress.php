@@ -13,6 +13,7 @@ function get_permalink($post = 0) { return home_url('/?p=' . (int) (is_object($p
 function get_the_title($post = 0) { return Sitepulse_Test_WP::$posts[(int) (is_object($post) ? $post->ID : ($post ?: get_the_ID()))]['post_title'] ?? 'Fixture page'; }
 function wp_timezone() { return new DateTimeZone('UTC'); }
 function wp_date($format, $timestamp = null, $timezone = null) {
+    if ($timestamp !== null && !is_numeric($timestamp)) { return false; } // WordPress returns false for an unusable timestamp.
     return (new DateTimeImmutable('@' . ($timestamp ?? time())))->setTimezone($timezone ?: wp_timezone())->format($format);
 }
 function date_i18n($format, $timestamp = false, $gmt = false) { return wp_date($format, $timestamp === false ? current_time('timestamp') : $timestamp); }

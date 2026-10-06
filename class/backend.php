@@ -768,7 +768,7 @@ class Sitepulse_Backend {
 	 * Display sections
 	 */
 	public function render_dashboard_section() {
-		$stats = get_option( SITEPULSE_PROFILER_KEY, [] );
+		$stats = Sitepulse_Profiler::get_stored_stats();
 		$snapshot_time = get_option( SITEPULSE_PROFILER_CURRENT_TIME, null );
 
 		// List of activated plugins - use cached utility method
@@ -789,7 +789,12 @@ class Sitepulse_Backend {
 		// Get plugin profiler stats
 		$plugin_profiler_stats = [];
 		if ( class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
-			$plugin_profiler_stats = Sitepulse_Plugin_Profiler::get_stats();
+			// Rows saved by earlier versions lack fields the screens read; missing and null fields read as their defaults.
+			$plugin_profiler_stats = array_map( static function ( $stat ) {
+				return array_merge( Sitepulse_Plugin_Profiler::STAT_DEFAULTS, array_filter( $stat, static function ( $value ) {
+					return null !== $value;
+				} ) );
+			}, Sitepulse_Plugin_Profiler::get_stats() );
 		}
 
 		// Get error log statistics
@@ -851,7 +856,9 @@ class Sitepulse_Backend {
 		$ps_strategy = 'desktop';
 
 		// Get vulnerabilities list
-		$vulnerabilities = get_option( 'sitepulse_vulnerabilities_list', [] );
+		$vulnerabilities = array_map( static function ( $vulnerability ) {
+			return array_merge( [ 'name' => '' ], $vulnerability );
+		}, array_filter( (array) get_option( 'sitepulse_vulnerabilities_list', [] ), 'is_array' ) );
 		$last_vulnerability_check = get_option( 'sitepulse_last_vulnerability_check', '' );
 
 		if ( ! empty( $pagespeed_report ) && is_array( $pagespeed_report ) && ! empty( $pagespeed_report['has_data'] ) ) {
@@ -1005,7 +1012,7 @@ class Sitepulse_Backend {
 			return;
 
 		Sitepulse_Getting_Started::mark_visited( 'resource-load' );
-		$stats = get_option( SITEPULSE_PROFILER_KEY, [] );
+		$stats = Sitepulse_Profiler::get_stored_stats();
 
 		$snapshot_time = get_option( SITEPULSE_PROFILER_CURRENT_TIME, null );
 

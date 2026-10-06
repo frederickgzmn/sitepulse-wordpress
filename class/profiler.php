@@ -17,6 +17,13 @@ if (!class_exists('Sitepulse_Profiler')) {
         /** Classes whose own callbacks are never wrapped (the profiler must not profile itself). */
         private const UNWRAPPED_CLASSES = [ __CLASS__, 'Sitepulse_Page_Tracker' ];
         private const SITEPULSE_OPTION_CURRENT_TIME = 'sitepulse_profiler_current_time';
+        /** Every field a stored stat may be read for. */
+        public const STAT_DEFAULTS = [
+            'current_url' => '', 'key' => '', 'hook' => '', 'priority' => 0, 'sig' => '', 'fileline' => '(unknown)',
+            'calls' => 0, 'total' => 0.0, 'total_ms' => 0.0, 'avg_ms' => 0.0, 'max' => 0.0, 'max_ms' => 0.0,
+            'self_total_ms' => 0.0, 'current_load_time' => 0.0, 'source' => '(unknown)', 'date_time' => null,
+            'last_seen_at' => 0.0, 'is_active' => false, 'status' => '',
+        ];
         private static $request_date_time = '';
 
         public static function init() {
@@ -28,7 +35,7 @@ if (!class_exists('Sitepulse_Profiler')) {
                 self::$enabled  = $enabled_opt = true;
             } else {
                 // Load persisted stats + enabled flag. Listen.
-                self::$stats   = get_option(SITEPULSE_PROFILER_KEY, []);
+                self::$stats   = self::get_stored_stats();
                 $enabled_opt   = get_option(SITEPULSE_PROFILER_ENABLED, null);
                 if ($enabled_opt !== null) self::$enabled = (bool) $enabled_opt;
             }
@@ -70,6 +77,13 @@ if (!class_exists('Sitepulse_Profiler')) {
             // Save to global option
             update_option(SITEPULSE_PROFILER_CURRENT_TIME, self::$request_date_time, false);
             update_option(SITEPULSE_PROFILER_KEY, self::$stats, false);
+        }
+
+        /** Site-wide stats as stored, normalized so every field can be read safely. */
+        public static function get_stored_stats(): array {
+            $stats = array_filter((array) get_option(SITEPULSE_PROFILER_KEY, []), 'is_array');
+            // Missing and null fields read as their defaults.
+            return array_map(static fn($stat) => array_merge(self::STAT_DEFAULTS, array_filter($stat, static fn($value) => null !== $value)), $stats);
         }
 
         /** Stats collected so far; during a page analysis request these cover only that request. */
