@@ -195,9 +195,7 @@ $sp_security_last_vuln_check = isset( $last_vulnerability_check ) ? $last_vulner
 			$sp_recent_errors = array();
 			if ( class_exists( 'Sitepulse_Error_Handler' ) ) {
 				$sp_error_log = Sitepulse_Error_Handler::get_error_log();
-				$sp_recent_errors = isset( $sp_error_log['errors'] ) && is_array( $sp_error_log['errors'] )
-					? array_slice( array_reverse( $sp_error_log['errors'] ), 0, 15 ) // Show 15 recent, reversed for newest first
-					: array();
+				$sp_recent_errors = array_slice( array_reverse( $sp_error_log['errors'] ), 0, 15 ); // Show 15 recent, reversed for newest first
 			}
 			?>
 			<?php if ( ! empty( $sp_recent_errors ) ) : ?>

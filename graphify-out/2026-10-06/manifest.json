@@ -78,15 +78,15 @@
     "semantic_hash": ""
   },
   "class/backend.php": {
-    "mtime": 1791254225.3418055,
-    "seen": 1791256527.5293045,
-    "ast_hash": "07f1206cff322efcb527f86fec25c4c3",
+    "mtime": 1791309195.357845,
+    "seen": 1791309903.1994061,
+    "ast_hash": "a413c288ab9c480177723c0e00f6eed4",
     "semantic_hash": ""
   },
   "class/curloader.php": {
-    "mtime": 1791256050.6710968,
-    "seen": 1791256527.5293076,
-    "ast_hash": "b77f0839a551ab0871ceef3490b8fe02",
+    "mtime": 1791308769.1388793,
+    "seen": 1791309903.1994116,
+    "ast_hash": "c09b0c09a425ade2a6d14ca22f37c19b",
     "semantic_hash": ""
   },
   "class/easy_mode.php": {
@@ -96,15 +96,15 @@
     "semantic_hash": ""
   },
   "class/error_handler.php": {
-    "mtime": 1791249751.5214467,
-    "seen": 1791256527.529314,
-    "ast_hash": "cadbde229ae771c52870e0bf04265e2e",
+    "mtime": 1791309324.451584,
+    "seen": 1791309903.1994188,
+    "ast_hash": "f4efdfe745ce149917b452c97fb6ae8a",
     "semantic_hash": ""
   },
   "class/frontend.php": {
-    "mtime": 1791252897.3745034,
-    "seen": 1791256527.529316,
-    "ast_hash": "f86d0da8d8f0eba158d7e98eb2c099d8",
+    "mtime": 1791308111.3019605,
+    "seen": 1791309903.1994216,
+    "ast_hash": "52b8d84adb0cc86159052d997e6b651b",
     "semantic_hash": ""
   },
   "class/onboarding.php": {
@@ -120,9 +120,9 @@
     "semantic_hash": ""
   },
   "class/plugin.php": {
-    "mtime": 1791249751.5244467,
-    "seen": 1791256527.5293283,
-    "ast_hash": "02a38bfd14925b5d7c3edbd329746bad",
+    "mtime": 1791308111.3062656,
+    "seen": 1791309903.199448,
+    "ast_hash": "2012e5b557fd3330f8f645bedeb71728",
     "semantic_hash": ""
   },
   "class/plugin_profiler.php": {
@@ -138,9 +138,9 @@
     "semantic_hash": "eab75e003c0ca24d216a7305966f6301"
   },
   "class/profiler.php": {
-    "mtime": 1791252326.9748867,
-    "seen": 1791256527.5293453,
-    "ast_hash": "9d8c9c0ab6b030bceb7a80549d4ce171",
+    "mtime": 1791308769.1376271,
+    "seen": 1791309903.1994593,
+    "ast_hash": "91540580b5d05b5076046509f4d0637e",
     "semantic_hash": ""
   },
   "class/settings.php": {
@@ -192,9 +192,9 @@
     "semantic_hash": ""
   },
   "loader.php": {
-    "mtime": 1791252786.6329825,
-    "seen": 1791256527.5293682,
-    "ast_hash": "a34669ca681335cacc8e6c108f049597",
+    "mtime": 1791308229.599425,
+    "seen": 1791309903.1994908,
+    "ast_hash": "6f045057867fb9c4c0397f6e07c9a020",
     "semantic_hash": ""
   },
   "templates/backend/curl_api.php": {
@@ -276,9 +276,9 @@
     "semantic_hash": ""
   },
   "templates/easy/views/home.php": {
-    "mtime": 1791253255.8508735,
-    "seen": 1791256527.5294068,
-    "ast_hash": "96ac7a2276062868a059ad4e708ba2c0",
+    "mtime": 1791309195.360845,
+    "seen": 1791309903.1995423,
+    "ast_hash": "ad2d0acde3e1cd375645ca4cd917f3c1",
     "semantic_hash": ""
   },
   "templates/easy/views/insights.php": {
@@ -294,9 +294,9 @@
     "semantic_hash": ""
   },
   "templates/easy/views/resource-load.php": {
-    "mtime": 1791253158.8316934,
-    "seen": 1791256527.5294151,
-    "ast_hash": "8480b706c1175bf28df4a4d289885d19",
+    "mtime": 1791309206.259152,
+    "seen": 1791309903.199555,
+    "ast_hash": "13daf73d983ef85705dc14191597270c",
     "semantic_hash": ""
   },
   "templates/easy/views/security.php": {
@@ -318,9 +318,9 @@
     "semantic_hash": "9177b57d700fc636dad4a7c04e1dc3f1"
   },
   "uninstall.php": {
-    "mtime": 1791253528.47933,
-    "seen": 1791256527.5295744,
-    "ast_hash": "9c8654e2e67aa3bd6220ba0c3a729a4e",
+    "mtime": 1791309653.0121293,
+    "seen": 1791309903.1998553,
+    "ast_hash": "5d86e024ecb327343356c401215ae124",
     "semantic_hash": ""
   },
   ".commandcode/taste/taste.md": {
@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "readme.txt": {
-    "mtime": 1791256439.9798262,
-    "seen": 1791256527.529587,
-    "ast_hash": "476cb7e7fbcf1974e9d888faac927263",
+    "mtime": 1791309662.9205902,
+    "seen": 1791309903.1998746,
+    "ast_hash": "528c16e0d30b4c7f0af344bc72d1d1d5",
     "semantic_hash": ""
   },
   "assets/img/only-logo.png": {
@@ -468,9 +468,9 @@
     "semantic_hash": ""
   },
   "tests/php/CurLoaderTest.php": {
-    "mtime": 1791256091.9050555,
-    "seen": 1791256527.5294764,
-    "ast_hash": "e216edd6d8cee08ff505ae24eb581a55",
+    "mtime": 1791308783.3985698,
+    "seen": 1791309903.1996593,
+    "ast_hash": "e2f5cf443a561e31ca130daac45543d8",
     "semantic_hash": ""
   },
   "tests/php/EasyModeTest.php": {
@@ -492,15 +492,15 @@
     "semantic_hash": ""
   },
   "tests/php/LifecycleTest.php": {
-    "mtime": 1791256276.4484546,
-    "seen": 1791256527.529502,
-    "ast_hash": "c9c6cc4c6b3e0db2f3f17ad9a688e388",
+    "mtime": 1791309653.012378,
+    "seen": 1791309903.1997397,
+    "ast_hash": "21348473cbbdac5e1677fbcecf60b181",
     "semantic_hash": ""
   },
   "tests/php/PageTrackerTest.php": {
-    "mtime": 1791253696.0376706,
-    "seen": 1791256527.5295088,
-    "ast_hash": "0022b5577d0f81c7cd8d0e2d6db87547",
+    "mtime": 1791309324.453406,
+    "seen": 1791309903.1997535,
+    "ast_hash": "f8be26614f6217d33e11be1db0238334",
     "semantic_hash": ""
   },
   "tests/php/PluginProfilerTest.php": {
@@ -516,9 +516,9 @@
     "semantic_hash": ""
   },
   "tests/php/ProfilerTest.php": {
-    "mtime": 1791253736.2692196,
-    "seen": 1791256527.5295258,
-    "ast_hash": "90521380dc287e74b6ccb8d2576ec8ce",
+    "mtime": 1791308783.392176,
+    "seen": 1791309903.1997812,
+    "ast_hash": "358b53d60b5d35e772016b610eb77158",
     "semantic_hash": ""
   },
   "tests/php/RestApiTest.php": {
@@ -534,9 +534,9 @@
     "semantic_hash": ""
   },
   "tests/php/SetupOnboardingTest.php": {
-    "mtime": 1791249751.9424462,
-    "seen": 1791256527.5295346,
-    "ast_hash": "4e400029a141d998d637319cbff49eaf",
+    "mtime": 1791308229.6101153,
+    "seen": 1791309903.1997929,
+    "ast_hash": "bbc8568a4d4f098f803aa135154bf639",
     "semantic_hash": ""
   },
   "tests/php/Support/ActionScheduler.php": {
@@ -564,9 +564,9 @@
     "semantic_hash": ""
   },
   "tests/php/Support/WordPress.php": {
-    "mtime": 1791256276.4470081,
-    "seen": 1791256527.529549,
-    "ast_hash": "344a29ff8a3f707ebc13b8bfaf018b23",
+    "mtime": 1791308914.5713785,
+    "seen": 1791309903.1998174,
+    "ast_hash": "1aac2feefc394c51d6e5ae84779db2ce",
     "semantic_hash": ""
   },
   "tests/php/TemplateTest.php": {
@@ -582,15 +582,15 @@
     "semantic_hash": ""
   },
   "tests/php/bootstrap.php": {
-    "mtime": 1791249751.947446,
-    "seen": 1791256527.5295568,
-    "ast_hash": "165a40814b8477f19e524c758d6ce7a3",
+    "mtime": 1791308229.6062212,
+    "seen": 1791309903.1998277,
+    "ast_hash": "8a90cb486ea0dd78d9cb90cb5c0a08a3",
     "semantic_hash": ""
   },
   "tests/php/fixtures/lifecycle.php": {
-    "mtime": 1791254270.280095,
-    "seen": 1791256527.5295668,
-    "ast_hash": "bad119fdcde621668c4b18b3dbeec52d",
+    "mtime": 1791309653.0129452,
+    "seen": 1791309903.1998444,
+    "ast_hash": "a1725ff38fc8a5c0cb7098212f97a13b",
     "semantic_hash": ""
   },
   ".github/workflows/tests.yml": {
@@ -756,9 +756,9 @@
     "semantic_hash": ""
   },
   "tests/php/PluginAdditionalBehaviorTest.php": {
-    "mtime": 1791253837.8572452,
-    "seen": 1791256527.5295131,
-    "ast_hash": "d63642347c33fe506618370ee2b69b86",
+    "mtime": 1791308080.5046368,
+    "seen": 1791309903.1997602,
+    "ast_hash": "f99ec3cc2e247af308fd843003ca04d1",
     "semantic_hash": ""
   },
   "tests/php/PopulatedTemplateTest.php": {
@@ -888,9 +888,9 @@
     "semantic_hash": ""
   },
   "class/page_analysis.php": {
-    "mtime": 1791256157.5028925,
-    "seen": 1791256527.5293245,
-    "ast_hash": "737e6708bc47838d93f6e907e7391268",
+    "mtime": 1791308902.137368,
+    "seen": 1791309903.1994412,
+    "ast_hash": "73b5d3ce0f458b5d6ce8c39c7d26ef69",
     "semantic_hash": ""
   },
   "templates/backend/page_analysis.php": {
@@ -924,9 +924,33 @@
     "semantic_hash": ""
   },
   "tests/php/PageAnalysisTest.php": {
-    "mtime": 1791256167.07348,
-    "seen": 1791256527.5295064,
-    "ast_hash": "6af926f8a3b70734d7f17847fa0ad488",
+    "mtime": 1791308914.572422,
+    "seen": 1791309903.1997502,
+    "ast_hash": "e53376dcfe1ec025a468d3efc7e10832",
+    "semantic_hash": ""
+  },
+  ".wordpress-org/screenshot-4.png": {
+    "mtime": 1791309109.8268113,
+    "seen": 1791309903.1998763,
+    "ast_hash": "5fca8184e304bbbe688f117376e2e096",
+    "semantic_hash": ""
+  },
+  ".wordpress-org/screenshot-6.png": {
+    "mtime": 1791309109.8275614,
+    "seen": 1791309903.1998794,
+    "ast_hash": "33b77d3539854ff9c723e13360957cb3",
+    "semantic_hash": ""
+  },
+  ".wordpress-org/screenshot-8.png": {
+    "mtime": 1791309109.8279603,
+    "seen": 1791309903.199882,
+    "ast_hash": "72ddf71ea37f84c87be8026f843f70ad",
+    "semantic_hash": ""
+  },
+  ".wordpress-org/screenshot-9.png": {
+    "mtime": 1791309109.8292067,
+    "seen": 1791309903.1998847,
+    "ast_hash": "f81ed413b6dd5efaad16c151ffcf1086",
     "semantic_hash": ""
   }
 }

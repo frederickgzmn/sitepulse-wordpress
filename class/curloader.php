@@ -4,6 +4,9 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 class Sitepulse_CurLoader {
     const MAX_EVENTS = 200;  // ring buffer
 
+    /** Every field a stored event may be read for. */
+    const EVENT_DEFAULTS = [ 'ts' => 0, 'elapsed' => 0.0, 'url' => '', 'host' => '', 'code' => 0, 'origin' => 'Unknown', 'file' => '(unknown)', 'line' => 0, 'date' => '' ];
+
     private static $enabled;
     private static $threshold;
 
@@ -269,7 +272,7 @@ class Sitepulse_CurLoader {
             return;
         }
 
-        $events = get_option(SITEPULSE_CURL_API_KEY, []);
+        $events = self::get_events();
         $event['date'] = gmdate('Y-m-d H:i:s');
         $events[] = $event;
         if (count($events) > self::MAX_EVENTS) {
@@ -281,7 +284,9 @@ class Sitepulse_CurLoader {
     }
 
     public static function get_events(): array {
-        return get_option(SITEPULSE_CURL_API_KEY, []);
+        $events = array_filter((array) get_option(SITEPULSE_CURL_API_KEY, []), 'is_array');
+        // Missing and null fields read as their defaults.
+        return array_map(static fn($event) => array_merge(self::EVENT_DEFAULTS, array_filter($event, static fn($value) => null !== $value)), $events);
     }
 
     private static function compact_backtrace(): array {
