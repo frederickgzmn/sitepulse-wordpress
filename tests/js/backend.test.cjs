@@ -66,21 +66,16 @@ test('memory API failure is logged and leaves the existing score in place', asyn
 for (const [name, id, css, endpoint, field, on, off] of [
   ['profiler', 'sp-profiler', 'sp_profiler', 'sp_profiler/set_active', 'sitepulse_profiler_enabled', 'enabled', 'disabled'],
   ['HTTP tracking', 'sp-http-load', 'sp_http_load', 'wpslowhttp/set_active', 'wpslowhttp', 'enabled', 'disabled'],
-  ['dark mode', 'dark-mode', 'sp_dark_mode', 'dark_mode/set_active', 'dark_mode', 'darkmode', 'lightmode'],
-  ['single-page reporting', 'report-mode', 'sp_report_mode', 'sp_report_mode/set_active', 'report_mode', 1, 0]
+  ['dark mode', 'dark-mode', 'sp_dark_mode', 'dark_mode/set_active', 'dark_mode', 'darkmode', 'lightmode']
 ]) {
   test(`${name} switch serializes both enabled and disabled states`, async t => {
-    const { $, network, flush } = await setup(t, `<input type="checkbox" id="${id}" class="${css}"><div class="sitepulse_report_mode"></div><div class="sitepulse_report_single_mode" style="display:none"></div>`, {
-      fetch: call => jsonResponse({ success: true, report_mode: JSON.parse(call.body).report_mode })
-    });
+    const { $, network, flush } = await setup(t, `<input type="checkbox" id="${id}" class="${css}">`);
     $(`#${id}`).trigger('click');
     await flush();
     assertRest(network.fetch[0], endpoint, { [field]: on });
-    if (field === 'report_mode') assert.notEqual($('.sitepulse_report_single_mode').css('display'), 'none');
     $(`#${id}`).trigger('click');
     await flush();
     assertRest(network.fetch[1], endpoint, { [field]: off });
-    if (field === 'report_mode') assert.equal($('.sitepulse_report_single_mode').css('display'), 'none');
   });
 }
 
@@ -366,17 +361,64 @@ for (const status of [200, 403]) {
   });
 }
 
-test('dashboard view honors stored preference and persists a user switch with the matching label and icon', async t => {
-  const { $, window } = await setup(t, '<button id="sp-toggle-view"><span class="sp-view-label"></span><span class="sp-view-toggle-icon"><i class="dashicons"></i></span></button><div id="sp-basic-view"></div><div id="sp-developer-view"></div>', {
-    storage: { sitepulse_dashboard_view: 'basic' }
+for (const [name, css, endpoint, field, onMessage, offMessage] of [
+  ['Performance Monitor', 'sp_profiler', 'sp_profiler/set_active', 'sitepulse_profiler_enabled', 'Performance Monitor is enabled', 'Performance Monitor is disabled'],
+  ['External Requests', 'sp_http_load', 'wpslowhttp/set_active', 'wpslowhttp', 'External Requests tracking is enabled', 'External Requests tracking is disabled']
+]) {
+  test(`${name} switch on the Simple dashboard reports the state of the switch that was clicked`, async t => {
+    const { $, network, flush, navigation, clock } = await setup(t, `<input type="checkbox" id="sp-easy-switch" class="${css}">`);
+    navigation.expected = css === 'sp_http_load' ? 2 : 0;
+    $('#sp-easy-switch').trigger('click');
+    await flush();
+    assertRest(network.fetch[0], endpoint, { [field]: 'enabled' });
+    assert.match($('.sitepulse-alert-success').text(), new RegExp(onMessage));
+    $('#sp-easy-switch').trigger('click');
+    await flush();
+    assertRest(network.fetch[1], endpoint, { [field]: 'disabled' });
+    assert.match($('.sitepulse-alert-warning').text(), new RegExp(offMessage));
+    await clock.advance(2000);
   });
-  assert.notEqual($('#sp-basic-view').css('display'), 'none');
-  assert.equal($('#sp-developer-view').css('display'), 'none');
-  assert.equal($('.sp-view-label').text(), 'Developer View');
+
+  test(`${name} switch flips back and explains when saving fails`, async t => {
+    const { $, flush } = await setup(t, `<input type="checkbox" id="sp-easy-switch" class="${css}" checked>`, { fetch: () => jsonResponse({ message: 'Forbidden' }, 403) });
+    $('#sp-easy-switch').trigger('click');
+    assert.equal($('#sp-easy-switch').prop('checked'), false);
+    await flush();
+    assert.equal($('#sp-easy-switch').prop('checked'), true);
+    assert.match($('.sitepulse-alert-danger').text(), /Could not change/);
+  });
+}
+
+const viewToggle = view => `<button id="sp-toggle-view" data-view="${view === 'basic' ? 'developer' : 'basic'}" data-label-basic="Vista básica" data-label-developer="Vista de desarrollo"><span class="sp-view-label"></span><span class="sp-view-toggle-icon"><i class="dashicons"></i></span></button><div id="sp-basic-view"></div><div id="sp-developer-view"></div>`;
+
+test('dashboard view switches instantly and saves the choice for this user on the server', async t => {
+  const { $, network, flush, window } = await setup(t, viewToggle('basic'));
   $('#sp-toggle-view').trigger('click');
   assert.equal($('#sp-basic-view').css('display'), 'none');
   assert.notEqual($('#sp-developer-view').css('display'), 'none');
-  assert.equal($('.sp-view-label').text(), 'Basic View');
+  assert.equal($('.sp-view-label').text(), 'Vista básica');
+  assert.equal($('#sp-toggle-view').attr('data-view'), 'basic');
   assert.equal($('.sp-view-toggle-icon .dashicons').hasClass('dashicons-admin-users'), true);
-  assert.equal(window.localStorage.getItem('sitepulse_dashboard_view'), 'developer');
+  await flush();
+  assertRest(network.fetch[0], 'dashboard_view', { view: 'developer' });
+  $('#sp-toggle-view').trigger('click');
+  assert.notEqual($('#sp-basic-view').css('display'), 'none');
+  assert.equal($('.sp-view-label').text(), 'Vista de desarrollo');
+  assert.equal($('.sp-view-toggle-icon .dashicons').hasClass('dashicons-editor-code'), true);
+  await flush();
+  assertRest(network.fetch[1], 'dashboard_view', { view: 'basic' });
+  assert.equal(window.localStorage.getItem('sitepulse_dashboard_view'), null);
+});
+
+test('a failed view save is logged while the chosen view stays on screen', async t => {
+  const { $, logs, flush } = await setup(t, viewToggle('developer'), { fetch: () => Promise.reject(new Error('offline')) });
+  $('#sp-toggle-view').trigger('click');
+  await flush();
+  assert.notEqual($('#sp-basic-view').css('display'), 'none');
+  assert.match(logs.error[0][0], /Failed to save dashboard view/);
+});
+
+test('view toggle is inert on screens without both dashboard views', async t => {
+  const { network } = await setup(t, '<button id="sp-toggle-view" data-view="basic"></button>');
+  assert.equal(network.fetch.length, 0);
 });

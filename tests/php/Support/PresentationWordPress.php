@@ -10,7 +10,7 @@ function selected($selected, $current = true, $display = true) {
 }
 function _n($single, $plural, $number, $domain = null) { return (int) $number === 1 ? $single : $plural; }
 function get_permalink($post = 0) { return home_url('/?p=' . (int) (is_object($post) ? $post->ID : $post)); }
-function get_the_title($post = 0) { return Sitepulse_Test_WP::$posts[(int) ($post ?: get_the_ID())]['post_title'] ?? 'Fixture page'; }
+function get_the_title($post = 0) { return Sitepulse_Test_WP::$posts[(int) (is_object($post) ? $post->ID : ($post ?: get_the_ID()))]['post_title'] ?? 'Fixture page'; }
 function wp_timezone() { return new DateTimeZone('UTC'); }
 function wp_date($format, $timestamp = null, $timezone = null) {
     return (new DateTimeImmutable('@' . ($timestamp ?? time())))->setTimezone($timezone ?: wp_timezone())->format($format);

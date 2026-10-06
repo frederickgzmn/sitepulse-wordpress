@@ -5,8 +5,8 @@ class Sitepulse_Test_Profiler_Callback {
     public function __invoke($value) { return $value; }
 }
 final class ProfilerCompatibilityTest extends Sitepulse_Test_Case {
-    public function test_single_page_request_enables_profiling_and_registers_lifecycle_measurement(): void {
-        update_option('sitepulse_profiler_enabled', false); update_option('sitepulse_pageloadhttp_loadstatus', true); update_option('sitepulse_current_tracked_pageid', 42); Sitepulse_Test_WP::$post_id = 42;
+    public function test_page_analysis_request_enables_profiling_and_registers_lifecycle_measurement(): void {
+        update_option('sitepulse_profiler_enabled', false); $this->startAnalysisRequest();
         Sitepulse_Profiler::init();
         $this->assertTrue(Sitepulse_Profiler::$enabled);
         $this->assertNotFalse(has_action('plugin_loaded', array('Sitepulse_Profiler', 'capture_plugin_load_time')));

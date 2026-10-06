@@ -96,12 +96,19 @@ add_action( 'rest_api_init', function () {
 	// Toggle/settings routes
 	sitepulse_register_route( '/wpslowhttp/set_active', 'sitepulse_set_wpslowhttp' );
 	sitepulse_register_route( '/sp_profiler/set_active', 'sitepulse_set_sp_profiler' );
-	sitepulse_register_route( '/wpspageloadhttp/set_active', 'sitepulse_set_wpspageloadhttp' );
-	sitepulse_register_route( '/sp_report_mode/set_active', 'sitepulse_sp_report_mode' );
+	sitepulse_register_route( '/monitoring/pause', 'sitepulse_pause_monitoring' );
+	sitepulse_register_route( '/monitoring/resume', 'sitepulse_resume_monitoring' );
 
-	// Real-time tracking routes
-	sitepulse_register_route( '/wpsprealtimemode/set_active', 'sitepulse_realtime_mode' );
-	sitepulse_register_route( '/wpsprealtimemode/get_active', 'sitepulse_get_realtime_mode' );
+	// Page Analysis routes
+	sitepulse_register_route( '/page_analysis/start', 'sitepulse_page_analysis_start' );
+	sitepulse_register_route( '/page_analysis/sample', 'sitepulse_page_analysis_sample' );
+	sitepulse_register_route( '/page_analysis/collect', 'sitepulse_page_analysis_collect' );
+	sitepulse_register_route( '/page_analysis/report', 'sitepulse_page_analysis_report' );
+	sitepulse_register_route( '/page_analysis/delete', 'sitepulse_page_analysis_delete' );
+
+	// Interface preference routes
+	sitepulse_register_route( '/dashboard_view', 'sitepulse_set_dashboard_view' );
+	sitepulse_register_route( '/getting_started/dismiss', 'sitepulse_dismiss_getting_started' );
 
 	// Notice dismissal routes
 	sitepulse_register_route( '/trackers_disabled_notice/dismiss', 'sitepulse_set_trackers_disabled_notice' );
@@ -133,32 +140,6 @@ add_action( 'rest_api_init', function () {
 	sitepulse_register_route( '/autoload_options', 'sitepulse_get_autoload_options', 'POST' );
 	sitepulse_register_route( '/autoload_options/update', 'sitepulse_update_autoload_option' );
 } );
-
-// sitepulse_get_realtime_mode
-function sitepulse_get_realtime_mode( WP_REST_Request $request ) {
-	$is_active = get_transient( "sitepulse_realtime_tracking" );
-
-	return rest_ensure_response( [
-		'success' => true,
-		'real_time_status' => $is_active ? true : false
-	] );
-}
-
-function sitepulse_realtime_mode( WP_REST_Request $request ) {
-	// Sanitization $request['real_time_status']
-	$real_time_status = isset( $request['real_time_status'] ) ? sanitize_text_field( $request['real_time_status'] ) : '';
-	$result = false;
-	if ( isset( $request['real_time_status'] ) && $request['real_time_status'] ) {
-		set_transient( "sitepulse_realtime_tracking", true, SITEPULSE_REALTIME_TRACKING_TIME );
-		$result = true;
-	} else {
-		delete_transient( "sitepulse_realtime_tracking" );
-	}
-
-	return rest_ensure_response( [
-		'success' => $result,
-	] );
-}
 
 function sitepulse_enable_clear_curl_api_events( WP_REST_Request $request ) {
 	$sitepulse_CurLoader = new Sitepulse_CurLoader();
@@ -202,49 +183,125 @@ function sitepulse_enable_save_queries( WP_REST_Request $request ) {
 	] );
 }
 
-function sitepulse_sp_report_mode( WP_REST_Request $request ) {
-	$params = $request->get_json_params();
-	$report_mode = isset( $params['report_mode'] ) ? sanitize_text_field( $params['report_mode'] ) : '';
-	if ( $report_mode === '' ) {
-		return new WP_Error( 'missing_report_mode', 'report_mode is required', [ 'status' => 400 ] );
+/**
+ * Pause every page-load tracker without losing settings or data.
+ *
+ * @return WP_REST_Response
+ */
+function sitepulse_pause_monitoring( WP_REST_Request $request ) {
+	Sitepulse_Monitoring::pause();
+
+	return rest_ensure_response( [ 'success' => true, 'paused' => true ] );
+}
+
+/**
+ * Switch every page-load tracker back on.
+ *
+ * @return WP_REST_Response
+ */
+function sitepulse_resume_monitoring( WP_REST_Request $request ) {
+	Sitepulse_Monitoring::resume();
+
+	return rest_ensure_response( [ 'success' => true, 'paused' => false ] );
+}
+
+/**
+ * Wrap a Page Analysis result for REST, passing errors through.
+ *
+ * @param array|WP_Error $result Result
+ * @return WP_REST_Response|WP_Error
+ */
+function sitepulse_page_analysis_response( $result ) {
+	return is_wp_error( $result ) ? $result : rest_ensure_response( $result );
+}
+
+/**
+ * Read the analysis ID parameter.
+ *
+ * @param WP_REST_Request $request Request
+ * @return string
+ */
+function sitepulse_page_analysis_id( WP_REST_Request $request ) {
+	return sanitize_key( (string) $request->get_param( 'id' ) );
+}
+
+/**
+ * Start analyzing a page.
+ *
+ * @return WP_REST_Response|WP_Error
+ */
+function sitepulse_page_analysis_start( WP_REST_Request $request ) {
+	$analysis = Sitepulse_Page_Analysis::start( (string) $request->get_param( 'url' ) );
+	if ( is_wp_error( $analysis ) ) {
+		return $analysis;
 	}
 
-	update_option( "sitepulse_report_mode_active", $report_mode, false );
-
 	return rest_ensure_response( [
-		'success' => true,
-		'report_mode' => $report_mode
+		'id'      => $analysis['id'],
+		'url'     => $analysis['url'],
+		'samples' => Sitepulse_Page_Analysis::SAMPLES,
 	] );
 }
 
-function sitepulse_set_wpspageloadhttp( WP_REST_Request $request ) {
-	$params = $request->get_json_params();
+/**
+ * Load the analyzed page once and record a sample.
+ *
+ * @return WP_REST_Response|WP_Error
+ */
+function sitepulse_page_analysis_sample( WP_REST_Request $request ) {
+	return sitepulse_page_analysis_response( Sitepulse_Page_Analysis::run_sample( sitepulse_page_analysis_id( $request ) ) );
+}
 
-	// Sanitazion to each variable: $params['page_id'], $params['curlSwitch'], $params['loadSwitch']
-	$page_id = isset( $params['page_id'] ) ? sanitize_text_field( $params['page_id'] ) : '';
-	$curlSwitch = isset( $params['curlSwitch'] ) ? sanitize_text_field( $params['curlSwitch'] ) : '';
-	$loadSwitch = isset( $params['loadSwitch'] ) ? sanitize_text_field( $params['loadSwitch'] ) : '';
+/**
+ * Collect samples recorded by browser visits.
+ *
+ * @return WP_REST_Response|WP_Error
+ */
+function sitepulse_page_analysis_collect( WP_REST_Request $request ) {
+	return sitepulse_page_analysis_response( Sitepulse_Page_Analysis::collect( sitepulse_page_analysis_id( $request ) ) );
+}
 
-	// Validate required parameters
-	if ( ! isset( $params['page_id'] ) || ! isset( $params['curlSwitch'] ) || ! isset( $params['loadSwitch'] ) ) {
-		return new WP_Error( 'missing_params', 'page_id, curlSwitch, and loadSwitch are required', [ 'status' => 400 ] );
+/**
+ * Report for one analysis.
+ *
+ * @return WP_REST_Response|WP_Error
+ */
+function sitepulse_page_analysis_report( WP_REST_Request $request ) {
+	return sitepulse_page_analysis_response( Sitepulse_Page_Analysis::get_report( sitepulse_page_analysis_id( $request ) ) );
+}
+
+/**
+ * Remove one analysis from the history.
+ *
+ * @return WP_REST_Response
+ */
+function sitepulse_page_analysis_delete( WP_REST_Request $request ) {
+	return rest_ensure_response( [ 'success' => Sitepulse_Page_Analysis::delete( sitepulse_page_analysis_id( $request ) ) ] );
+}
+
+/**
+ * Remember which classic dashboard view (basic or developer) the user prefers.
+ *
+ * @return WP_REST_Response|WP_Error
+ */
+function sitepulse_set_dashboard_view( WP_REST_Request $request ) {
+	$view = sanitize_key( (string) $request->get_param( 'view' ) );
+	if ( ! Sitepulse_Easy_Mode::set_dashboard_view( $view ) ) {
+		return new WP_Error( 'sitepulse_invalid_view', 'view must be basic or developer', [ 'status' => 400 ] );
 	}
 
-	$page_id = absint( $params['page_id'] );
-	$curlSwitch = absint( $params['curlSwitch'] );
-	$loadSwitch = absint( $params['loadSwitch'] );
+	return rest_ensure_response( [ 'success' => true, 'view' => $view ] );
+}
 
-	// Persist as option (example). Adapt storage to your plugin.
-	update_option( "sitepulse_pageloadhttp_curlstatus", $curlSwitch, false );
-	update_option( "sitepulse_pageloadhttp_loadstatus", $loadSwitch, false );
-	update_option( "sitepulse_current_tracked_pageid", $page_id, false );
+/**
+ * Hide the getting-started checklist for the current user.
+ *
+ * @return WP_REST_Response
+ */
+function sitepulse_dismiss_getting_started( WP_REST_Request $request ) {
+	Sitepulse_Getting_Started::dismiss();
 
-	return rest_ensure_response( [
-		'success' => true,
-		'page_id' => $page_id,
-		'curlSwitch' => $curlSwitch,
-		'loadSwitch' => $loadSwitch
-	] );
+	return rest_ensure_response( [ 'success' => true ] );
 }
 
 //trackers_disabled_notice/dismiss
@@ -275,11 +332,9 @@ function sitepulse_set_wpslowhttp( WP_REST_Request $request ) {
 		return new WP_Error( 'missing_wpslowhttp', 'wpslowhttp is required', [ 'status' => 400 ] );
 	}
 
-	if ( $wpslowhttp == 'enabled' ) {
-		$wpslowhttp = true;
-	}
+	// Store a real boolean: any other value (such as "disabled") would read as enabled.
+	$wpslowhttp = 'enabled' === $wpslowhttp;
 
-	// persist as option (example). adapt storage to your plugin.
 	update_option( "sitepulse_curl_api_enabled", $wpslowhttp, false );
 
 	// Reset the dismissal of the trackers disabled notice
@@ -394,6 +449,13 @@ function sitepulse_complete_onboarding( WP_REST_Request $request ) {
 	require_once SITEPULSE_CLASS_PATH . 'onboarding.php';
 	$onboarding = Sitepulse_Onboarding::getInstance();
 	$onboarding->mark_onboarding_completed();
+
+	// Save the interface chosen in the wizard: Simple (Easy Mode) or Advanced (classic developer view).
+	$interface = sanitize_key( (string) $request->get_param( 'interface' ) );
+	if ( in_array( $interface, [ 'simple', 'advanced' ], true ) ) {
+		Sitepulse_Easy_Mode::set_enabled( 'simple' === $interface );
+		Sitepulse_Easy_Mode::set_dashboard_view( 'simple' === $interface ? 'basic' : 'developer' );
+	}
 
 	return rest_ensure_response( [
 		'success' => true,

@@ -32,9 +32,10 @@ final class TemplateRenderingTest extends Sitepulse_Test_Case {
         foreach (array('home', 'performance', 'security', 'system', 'resource-load', 'insights', 'api-monitor', 'settings') as $view) {
             $rows['easy ' . $view] = array(true, $view, 'render_dashboard_section');
         }
-        foreach (array('render_dashboard_section', 'render_resource_load', 'render_curl_api', 'render_page_sitepulse_settings') as $method) {
+        foreach (array('render_dashboard_section', 'render_resource_load', 'render_curl_api', 'render_page_sitepulse_settings', 'render_page_analysis') as $method) {
             $rows['classic ' . $method] = array(false, 'home', $method);
         }
+        $rows['easy page analysis'] = array(true, 'home', 'render_page_analysis');
         return $rows;
     }
 
@@ -53,29 +54,21 @@ final class TemplateRenderingTest extends Sitepulse_Test_Case {
     public function test_onboarding_render_outputs_wizard_and_configuration_controls(): void {
         $html = $this->render(array(new Sitepulse_Onboarding(), 'render_onboarding_page'));
         $this->assertStringContainsString('sitepulse-onboarding', $html);
-        $this->assertStringContainsString('data-task="memory"', $html);
-    }
-
-    public function test_frontend_tracking_dialog_uses_page_identity_and_status(): void {
-        update_option('sitepulse_current_tracked_pageid', 42);
-        set_transient('sitepulse_realtime_tracking', true);
-        $html = $this->render(array('Sitepulse_Frontend', 'sitepulse_modal_html'));
-        $this->assertStringContainsString('sitepulse-modal', $html);
-        $this->assertStringContainsString('data-sitepulse-realtime="tracking"', $html);
+        $this->assertStringContainsString('data-view="advanced"', $html); $this->assertStringContainsString('class="onboarding-checkup"', $html);
+        $this->assertStringContainsString('Performance Monitor', $html); $this->assertStringNotContainsString('LoadSentinel', $html);
     }
 
     public static function focusedViews(): array {
         return array(array(false, 'render_resource_load'), array(true, 'render_resource_load'), array(false, 'render_curl_api'), array(true, 'render_curl_api'));
     }
     /** @dataProvider focusedViews */
-    public function test_controller_selects_records_for_the_tracked_page($easy, $method): void {
-        $data = sitepulse_test_seed_template_options();
-        set_transient('sitepulse_load_single_page_42', $data['stats']);
-        set_transient('sitepulse_single_page_42', $data['curl_events']);
+    public function test_site_wide_lists_show_collected_records_and_point_to_page_analysis($easy, $method): void {
+        $data = sitepulse_test_seed_template_options(); update_option('sitepulse_curl_api_events', $data['curl_events']);
         update_user_meta(1, 'sitepulse_easy_mode', $easy);
         $html = $this->render(array(new Sitepulse_Backend(new Sitepulse_Plugin()), $method));
-        $this->assertStringContainsString($easy && $method === 'render_curl_api' ? 'Single Page' : 'Tracked shop', $html);
-        $this->assertStringContainsString('sample', strtolower($html));
+        $this->assertStringContainsString('href="https://example.test/wp-admin/admin.php?page=wpsp_sitepulse_page_analysis"', $html);
+        $this->assertStringContainsString('sample', strtolower($html)); $this->assertStringNotContainsString('Single Mode', $html);
+        $this->assertSame(array($method === 'render_curl_api' ? 'api-monitor' : 'resource-load'), get_user_meta(1, 'sitepulse_getting_started_visited', true));
     }
 
     public static function settingsSubmissions(): array { return array(array(false, false), array(false, true), array(true, true)); }
@@ -90,6 +83,7 @@ final class TemplateRenderingTest extends Sitepulse_Test_Case {
     public function test_invalid_view_falls_back_to_home_and_settings_api_can_render_registered_dashboard(): void {
         $html = $this->render(static function () { Sitepulse_Easy_Mode::render('nonexistent'); });
         $this->assertStringContainsString('sp-easy-shell', $html);
+        update_user_meta(1, 'sitepulse_easy_mode', '0');
         $backend = new Sitepulse_Backend(new Sitepulse_Plugin());
         $backend->register_settings();
         $html = $this->render(array($backend, 'render_page_sitepulse'));
@@ -104,10 +98,5 @@ final class TemplateRenderingTest extends Sitepulse_Test_Case {
         update_option('sitepulse_pagespeed_report', array('has_data' => true, $strategy => array('scores' => array('performance' => $score))));
         $html = $this->render(array(new Sitepulse_Backend(new Sitepulse_Plugin()), 'render_dashboard_section'));
         $this->assertStringContainsString('data-score="' . ($score <= 1 ? round($score * 100) : $score) . '"', $html);
-    }
-
-    public function test_frontend_dialog_explains_that_no_page_is_selected(): void {
-        $html = $this->render(array('Sitepulse_Frontend', 'sitepulse_modal_html'));
-        $this->assertStringContainsString('No page is currently set', $html);
     }
 }

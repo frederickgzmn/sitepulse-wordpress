@@ -12,28 +12,38 @@ final class FrontendAdminBarTest extends Sitepulse_Test_Case {
         $this->assertStringContainsString('wshp-site-load-time ' . $color, $bar->nodes['wpsp']['title']);
     }
     public static function durations(): array { return array(array(.1, ' ms', 'green'), array(2, '2.0 s', 'yellow'), array(5, '5.0 s', 'red'), array(70, '1.2 min', 'red'), array(4000, '1.1 hr', 'red')); }
-    public function test_singular_page_menu_counts_global_and_page_events_and_shows_active_tracking(): void {
-        Sitepulse_Test_WP::$is_singular = true; Sitepulse_Test_WP::$post_id = 42;
-        Sitepulse_Test_WP::$posts[42] = array('post_title' => 'A page title longer than twenty characters');
-        Sitepulse_Test_WP::$posts[0] = Sitepulse_Test_WP::$posts[42];
-        update_option('sitepulse_current_tracked_pageid', 42); update_option('sitepulse_pageloadhttp_loadstatus', true); update_option('sitepulse_pageloadhttp_curlstatus', true);
+    public function test_menu_counts_events_and_offers_dashboard_analysis_and_pause(): void {
         update_option('sitepulse_profiler_stats', array(array('total_ms' => 2), array('total_ms' => 3))); update_option('sitepulse_curl_api_events', array(array('elapsed' => 2)));
-        set_transient('sitepulse_load_single_page_42', array(1, 2, 3)); set_transient('sitepulse_single_page_42', array(1, 2));
-        update_user_meta(1, 'sitepulse_easy_mode', true); $GLOBALS['timestart'] = null;
-        $bar = new Sitepulse_Test_Admin_Bar(); Sitepulse_Frontend::admin_bar_node($bar);
-        $this->assertStringContainsString('API: 1', $bar->nodes['wpsp']['title']); $this->assertStringContainsString('Load: 2', $bar->nodes['wpsp']['title']);
-        $page = $bar->nodes['wpsp_view_report']['title'];
-        $this->assertStringContainsString('data-sitepulse-page-id="42"', $page); $this->assertStringContainsString('API: 2', $page); $this->assertStringContainsString('Load: 3', $page);
-        $this->assertStringContainsString('A page title longer ...', $page); $this->assertStringContainsString('checked="checked"', $page); $this->assertStringContainsString('rainbow-border', $page); $this->assertStringContainsString('display: block', $page);
-        $this->assertSame('Switch to Classic View', $bar->nodes['wpsp_easy_mode']['title']);
-        $this->assertStringContainsString('wpsp_sitepulse_curl_api', $bar->nodes['wpsp_api_tracker']['href']); $this->assertStringContainsString('wpsp_sitepulse_resource_load', $bar->nodes['wpsp_load_tracker']['href']);
+        $GLOBALS['timestart'] = null; $bar = new Sitepulse_Test_Admin_Bar(); Sitepulse_Frontend::admin_bar_node($bar);
+        $this->assertStringContainsString('API: 1', $bar->nodes['wpsp']['title']); $this->assertStringContainsString('Load: 2', $bar->nodes['wpsp']['title']); $this->assertStringNotContainsString('Paused', $bar->nodes['wpsp']['title']);
+        $this->assertSame(array('wpsp', 'wpsp_dashboard', 'wpsp_analyze_page', 'wpsp_monitoring'), array_keys($bar->nodes));
+        $this->assertSame('Analyze a page', $bar->nodes['wpsp_analyze_page']['title']); $this->assertSame('https://example.test/wp-admin/admin.php?page=wpsp_sitepulse_page_analysis', $bar->nodes['wpsp_analyze_page']['href']);
+        $this->assertSame('Pause monitoring', $bar->nodes['wpsp_monitoring']['title']);
+        $this->assertSame('https://example.test/wp-admin/admin-post.php?action=sitepulse_toggle_monitoring&_wp_http_referer=%2F&_wpnonce=nonce-sitepulse_toggle_monitoring', $bar->nodes['wpsp_monitoring']['href']);
     }
-    public function test_unsupported_frontend_page_has_notice_while_admin_page_does_not(): void {
-        Sitepulse_Test_WP::$is_admin = false; $GLOBALS['timestart'] = null;
+    /** @dataProvider frontEndAddresses */
+    public function test_every_front_end_page_can_be_analyzed_from_the_toolbar($request_uri, $expected_url): void {
+        Sitepulse_Test_WP::$is_admin = false; $GLOBALS['timestart'] = null; $_SERVER['REQUEST_URI'] = $request_uri;
         $bar = new Sitepulse_Test_Admin_Bar(); Sitepulse_Frontend::admin_bar_node($bar);
-        $this->assertArrayHasKey('wpsp_unsupported_page', $bar->nodes); $this->assertArrayNotHasKey('wpsp_view_report', $bar->nodes);
-        Sitepulse_Test_WP::$is_admin = true; $bar = new Sitepulse_Test_Admin_Bar(); Sitepulse_Frontend::admin_bar_node($bar);
-        $this->assertArrayNotHasKey('wpsp_unsupported_page', $bar->nodes); $this->assertSame('Switch to New Experience', $bar->nodes['wpsp_easy_mode']['title']);
+        $this->assertSame('Analyze this page', $bar->nodes['wpsp_analyze_page']['title']);
+        $this->assertSame('https://example.test/wp-admin/admin.php?page=wpsp_sitepulse_page_analysis&url=' . rawurlencode($expected_url) . '&autorun=1', $bar->nodes['wpsp_analyze_page']['href']);
+    }
+    public static function frontEndAddresses(): array {
+        return array(
+            'product' => array('/product/blue-shirt/', 'https://example.test/product/blue-shirt/'), 'archive' => array('/category/news/page/2/', 'https://example.test/category/news/page/2/'),
+            'search with query' => array('/?s=shoes&post_type=product', 'https://example.test/?s=shoes&post_type=product'),
+            'analysis token removed' => array('/shop/?sitepulse_analyze=abcdefghijklmnopqrstuvwxyz012345', 'https://example.test/shop/'),
+        );
+    }
+    public function test_front_end_link_keeps_port_and_falls_back_to_home_when_request_uri_is_missing(): void {
+        Sitepulse_Test_WP::$is_admin = false; Sitepulse_Test_WP::$home_url = 'http://localhost:8080'; unset($_SERVER['REQUEST_URI']); $GLOBALS['timestart'] = null;
+        $bar = new Sitepulse_Test_Admin_Bar(); Sitepulse_Frontend::admin_bar_node($bar);
+        $this->assertStringEndsWith('&url=' . rawurlencode('http://localhost:8080/') . '&autorun=1', $bar->nodes['wpsp_analyze_page']['href']);
+    }
+    public function test_paused_monitoring_is_visible_and_offers_resume(): void {
+        Sitepulse_Monitoring::pause(); $GLOBALS['timestart'] = null; $bar = new Sitepulse_Test_Admin_Bar(); Sitepulse_Frontend::admin_bar_node($bar);
+        $this->assertStringContainsString('<span class="wshp-paused">Paused</span>', $bar->nodes['wpsp']['title']);
+        $this->assertSame('Resume monitoring', $bar->nodes['wpsp_monitoring']['title']); $this->assertSame('Start collecting performance data again', $bar->nodes['wpsp_monitoring']['meta']['title']);
     }
     /**
      * @runInSeparateProcess

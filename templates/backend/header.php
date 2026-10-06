@@ -34,22 +34,16 @@ if( ! defined('ABSPATH') ) {
     </div>
 
     <div class="header-actions">
-        <?php
-        $sitepulse_current_page             = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
-        $sitepulse_show_new_experience_cta = 'wpsp_sitepulse' === $sitepulse_current_page;
-        if ( $sitepulse_show_new_experience_cta ) :
-            ?>
-            <button
-                type="button"
-                class="btn btn-sm sp-new-experience-cta"
-                data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>"
-                data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>"
-            >
-                <span class="dashicons dashicons-superhero-alt" aria-hidden="true"></span>
-                <span class="sp-new-experience-cta-text"><?php echo esc_html__( 'Try New Experience', 'sitepulse' ); ?></span>
-                <span class="sp-new-experience-cta-badge"><?php echo esc_html__( 'NEW', 'sitepulse' ); ?></span>
-            </button>
-        <?php endif; ?>
+        <button
+            type="button"
+            class="btn btn-sm sp-new-experience-cta"
+            data-ajax-url="<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>"
+            data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>"
+            title="<?php echo esc_attr__( 'Switch to the simple dashboard with plain-language explanations', 'sitepulse' ); ?>"
+        >
+            <span class="dashicons dashicons-superhero-alt" aria-hidden="true"></span>
+            <span class="sp-new-experience-cta-text"><?php echo esc_html__( 'Simple view', 'sitepulse' ); ?></span>
+        </button>
 
         <span class="small text-muted"><?php echo esc_html__( 'Snapshot:', 'sitepulse' ); ?></span>
         <span class="badge bg-secondary small-b"><?php echo esc_html( $snapshot_time ?? esc_html__( 'Unknown', 'sitepulse' ) ); ?></span>

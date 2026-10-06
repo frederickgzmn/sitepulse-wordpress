@@ -24,36 +24,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
   <?php require_once( SITEPULSE_PATH . '/templates/backend/header.php' ); ?>
 
-  <hr>
-  <div class="row  justify-content-center align-items-center">
-    <div class="col-12 text-center">
-      <?php
-        $sitepulse_report_mode_active = get_option( "sitepulse_report_mode_active" );
-        $sitepulse_report_mode_rain = '';
-        $sitepulse_report_mode_display = 'display: none';
-        if ( $sitepulse_report_mode_active ) {
-          $sitepulse_report_mode_rain = 'rainbow-border';
-          $sitepulse_report_mode_display = 'display: inline-block';
-        }
-      ?>
-
-      <label class="form-switch me-2 sitepulse_report_mode <?php echo esc_attr( $sitepulse_report_mode_rain ); ?>">
-        <input type="checkbox" <?php checked( $sitepulse_report_mode_active ); ?> id="sp-single-mode" class="form-check-input sp_report_mode" />
-        <span class="form-check-label"><?php echo esc_html__( 'Toggle Page Activity Report', 'sitepulse' ); ?></span>
-      </label>
-
-      <span class="badge bg-primary sitepulse_report_single_mode" style="<?php echo esc_attr( $sitepulse_report_mode_display ); ?>">
-        <?php echo esc_html__( 'Single Mode Enabled', 'sitepulse' ); ?>
-
-        <?php
-          if ( $sitepulse_current_tracked_pageid ) {
-            echo ' - ' . esc_html__( 'Tracking Page ID:', 'sitepulse' ) . ' ' . esc_html( $sitepulse_current_tracked_title = get_the_title( $sitepulse_current_tracked_pageid ) );
-          }
-        ?>
-      </span>
-    </div>
+  <div class="sp-pa-pointer">
+    <span class="dashicons dashicons-search" aria-hidden="true"></span>
+    <span><?php echo esc_html__( 'These numbers cover your whole site. To see what slows down one particular page, use Page Analysis.', 'sitepulse' ); ?></span>
+    <a href="<?php echo esc_url( Sitepulse_Page_Analysis::admin_link() ); ?>"><?php echo esc_html__( 'Analyze a page', 'sitepulse' ); ?> &rarr;</a>
   </div>
-  <hr>
 
   <div class="row g-3">
     <div class="col-12">
@@ -68,15 +43,6 @@ if ( ! defined( 'ABSPATH' ) ) {
               </div>
             </div>
             <div class="sp-widget-stats">
-              <?php if ( $single_load_events && isset( $sitepulse_current_tracked_pageid ) && ! empty( $sitepulse_current_tracked_pageid ) && is_numeric( $sitepulse_current_tracked_pageid ) ): 
-                $sitepulse_load_single_page_id = sanitize_text_field( wp_unslash( $sitepulse_current_tracked_pageid ) );
-                $sitepulse_load_single_page_title = get_the_title( $sitepulse_load_single_page_id );
-              ?>
-                <div class="sp-stat-item">
-                  <span class="sp-stat-value text-muted" style="font-size: 0.85rem;"><?php echo esc_html( $sitepulse_load_single_page_title ); ?></span>
-                  <span class="sp-stat-label"><?php echo esc_html__( 'Single Mode', 'sitepulse' ); ?></span>
-                </div>
-              <?php endif; ?>
               <div class="sp-stat-item">
                 <span class="sp-stat-value"><?php echo esc_html( $active_plugins_count ); ?></span>
                 <span class="sp-stat-label"><?php echo esc_html__( 'Plugins', 'sitepulse' ); ?></span>

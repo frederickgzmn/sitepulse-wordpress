@@ -39,32 +39,80 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<input type="checkbox" id="sp-easy-profiler-toggle" class="sp_profiler" <?php checked( $sitepulse_profiler_enabled, '1' ); ?>>
 					<span class="sp-toggle-track"></span>
 				</span>
-				<span class="sp-text-xs sp-fw-500"><?php echo esc_html__( 'Activity Monitor', 'sitepulse' ); ?></span>
+				<span class="sp-text-xs sp-fw-500"><?php echo esc_html__( 'Performance Monitor', 'sitepulse' ); ?></span>
 			</label>
 			<label class="sp-tracker-toggle-label">
 				<span class="sp-toggle">
 					<input type="checkbox" id="sp-easy-http-toggle" class="sp_http_load" <?php checked( $sitepulse_lowhttp_enabled, '1' ); ?>>
 					<span class="sp-toggle-track"></span>
 				</span>
-				<span class="sp-text-xs sp-fw-500"><?php echo esc_html__( 'Outgoing Connections', 'sitepulse' ); ?></span>
+				<span class="sp-text-xs sp-fw-500"><?php echo esc_html__( 'External Requests', 'sitepulse' ); ?></span>
 			</label>
 		</div>
 	</div>
 </div>
 
-<!-- Early Access Promo Banner -->
-<div class="sp-promo-banner sp-mb-24">
-	<div class="sp-promo-content">
-		<h3><?php echo esc_html__( 'Claim Your Early Access', 'sitepulse' ); ?></h3>
-		<p><?php echo esc_html__( 'Experience the future of WordPress performance today. SitePulse Pro is now open for early access. Secure your spot and start optimizing with elite tools.', 'sitepulse' ); ?></p>
+<?php if ( ! empty( $show_getting_started ) ) : ?>
+	<?php
+	$sp_gs_steps = $getting_started_steps;
+	$sp_gs_done  = count( array_filter( array_column( $sp_gs_steps, 'done' ) ) );
+	?>
+<!-- Getting Started -->
+<div class="sp-card sp-getting-started sp-mb-24">
+	<div class="sp-card-header">
+		<div>
+			<h3 class="sp-card-title"><span class="dashicons dashicons-flag"></span> <?php echo esc_html__( 'Get started with SitePulse', 'sitepulse' ); ?></h3>
+			<p class="sp-card-subtitle">
+				<?php
+				/* translators: 1: completed steps, 2: total steps */
+				echo esc_html( sprintf( __( '%1$d of %2$d done. Each step takes under a minute.', 'sitepulse' ), $sp_gs_done, count( $sp_gs_steps ) ) );
+				?>
+			</p>
+		</div>
+		<button type="button" class="sp-btn sp-btn-ghost sp-btn-sm sp-getting-started-dismiss" aria-label="<?php echo esc_attr__( 'Hide the getting started checklist', 'sitepulse' ); ?>">
+			<span class="dashicons dashicons-no-alt"></span>
+		</button>
 	</div>
-	<div class="sp-promo-action">
-		<a href="https://sitepulse.me/" target="_blank" class="sp-btn-early-access sp-pulse">
-			<span class="dashicons dashicons-star-filled"></span>
-			<?php echo esc_html__( 'Secure My Spot', 'sitepulse' ); ?>
-		</a>
-	</div>
+	<div class="sp-progress sp-getting-started-progress"><div class="sp-progress-fill" style="width: <?php echo esc_attr( (string) round( $sp_gs_done / count( $sp_gs_steps ) * 100 ) ); ?>%;"></div></div>
+	<ol class="sp-getting-started-steps">
+		<?php foreach ( $sp_gs_steps as $sp_gs_index => $sp_gs_step ) : ?>
+			<li class="sp-getting-started-step<?php echo $sp_gs_step['done'] ? ' is-done' : ''; ?>">
+				<span class="sp-getting-started-check" aria-hidden="true">
+					<?php if ( $sp_gs_step['done'] ) : ?>
+						<span class="dashicons dashicons-yes"></span>
+					<?php else : ?>
+						<?php echo esc_html( (string) ( $sp_gs_index + 1 ) ); ?>
+					<?php endif; ?>
+				</span>
+				<div class="sp-getting-started-text">
+					<strong><?php echo esc_html( $sp_gs_step['title'] ); ?></strong>
+					<span><?php echo esc_html( $sp_gs_step['text'] ); ?></span>
+				</div>
+				<?php if ( ! $sp_gs_step['done'] ) : ?>
+					<a class="sp-btn sp-btn-outline sp-btn-sm" href="<?php echo esc_url( $sp_gs_step['url'] ); ?>"><?php echo esc_html( $sp_gs_step['action'] ); ?></a>
+				<?php else : ?>
+					<span class="sp-badge sp-badge-success"><?php echo esc_html__( 'Done', 'sitepulse' ); ?></span>
+				<?php endif; ?>
+			</li>
+		<?php endforeach; ?>
+	</ol>
 </div>
+<?php endif; ?>
+
+<!-- Analyze a page -->
+<form class="sp-card sp-analyze-bar sp-mb-24" method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
+	<input type="hidden" name="page" value="<?php echo esc_attr( Sitepulse_Page_Analysis::ADMIN_PAGE ); ?>">
+	<input type="hidden" name="autorun" value="1">
+	<div class="sp-analyze-bar-text">
+		<strong><span class="dashicons dashicons-search"></span> <?php echo esc_html__( 'Why is a page slow?', 'sitepulse' ); ?></strong>
+		<span><?php echo esc_html__( 'Paste any address from your site: a product, a post, your shop or an archive.', 'sitepulse' ); ?></span>
+	</div>
+	<div class="sp-analyze-bar-field">
+		<label class="screen-reader-text" for="sp-analyze-bar-url"><?php echo esc_html__( 'Page address', 'sitepulse' ); ?></label>
+		<input type="text" id="sp-analyze-bar-url" name="url" class="sp-input" value="<?php echo esc_attr( home_url( '/' ) ); ?>" spellcheck="false">
+		<button type="submit" class="sp-btn sp-btn-primary"><?php echo esc_html__( 'Analyze', 'sitepulse' ); ?></button>
+	</div>
+</form>
 
 <div class="sp-dashboard-layout">
 <div class="sp-hero-grid sp-mb-24">
@@ -83,7 +131,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		?>
 		<div class="sp-hero-text">
             <h3 style="font-size: 28px; font-weight: 700; margin: 0; color: var(--sp-text-primary); letter-spacing: -0.02em;">
-                <?php echo esc_html(sprintf(__('Site is %s', 'sitepulse'), $hero_status)); ?>
+                <?php /* translators: %s: site status, such as Optimal */ echo esc_html(sprintf(__('Site is %s', 'sitepulse'), $hero_status)); ?>
             </h3>
             <p style="color: var(--sp-text-secondary); font-size: 14px; margin-top: 8px; line-height: 1.6; max-width: 280px; margin-bottom:0;">
                 <?php echo esc_html__('We continuously check your server, database, and website speed so you don\'t have to.', 'sitepulse'); ?>
@@ -104,7 +152,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	<!-- AI Intelligence (Now in Hero Grid) -->
 	<?php if ( ! empty( $sp_ai_external_api_enabled ) ) : ?>
-<div class="sp-glass-card sp-card--ai sp-ai-diagnostic-widget" data-status="<?php echo esc_attr( $ai_diagnostic_status ); ?>" style="max-height:100%; display:flex; flex-direction:column; overflow:hidden;">
+<div id="sp-ai-card" class="sp-glass-card sp-card--ai sp-ai-diagnostic-widget" data-status="<?php echo esc_attr( $ai_diagnostic_status ); ?>" style="max-height:100%; display:flex; flex-direction:column; overflow:hidden;">
 	<div class="sp-card-header">
 		<div>
 			<h3 class="sp-card-title">
@@ -530,6 +578,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</div>
 </div>
 
+<!-- Early Access Promo Banner -->
+<div class="sp-promo-banner sp-mb-24">
+	<div class="sp-promo-content">
+		<h3><?php echo esc_html__( 'Claim Your Early Access', 'sitepulse' ); ?></h3>
+		<p><?php echo esc_html__( 'Experience the future of WordPress performance today. SitePulse Pro is now open for early access. Secure your spot and start optimizing with elite tools.', 'sitepulse' ); ?></p>
+	</div>
+	<div class="sp-promo-action">
+		<a href="https://sitepulse.me/" target="_blank" class="sp-btn-early-access sp-pulse">
+			<span class="dashicons dashicons-star-filled"></span>
+			<?php echo esc_html__( 'Secure My Spot', 'sitepulse' ); ?>
+		</a>
+	</div>
+</div>
+
 <!-- ═══════════════════════════════════════════════════════════════════════
      MAIN DASHBOARD COLUMNS
      ═══════════════════════════════════════════════════════════════════════ -->
@@ -919,7 +981,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<div class="sp-card-body sp-flex sp-items-center sp-gap-12">
 				<span class="dashicons dashicons-rest-api" style="color:var(--sp-info);font-size:24px;width:24px;height:24px;"></span>
 				<div>
-					<p class="sp-fw-600 sp-mb-0" style="margin:0;color:var(--sp-text-primary);"><?php echo esc_html__( 'Outgoing Connections', 'sitepulse' ); ?></p>
+					<p class="sp-fw-600 sp-mb-0" style="margin:0;color:var(--sp-text-primary);"><?php echo esc_html__( 'External Requests', 'sitepulse' ); ?></p>
 					<p class="sp-text-xs sp-text-muted" style="margin:2px 0 0;">
 						<?php echo esc_html( sprintf(
 							/* translators: %d: number of API events */
@@ -939,6 +1001,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<?php
 						$vuln_count = isset( $vulnerabilities ) ? count( $vulnerabilities ) : 0;
 						echo $vuln_count > 0
+							/* translators: %d: number of vulnerabilities */
 							? esc_html( sprintf( __( '%d vulnerabilities found', 'sitepulse' ), $vuln_count ) )
 							: esc_html__( 'No issues detected', 'sitepulse' );
 						?>

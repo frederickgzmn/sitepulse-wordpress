@@ -4,7 +4,7 @@ Tags: performance, speed, optimization, monitoring, profiler
 Requires at least: 5.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.5
+Stable tag: 1.4.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,7 +21,7 @@ Activate it, and within seconds you will see which plugins are heavy, which exte
 - 🚀 **AI Diagnostic** – Get instant insights into what's slowing down your site with AI-powered diagnostics
 - ⚡ **Real-Time Performance Dashboard** – See live load-time metrics, Core Web Vitals, and performance trends at a glance
 - 📊 **Health Score System** – Get a composite health score based on load time, TTFB, error rates, plugin count, memory usage, and CPU utilization
-- 🎯 **Page-by-Page Performance Tracking** – Identify which pages and posts are slow with detailed performance breakdowns
+- 🔎 **Page Analysis** – Paste any address (a product, post, archive, your shop or search results) and see exactly which plugins, theme code and external requests slow that page down, with plain-English fixes. Start it from the toolbar on any page with "Analyze this page".
 - 📈 **Trend Analysis** – Track performance metrics over time to spot issues before they become critical
 
 **🔍Identify Heavy Plugins Instantly**
@@ -48,11 +48,11 @@ Activate it, and within seconds you will see which plugins are heavy, which exte
 - 📊 **Plugin Count Analysis** – Get recommendations on how many plugins are optimal for your setup
 
 **Smart Features**
-- 🎨 **Dual Dashboard Views** – Switch between user-friendly Basic View and advanced Developer View
+- 🎨 **Simple and Advanced dashboards** – Start with the Simple dashboard and its guided checklist, or switch to the Advanced view for hook-level detail
 - 🧠 **AI-Powered Diagnostics** – Get AI recommendations for performance optimization (coming soon)
 - 🎯 **Google PageSpeed Integration** – Built-in PageSpeed Insights reports with actionable recommendations
 - 📧 **Email Alerts** – Customizable alerts for critical errors with team member management
-- ✅ **Smart Onboarding** – Interactive setup wizard guides you through configuration and preferences
+- ✅ **Smart Onboarding** – A three-step setup that ends with a real check-up of your homepage
 
 **Developer-Friendly**
 - 👨‍💻 **Advanced Profiler Data** – Hook-level metrics and detailed execution analysis for developers
@@ -61,6 +61,7 @@ Activate it, and within seconds you will see which plugins are heavy, which exte
 
 **Customization & Control**
 - 🎚️ **Toggle Features On/Off** – Enable or disable monitoring features as needed
+- ⏸️ **Pause Monitoring** – Stop measuring page loads from the toolbar without deactivating; settings and history are kept
 - 🔐 **Optional External API** – Use PageSpeed and AI features completely optional—disable anytime without affecting core monitoring
 - 📊 **Custom Reporting** – View detailed reports filtered by date, plugin, hook, or error type
 - 🛡️ **Email Blocking** – Block outgoing emails during testing or prevent email spam
@@ -157,7 +158,16 @@ This opens a temporary WordPress environment in your browser with SitePulse pre-
 Yes! You can instantly try SitePulse using WordPress Playground — a browser-based WordPress environment. Click [Try SitePulse Demo](https://playground.wordpress.net/?plugin=sitepulse&login=yes&url=/wp-admin/admin.php?page=wpsp_sitepulse) to launch a temporary WordPress site with SitePulse pre-installed. No account or installation required.
 
 = Does SitePulse slow my site down? =
-No. SitePulse is built to be lightweight and runs asynchronously. Profiling is optional and can be toggled off anytime.
+No. SitePulse is built to be lightweight and runs asynchronously. Profiling is optional and can be toggled off anytime, or paused entirely from the SitePulse toolbar menu ("Pause monitoring") without deactivating the plugin.
+
+= How do I find out why one specific page is slow? =
+Open the page on your site and choose **SitePulse → Analyze this page** in the toolbar, or go to **SitePulse → Page Analysis** and paste its address. SitePulse loads the page a few times as a logged-out visitor and shows how long WordPress needs to build it, how much of that time each plugin and your theme take, every external request the page makes, and what to do about it. It works for any front-end address: products, posts, pages, archives, your shop and search results.
+
+= Page Analysis says my server could not load the page. What now? =
+Some hosts, firewalls and password-protected staging sites block a site from requesting its own pages. Click **Open the page and measure my visit**: the page opens in a new tab, SitePulse measures that visit, and the report appears in the first tab. The same happens if a page cache or CDN answers instead of WordPress.
+
+= Can I pause SitePulse instead of deactivating it? =
+Yes. Choose **Pause monitoring** in the SitePulse toolbar menu (or "Pause instead of deactivating" when you deactivate). SitePulse stops measuring page loads, so it adds no profiling overhead, and keeps your settings and history. Choose **Resume monitoring** when you need it again.
 
 = Does SitePulse use external services? =
 Yes, but only for optional enhanced features. SitePulse can communicate with api.sitepulse.me to provide PageSpeed reports and AI diagnostics. The core monitoring features work 100% locally without any external connection. Only performance metrics (plugin names, load times, memory usage) are sent — never personal data or user content.
@@ -166,7 +176,7 @@ Yes, but only for optional enhanced features. SitePulse can communicate with api
 When enhanced features are enabled, SitePulse sends only performance-related data: plugin names/versions, hook execution times, memory usage, and API request metrics. NO personal information, user data, database content, or sensitive information is ever collected or transmitted.
 
 = Can it work with WooCommerce or multisite? =
-Yes. SitePulse tracks any page or post type, including WooCommerce product pages and multisite environments.
+Yes. Page Analysis works on any front-end address, including WooCommerce product, shop, cart and category pages, and SitePulse runs on multisite environments.
 
 = Is this a "Lite" version with limited features? =
 No. This is the Core version of SitePulse. It is a fully functional, unlimited performance monitor. We are building a separate Pro version for advanced historical data and AI features, but the features you see here today will remain free forever.
@@ -180,17 +190,35 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 1. Real-time Admin Dashboard – View load-time metrics, Core Web Vitals, and Google PageSpeed Insights reports at a glance
 2. Simple Performance Overview – Easily spot what's slowing your site down with a beginner-friendly dashboard view
 3. Advanced Settings & Controls – Customize monitoring features, manage error logs, and toggle services on/off for testing and optimization
-4. Single-Page Performance Analytics – Identify performance bottlenecks on specific pages and posts with detailed load-time breakdowns
+4. Page Analysis – See exactly which plugins, theme code and external requests slow down any page, with plain-English findings
 5. Interactive Setup Wizard – Step-by-step onboarding guide to configure monitoring preferences and get started instantly
-6. Choose your experience level (Basic or Developer View) during onboarding, switch anytime from dashboard.
+6. Choose the Simple or Advanced dashboard during onboarding; switch any time.
 7. Developer View – Unlock advanced profiler data, hook-level metrics, and detailed execution analysis for power users
-8. Interactive onboarding collects initial performance baseline to establish monitoring baselines.
-9. Single-Page Performance Analytics – Monitoring individual page performance in real-time to identify and resolve bottlenecks quickly.
+8. Onboarding ends with a real check-up of your homepage and clear next steps.
+9. Analyze this page – Start a Page Analysis of any product, post or archive from the toolbar, or pause monitoring without deactivating.
 10. Actionable Performance Recommendations – Receive tailored optimization suggestions to quickly identify and resolve bottlenecks
 
 ---
 
 == Changelog ==
+= 1.4.6 =
+* New: Page Analysis. Analyze any page (products, posts, archives, your shop, search results) and see which plugins, theme code and external requests slow it down, with plain-English findings. Replaces the old single-page tracking, which only supported posts and pages and mixed in data from other requests.
+* New: "Analyze this page" in the toolbar on every front-end page.
+* New: when the server cannot load its own pages, Page Analysis measures your browser visit instead.
+* New: Pause and resume monitoring from the toolbar, without deactivating.
+* New: getting-started checklist on the dashboard.
+* Improved: the Simple dashboard (Easy Mode) is now the default; the classic dashboard is the "Advanced view". Dashboard preferences are saved per user instead of per browser.
+* Improved: onboarding ends with a real check-up of your homepage.
+* Improved: plain menu names: Page Analysis, Plugin Activity and External Requests.
+* Improved: profiler measures each callback's own time, so nested plugins are no longer counted twice.
+* Improved: pages for visitors no longer load jQuery or SitePulse styles; only administrators who see the toolbar do.
+* Improved: the deactivation dialog offers to pause instead, a quick-start guide and a support link, and can be translated.
+* Improved: uninstalling also removes the error log and plugin timing data.
+* Fixed: switching off External Requests tracking now really stops it (it kept recording before), and the dashboard switches confirm the right state.
+* Fixed: single-file plugins (such as Hello Dolly) appear under their own name in Plugin Activity.
+* Fixed: a deprecation notice from the error handler on PHP 8.4 and newer.
+* Removed: the simulated "Real-Time Tracking" modal on the front end.
+
 = 1.4.5 =
 * Better reporting
 * Cron Fixes

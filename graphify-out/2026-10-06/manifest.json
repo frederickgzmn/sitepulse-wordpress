@@ -1,0 +1,932 @@
+{
+  "assets/externals/bootstrap-5.3.8-dist/js/bootstrap.bundle.js": {
+    "mtime": 1787972736.6621375,
+    "seen": 1790214669.717153,
+    "ast_hash": "7d2c412531f05f39e97195f9b48a53dc",
+    "semantic_hash": "7d2c412531f05f39e97195f9b48a53dc"
+  },
+  "assets/externals/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js": {
+    "mtime": 1787972736.6633854,
+    "seen": 1790214669.7171576,
+    "ast_hash": "5cc1b73e70520fa84b1846afe0ec8fb6",
+    "semantic_hash": "5cc1b73e70520fa84b1846afe0ec8fb6"
+  },
+  "assets/externals/bootstrap-5.3.8-dist/js/bootstrap.esm.js": {
+    "mtime": 1787972736.664203,
+    "seen": 1790214669.7171593,
+    "ast_hash": "32e42b38a15f27b01f79bb13aad53714",
+    "semantic_hash": "32e42b38a15f27b01f79bb13aad53714"
+  },
+  "assets/externals/bootstrap-5.3.8-dist/js/bootstrap.esm.min.js": {
+    "mtime": 1787972736.664988,
+    "seen": 1790214669.7171602,
+    "ast_hash": "6ccf144f123da79e62d5e46a06f133b9",
+    "semantic_hash": "6ccf144f123da79e62d5e46a06f133b9"
+  },
+  "assets/externals/bootstrap-5.3.8-dist/js/bootstrap.js": {
+    "mtime": 1787972736.665393,
+    "seen": 1790214669.7171679,
+    "ast_hash": "52de67605c3d156f4958c83fa9cfc8d9",
+    "semantic_hash": "52de67605c3d156f4958c83fa9cfc8d9"
+  },
+  "assets/externals/bootstrap-5.3.8-dist/js/bootstrap.min.js": {
+    "mtime": 1767476194.8914135,
+    "seen": 1790214669.7171695,
+    "ast_hash": "a92b3364fb0a7349f2a1c31a7ad5ed5e",
+    "semantic_hash": "a92b3364fb0a7349f2a1c31a7ad5ed5e"
+  },
+  "assets/js/backend.js": {
+    "mtime": 1791253283.4811766,
+    "seen": 1791256527.5292752,
+    "ast_hash": "c6b29e7a89fe7ffe3ea2c3744df14232",
+    "semantic_hash": ""
+  },
+  "assets/js/deactivation-modal.js": {
+    "mtime": 1791253508.7995088,
+    "seen": 1791256527.5292802,
+    "ast_hash": "1d66eb43ce309044560f2bba4e38a8f6",
+    "semantic_hash": ""
+  },
+  "assets/js/easy-mode.js": {
+    "mtime": 1791253197.7265167,
+    "seen": 1791256527.5292833,
+    "ast_hash": "59d8c2eb21d2ce0c800d2a5237488298",
+    "semantic_hash": ""
+  },
+  "assets/js/onboarding.js": {
+    "mtime": 1791253376.9020703,
+    "seen": 1791256527.5292869,
+    "ast_hash": "b0597a33a511dbc9175675cf1be56570",
+    "semantic_hash": ""
+  },
+  "assets/js/sitepulse_global.js": {
+    "mtime": 1791249751.5134468,
+    "seen": 1791256527.5292938,
+    "ast_hash": "bd9dc22c59cf9b621f0acb3deea825ad",
+    "semantic_hash": ""
+  },
+  "blueprint.json": {
+    "mtime": 1767987859.9076574,
+    "seen": 1790214669.7171767,
+    "ast_hash": "7d680f57eebda0d0a72c8a3dafef985d",
+    "semantic_hash": "7d680f57eebda0d0a72c8a3dafef985d"
+  },
+  "class/api_service.php": {
+    "mtime": 1791249751.5194468,
+    "seen": 1791256527.5293007,
+    "ast_hash": "606b128d9d875c17ad5d0a1103608496",
+    "semantic_hash": ""
+  },
+  "class/backend.php": {
+    "mtime": 1791254225.3418055,
+    "seen": 1791256527.5293045,
+    "ast_hash": "07f1206cff322efcb527f86fec25c4c3",
+    "semantic_hash": ""
+  },
+  "class/curloader.php": {
+    "mtime": 1791256050.6710968,
+    "seen": 1791256527.5293076,
+    "ast_hash": "b77f0839a551ab0871ceef3490b8fe02",
+    "semantic_hash": ""
+  },
+  "class/easy_mode.php": {
+    "mtime": 1791252767.2180588,
+    "seen": 1791256527.5293117,
+    "ast_hash": "afbc0b33943633b12ff36eae188f9c1d",
+    "semantic_hash": ""
+  },
+  "class/error_handler.php": {
+    "mtime": 1791249751.5214467,
+    "seen": 1791256527.529314,
+    "ast_hash": "cadbde229ae771c52870e0bf04265e2e",
+    "semantic_hash": ""
+  },
+  "class/frontend.php": {
+    "mtime": 1791252897.3745034,
+    "seen": 1791256527.529316,
+    "ast_hash": "f86d0da8d8f0eba158d7e98eb2c099d8",
+    "semantic_hash": ""
+  },
+  "class/onboarding.php": {
+    "mtime": 1791256450.8251727,
+    "seen": 1791256527.5293214,
+    "ast_hash": "25af8ee1b7bea3c6de7c4f571fbe58e1",
+    "semantic_hash": ""
+  },
+  "class/page_tracker.php": {
+    "mtime": 1791252466.7389712,
+    "seen": 1791256527.529327,
+    "ast_hash": "8113c0401360ed797b935f8c83fff4a3",
+    "semantic_hash": ""
+  },
+  "class/plugin.php": {
+    "mtime": 1791249751.5244467,
+    "seen": 1791256527.5293283,
+    "ast_hash": "02a38bfd14925b5d7c3edbd329746bad",
+    "semantic_hash": ""
+  },
+  "class/plugin_profiler.php": {
+    "mtime": 1790213897.4950912,
+    "seen": 1790214669.7171845,
+    "ast_hash": "eeca46dd601efb8d7a2486f01817c858",
+    "semantic_hash": "eeca46dd601efb8d7a2486f01817c858"
+  },
+  "class/product_analytics.php": {
+    "mtime": 1787972736.6725898,
+    "seen": 1790214669.7171853,
+    "ast_hash": "eab75e003c0ca24d216a7305966f6301",
+    "semantic_hash": "eab75e003c0ca24d216a7305966f6301"
+  },
+  "class/profiler.php": {
+    "mtime": 1791252326.9748867,
+    "seen": 1791256527.5293453,
+    "ast_hash": "9d8c9c0ab6b030bceb7a80549d4ce171",
+    "semantic_hash": ""
+  },
+  "class/settings.php": {
+    "mtime": 1790213897.4958313,
+    "seen": 1790214669.717187,
+    "ast_hash": "3d8ba3deda4b8fe2c168f293734a3ca4",
+    "semantic_hash": "3d8ba3deda4b8fe2c168f293734a3ca4"
+  },
+  "class/setup.php": {
+    "mtime": 1791249751.5264468,
+    "seen": 1791256527.5293496,
+    "ast_hash": "7be7cc4a2a68a91ef05e75e41755604f",
+    "semantic_hash": ""
+  },
+  "class/utils.php": {
+    "mtime": 1782573675.091026,
+    "seen": 1790214669.7171884,
+    "ast_hash": "6787e7d7232a8f967ac0217d9aef4f65",
+    "semantic_hash": "6787e7d7232a8f967ac0217d9aef4f65"
+  },
+  "class/whitelabel_service.php": {
+    "mtime": 1769132811.1701794,
+    "seen": 1790214669.717189,
+    "ast_hash": "8345bdf7a2f171191019a0848c5d7688",
+    "semantic_hash": "8345bdf7a2f171191019a0848c5d7688"
+  },
+  "inc/ai_diagnostic_cron.php": {
+    "mtime": 1791249751.8664463,
+    "seen": 1791256527.529359,
+    "ast_hash": "b7622dde3e42b82cf60f06c55611ad1a",
+    "semantic_hash": ""
+  },
+  "inc/api_backend.php": {
+    "mtime": 1791252739.6742206,
+    "seen": 1791256527.5293612,
+    "ast_hash": "c31f6e5c8800fe86d820d2be46ea2a1a",
+    "semantic_hash": ""
+  },
+  "inc/cron_fallback.php": {
+    "mtime": 1791249751.8824463,
+    "seen": 1791256527.5293639,
+    "ast_hash": "f712685f5153dd30368ea9ed5244f2b1",
+    "semantic_hash": ""
+  },
+  "inc/cron_manager.php": {
+    "mtime": 1790339830.7369087,
+    "seen": 1790339834.5440288,
+    "ast_hash": "191663db53818466c3930f329f54b8c9",
+    "semantic_hash": ""
+  },
+  "loader.php": {
+    "mtime": 1791252786.6329825,
+    "seen": 1791256527.5293682,
+    "ast_hash": "a34669ca681335cacc8e6c108f049597",
+    "semantic_hash": ""
+  },
+  "templates/backend/curl_api.php": {
+    "mtime": 1791253137.2140582,
+    "seen": 1791256527.5293772,
+    "ast_hash": "33f3fa66967a82b0fa2aa05025cd0278",
+    "semantic_hash": ""
+  },
+  "templates/backend/dashboard.php": {
+    "mtime": 1791254327.72774,
+    "seen": 1791256527.52938,
+    "ast_hash": "dc1e38b3b6fbf59f3ec19e520afaed09",
+    "semantic_hash": ""
+  },
+  "templates/backend/header.php": {
+    "mtime": 1791253262.5809586,
+    "seen": 1791256527.5293822,
+    "ast_hash": "db76439a039f1015b3a2afec0313d86e",
+    "semantic_hash": ""
+  },
+  "templates/backend/onboarding.php": {
+    "mtime": 1791253349.123325,
+    "seen": 1791256527.5293846,
+    "ast_hash": "2e8dceca26800b4d945cef094f13891b",
+    "semantic_hash": ""
+  },
+  "templates/backend/resource_load.php": {
+    "mtime": 1791253131.3989007,
+    "seen": 1791256527.529389,
+    "ast_hash": "752c65fbaff93e4084a8d31d45e2473d",
+    "semantic_hash": ""
+  },
+  "templates/backend/settings.php": {
+    "mtime": 1790213897.4999213,
+    "seen": 1790214669.7171984,
+    "ast_hash": "e71bcd867d63ae0232d483f8b65db5e5",
+    "semantic_hash": "e71bcd867d63ae0232d483f8b65db5e5"
+  },
+  "templates/easy/layout.php": {
+    "mtime": 1790213897.5001109,
+    "seen": 1790214669.717199,
+    "ast_hash": "1e6ce2e6b9f7029fdb5a57240d80ad58",
+    "semantic_hash": "1e6ce2e6b9f7029fdb5a57240d80ad58"
+  },
+  "templates/easy/partials/metric-card.php": {
+    "mtime": 1782573675.0923607,
+    "seen": 1790214669.7172,
+    "ast_hash": "b3e268d621b8a9d15e0bd79a6dcc242a",
+    "semantic_hash": "b3e268d621b8a9d15e0bd79a6dcc242a"
+  },
+  "templates/easy/partials/pet-assistant.php": {
+    "mtime": 1791253922.1302576,
+    "seen": 1791256527.5293972,
+    "ast_hash": "db99954fac7785a0c853a13d7aef1be5",
+    "semantic_hash": ""
+  },
+  "templates/easy/partials/score-ring.php": {
+    "mtime": 1782573675.092427,
+    "seen": 1790214669.717203,
+    "ast_hash": "6328eb22e0a939830c218a435acd7596",
+    "semantic_hash": "6328eb22e0a939830c218a435acd7596"
+  },
+  "templates/easy/partials/sidebar.php": {
+    "mtime": 1791249751.9104462,
+    "seen": 1791256527.5294008,
+    "ast_hash": "0b865f805169e337567bb79395ebf10a",
+    "semantic_hash": ""
+  },
+  "templates/easy/partials/topbar.php": {
+    "mtime": 1791253180.2550719,
+    "seen": 1791256527.5294023,
+    "ast_hash": "b3ea4502e7889d3438ad94c66e9b71a1",
+    "semantic_hash": ""
+  },
+  "templates/easy/views/api-monitor.php": {
+    "mtime": 1791253158.8339334,
+    "seen": 1791256527.5294044,
+    "ast_hash": "46eb7333a173b15061020760d53e1398",
+    "semantic_hash": ""
+  },
+  "templates/easy/views/home.php": {
+    "mtime": 1791253255.8508735,
+    "seen": 1791256527.5294068,
+    "ast_hash": "96ac7a2276062868a059ad4e708ba2c0",
+    "semantic_hash": ""
+  },
+  "templates/easy/views/insights.php": {
+    "mtime": 1791249751.9134462,
+    "seen": 1791256527.5294085,
+    "ast_hash": "d6846aae60fcff0aada5ffd9761c85a6",
+    "semantic_hash": ""
+  },
+  "templates/easy/views/performance.php": {
+    "mtime": 1791253255.8484292,
+    "seen": 1791256527.5294135,
+    "ast_hash": "e935dfc4adf5d99242ef340302abbbbb",
+    "semantic_hash": ""
+  },
+  "templates/easy/views/resource-load.php": {
+    "mtime": 1791253158.8316934,
+    "seen": 1791256527.5294151,
+    "ast_hash": "8480b706c1175bf28df4a4d289885d19",
+    "semantic_hash": ""
+  },
+  "templates/easy/views/security.php": {
+    "mtime": 1782573675.0932207,
+    "seen": 1790214669.7172139,
+    "ast_hash": "7b851923c1b7860e2a46b580c1eb1645",
+    "semantic_hash": "7b851923c1b7860e2a46b580c1eb1645"
+  },
+  "templates/easy/views/settings.php": {
+    "mtime": 1790213897.5021298,
+    "seen": 1790214669.7172148,
+    "ast_hash": "0d0e2753bc926f08181c87c782c6b4e6",
+    "semantic_hash": "0d0e2753bc926f08181c87c782c6b4e6"
+  },
+  "templates/easy/views/system.php": {
+    "mtime": 1790213897.5028305,
+    "seen": 1790214669.7172155,
+    "ast_hash": "9177b57d700fc636dad4a7c04e1dc3f1",
+    "semantic_hash": "9177b57d700fc636dad4a7c04e1dc3f1"
+  },
+  "uninstall.php": {
+    "mtime": 1791253528.47933,
+    "seen": 1791256527.5295744,
+    "ast_hash": "9c8654e2e67aa3bd6220ba0c3a729a4e",
+    "semantic_hash": ""
+  },
+  ".commandcode/taste/taste.md": {
+    "mtime": 1787972736.6579227,
+    "seen": 1790214669.7172177,
+    "ast_hash": "0f0ea13a48fd9dc655eeb20a6b8a9f27",
+    "semantic_hash": "0f0ea13a48fd9dc655eeb20a6b8a9f27"
+  },
+  "AGENTS.md": {
+    "mtime": 1791249751.49905,
+    "seen": 1791256527.52958,
+    "ast_hash": "0ed3f3a1b59c64cdb5bd0141a019152e",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1791256439.9806516,
+    "seen": 1791256527.5295818,
+    "ast_hash": "423d51d7ae042d0f8629a3d3cf63d0af",
+    "semantic_hash": ""
+  },
+  "readme.txt": {
+    "mtime": 1791256439.9798262,
+    "seen": 1791256527.529587,
+    "ast_hash": "476cb7e7fbcf1974e9d888faac927263",
+    "semantic_hash": ""
+  },
+  "assets/img/only-logo.png": {
+    "mtime": 1767476194.8797383,
+    "seen": 1790214669.717221,
+    "ast_hash": "77973f018c6d8c57ccb1997a200b7917",
+    "semantic_hash": "77973f018c6d8c57ccb1997a200b7917"
+  },
+  "assets/img/sitepulse-file.svg": {
+    "mtime": 1787972736.668738,
+    "seen": 1790214669.7172217,
+    "ast_hash": "d1553f50c8eaa46cc6f604a28c3eebb0",
+    "semantic_hash": "d1553f50c8eaa46cc6f604a28c3eebb0"
+  },
+  "assets/img/sitepulse-logo.png": {
+    "mtime": 1767476194.8826804,
+    "seen": 1790214669.7172225,
+    "ast_hash": "434769bab66a11c5fcc179f93ac0919f",
+    "semantic_hash": "434769bab66a11c5fcc179f93ac0919f"
+  },
+  "assets/img/sitepulse_120x120.png": {
+    "mtime": 1787972736.6711023,
+    "seen": 1790214669.7172234,
+    "ast_hash": "6ce63b0a97c632995908877adcef816c",
+    "semantic_hash": "6ce63b0a97c632995908877adcef816c"
+  },
+  "assets/img/sitepulse_12x12.svg": {
+    "mtime": 1787972736.6711023,
+    "seen": 1790214669.717224,
+    "ast_hash": "6eae79fa52e205e764502cf6e372848b",
+    "semantic_hash": "6eae79fa52e205e764502cf6e372848b"
+  },
+  "assets/img/sitepulse_34x34.svg": {
+    "mtime": 1767476194.8839,
+    "seen": 1790214669.7172246,
+    "ast_hash": "3b1732c37f31f136cb5381caec63491f",
+    "semantic_hash": "3b1732c37f31f136cb5381caec63491f"
+  },
+  "composer.json": {
+    "mtime": 1791249751.5284467,
+    "seen": 1791256527.529357,
+    "ast_hash": "f18bd815a413cb605f33625a87a4c0df",
+    "semantic_hash": ""
+  },
+  "package.json": {
+    "mtime": 1791249751.89676,
+    "seen": 1791256527.5293696,
+    "ast_hash": "d60d5086e2f774f6385428488ea6e4ad",
+    "semantic_hash": ""
+  },
+  "tests/js/backend.test.cjs": {
+    "mtime": 1791254494.776453,
+    "seen": 1791256527.529424,
+    "ast_hash": "d64df39ea38cdf0fa476985a0907dfb6",
+    "semantic_hash": ""
+  },
+  "tests/js/deactivation-modal.test.cjs": {
+    "mtime": 1791254468.9364429,
+    "seen": 1791256527.5294287,
+    "ast_hash": "9bd87b5e28cadb1ac016866df881339e",
+    "semantic_hash": ""
+  },
+  "tests/js/easy-mode.test.cjs": {
+    "mtime": 1791254644.5511818,
+    "seen": 1791256527.5294313,
+    "ast_hash": "4f35979ac2b7a005392d2bfa9e350f24",
+    "semantic_hash": ""
+  },
+  "tests/js/global.test.cjs": {
+    "mtime": 1791249751.9220383,
+    "seen": 1791256527.5294335,
+    "ast_hash": "db4419b498e5368d5534993459adfd46",
+    "semantic_hash": ""
+  },
+  "tests/js/helpers/browser.cjs": {
+    "mtime": 1791249751.9225786,
+    "seen": 1791256527.5294354,
+    "ast_hash": "44b000cb06425d50c4c3488bdd4f2612",
+    "semantic_hash": ""
+  },
+  "tests/js/onboarding.test.cjs": {
+    "mtime": 1791254631.7672515,
+    "seen": 1791256527.5294392,
+    "ast_hash": "866adf45e805d46f186feb25218750f1",
+    "semantic_hash": ""
+  },
+  "tests/php/ActionSchedulerTest.php": {
+    "mtime": 1791249751.9264462,
+    "seen": 1791256527.5294468,
+    "ast_hash": "a066dd7952e694e3510b0bd33b6c86be",
+    "semantic_hash": ""
+  },
+  "tests/php/ApiServiceTest.php": {
+    "mtime": 1791249751.9294462,
+    "seen": 1791256527.5294538,
+    "ast_hash": "9900d2490cf2282f3dab4c67e18fd604",
+    "semantic_hash": ""
+  },
+  "tests/php/AutoloadRestApiTest.php": {
+    "mtime": 1791249751.9294462,
+    "seen": 1791256527.5294573,
+    "ast_hash": "1c0964bdc2e8947454e01ecf969cc15f",
+    "semantic_hash": ""
+  },
+  "tests/php/BackendTest.php": {
+    "mtime": 1791249751.9304461,
+    "seen": 1791256527.5294607,
+    "ast_hash": "8998d674f9d114860c61c1e07e132c13",
+    "semantic_hash": ""
+  },
+  "tests/php/BrandingAnalyticsTest.php": {
+    "mtime": 1791249751.9304461,
+    "seen": 1791256527.5294628,
+    "ast_hash": "08acf65b7f76d6b3223d9b711b60e130",
+    "semantic_hash": ""
+  },
+  "tests/php/CronTest.php": {
+    "mtime": 1791249751.9324462,
+    "seen": 1791256527.5294745,
+    "ast_hash": "5fddcd2793406cb8c4dbf6fdde8a0aa6",
+    "semantic_hash": ""
+  },
+  "tests/php/CurLoaderTest.php": {
+    "mtime": 1791256091.9050555,
+    "seen": 1791256527.5294764,
+    "ast_hash": "e216edd6d8cee08ff505ae24eb581a55",
+    "semantic_hash": ""
+  },
+  "tests/php/EasyModeTest.php": {
+    "mtime": 1791253825.1444023,
+    "seen": 1791256527.5294845,
+    "ast_hash": "be3127cbc0cbfcd1375fc80337233823",
+    "semantic_hash": ""
+  },
+  "tests/php/ErrorHandlerTest.php": {
+    "mtime": 1791249751.9334462,
+    "seen": 1791256527.5294886,
+    "ast_hash": "54880c1c57b2ff9649ac5d5ab5502f13",
+    "semantic_hash": ""
+  },
+  "tests/php/FrontendTest.php": {
+    "mtime": 1791253762.986784,
+    "seen": 1791256527.5294938,
+    "ast_hash": "a0d09e7573648e92b0b6dac2eb17e2eb",
+    "semantic_hash": ""
+  },
+  "tests/php/LifecycleTest.php": {
+    "mtime": 1791256276.4484546,
+    "seen": 1791256527.529502,
+    "ast_hash": "c9c6cc4c6b3e0db2f3f17ad9a688e388",
+    "semantic_hash": ""
+  },
+  "tests/php/PageTrackerTest.php": {
+    "mtime": 1791253696.0376706,
+    "seen": 1791256527.5295088,
+    "ast_hash": "0022b5577d0f81c7cd8d0e2d6db87547",
+    "semantic_hash": ""
+  },
+  "tests/php/PluginProfilerTest.php": {
+    "mtime": 1791249751.936329,
+    "seen": 1791256527.529515,
+    "ast_hash": "b9d705f13ad47dae46cca7b0bde13b1e",
+    "semantic_hash": ""
+  },
+  "tests/php/PluginTest.php": {
+    "mtime": 1791249751.938446,
+    "seen": 1791256527.5295167,
+    "ast_hash": "cd21762c022dd998607805e4bc6ba586",
+    "semantic_hash": ""
+  },
+  "tests/php/ProfilerTest.php": {
+    "mtime": 1791253736.2692196,
+    "seen": 1791256527.5295258,
+    "ast_hash": "90521380dc287e74b6ccb8d2576ec8ce",
+    "semantic_hash": ""
+  },
+  "tests/php/RestApiTest.php": {
+    "mtime": 1791253801.5467377,
+    "seen": 1791256527.5295286,
+    "ast_hash": "2c184d4b57a26887125a1c82daf2af1c",
+    "semantic_hash": ""
+  },
+  "tests/php/SettingsTest.php": {
+    "mtime": 1791249751.941446,
+    "seen": 1791256527.5295322,
+    "ast_hash": "85a01b107f1e1f06469069d3ba02b884",
+    "semantic_hash": ""
+  },
+  "tests/php/SetupOnboardingTest.php": {
+    "mtime": 1791249751.9424462,
+    "seen": 1791256527.5295346,
+    "ast_hash": "4e400029a141d998d637319cbff49eaf",
+    "semantic_hash": ""
+  },
+  "tests/php/Support/ActionScheduler.php": {
+    "mtime": 1791249751.9424462,
+    "seen": 1791256527.5295367,
+    "ast_hash": "2e1c099220f8c33acd94499e55cf6858",
+    "semantic_hash": ""
+  },
+  "tests/php/Support/Database.php": {
+    "mtime": 1791249751.94399,
+    "seen": 1791256527.5295386,
+    "ast_hash": "26d5579446dc105108048b3a1d4d48a4",
+    "semantic_hash": ""
+  },
+  "tests/php/Support/LocalFilesystem.php": {
+    "mtime": 1791249751.94399,
+    "seen": 1791256527.5295403,
+    "ast_hash": "9325ac69d518f04b2ba594d82182ae1a",
+    "semantic_hash": ""
+  },
+  "tests/php/Support/TestCase.php": {
+    "mtime": 1791253647.9961514,
+    "seen": 1791256527.5295472,
+    "ast_hash": "7c4c3319afefe2a164de172154392c89",
+    "semantic_hash": ""
+  },
+  "tests/php/Support/WordPress.php": {
+    "mtime": 1791256276.4470081,
+    "seen": 1791256527.529549,
+    "ast_hash": "344a29ff8a3f707ebc13b8bfaf018b23",
+    "semantic_hash": ""
+  },
+  "tests/php/TemplateTest.php": {
+    "mtime": 1791249751.9458191,
+    "seen": 1791256527.529552,
+    "ast_hash": "8de503bb618df0eff43a29c9d6d1530b",
+    "semantic_hash": ""
+  },
+  "tests/php/UtilsTest.php": {
+    "mtime": 1791249751.9464462,
+    "seen": 1791256527.5295544,
+    "ast_hash": "3471499f7df69ea22e981b03cfe6a536",
+    "semantic_hash": ""
+  },
+  "tests/php/bootstrap.php": {
+    "mtime": 1791249751.947446,
+    "seen": 1791256527.5295568,
+    "ast_hash": "165a40814b8477f19e524c758d6ce7a3",
+    "semantic_hash": ""
+  },
+  "tests/php/fixtures/lifecycle.php": {
+    "mtime": 1791254270.280095,
+    "seen": 1791256527.5295668,
+    "ast_hash": "bad119fdcde621668c4b18b3dbeec52d",
+    "semantic_hash": ""
+  },
+  ".github/workflows/tests.yml": {
+    "mtime": 1791249751.49796,
+    "seen": 1791256527.5295784,
+    "ast_hash": "9afcab182b77af8a65a48d1ef57b70c2",
+    "semantic_hash": ""
+  },
+  "tests/js/browser-harness.test.cjs": {
+    "mtime": 1791249751.915446,
+    "seen": 1791256527.5294259,
+    "ast_hash": "9b7c36a61d136474649ccf393ca52cc0",
+    "semantic_hash": ""
+  },
+  "scripts/js-coverage.cjs": {
+    "mtime": 1791249751.898446,
+    "seen": 1791256527.529372,
+    "ast_hash": "76e69246b67fb5a31c31d3ce5e779101",
+    "semantic_hash": ""
+  },
+  "scripts/lib/php-coverage.php": {
+    "mtime": 1791249751.8999074,
+    "seen": 1791256527.5293736,
+    "ast_hash": "9a921f447393f8a5ff5b3f0f0ccc5a14",
+    "semantic_hash": ""
+  },
+  "scripts/php-coverage.php": {
+    "mtime": 1791249751.900757,
+    "seen": 1791256527.5293756,
+    "ast_hash": "6fcc00a1f28b1c9db0e2194996250fde",
+    "semantic_hash": ""
+  },
+  "tests/js/browser-regressions.test.cjs": {
+    "mtime": 1791254438.5811698,
+    "seen": 1791256527.5294273,
+    "ast_hash": "94880b40fd293f2e90daf48bf9655de2",
+    "semantic_hash": ""
+  },
+  "tests/js/helpers/coverage.cjs": {
+    "mtime": 1791249751.923365,
+    "seen": 1791256527.529437,
+    "ast_hash": "226b176822904fd46299b5fad28a0de8",
+    "semantic_hash": ""
+  },
+  "tests/js/remaining-browser-behavior.test.cjs": {
+    "mtime": 1791254494.775798,
+    "seen": 1791256527.529443,
+    "ast_hash": "621e978dcdfdd70dd7fe5865e2b0011d",
+    "semantic_hash": ""
+  },
+  "tests/js/remaining-ui-flows.test.cjs": {
+    "mtime": 1791254438.5809333,
+    "seen": 1791256527.5294452,
+    "ast_hash": "8a591fa29cfee4d10b8bb02baedcd054",
+    "semantic_hash": ""
+  },
+  "tests/php/ApiCoverageTest.php": {
+    "mtime": 1791249751.9282532,
+    "seen": 1791256527.5294487,
+    "ast_hash": "4d416f520e2618463462400f20692fbb",
+    "semantic_hash": ""
+  },
+  "tests/php/ApiRegressionTest.php": {
+    "mtime": 1791249751.928698,
+    "seen": 1791256527.5294516,
+    "ast_hash": "f49f3adc58fb4c2fe95c3b1d36423587",
+    "semantic_hash": ""
+  },
+  "tests/php/ApiVariantsTest.php": {
+    "mtime": 1791249751.9294462,
+    "seen": 1791256527.5294557,
+    "ast_hash": "165c3eed4c99d0f5a552288b016c8a3e",
+    "semantic_hash": ""
+  },
+  "tests/php/BackendCoverageTest.php": {
+    "mtime": 1791254406.0505362,
+    "seen": 1791256527.5294592,
+    "ast_hash": "86338961b28104f78539c38657596571",
+    "semantic_hash": ""
+  },
+  "tests/php/CoreAdditionalBehaviorTest.php": {
+    "mtime": 1791256450.825596,
+    "seen": 1791256527.5294652,
+    "ast_hash": "9e2ac26500bd0ca0e5be38d91eb15caa",
+    "semantic_hash": ""
+  },
+  "tests/php/CoreRegressionTest.php": {
+    "mtime": 1791249751.931446,
+    "seen": 1791256527.5294669,
+    "ast_hash": "09f15a2500defca18f5e9b373a87c531",
+    "semantic_hash": ""
+  },
+  "tests/php/CoreVariantsTest.php": {
+    "mtime": 1791254292.3431947,
+    "seen": 1791256527.529469,
+    "ast_hash": "25aeabc88478ba85f09974c273e40831",
+    "semantic_hash": ""
+  },
+  "tests/php/CoverageGateTest.php": {
+    "mtime": 1791249751.9324462,
+    "seen": 1791256527.5294712,
+    "ast_hash": "26b47d50cf55d4d2169f8646ef53f3cd",
+    "semantic_hash": ""
+  },
+  "tests/php/CronCoverageTest.php": {
+    "mtime": 1791249751.9324462,
+    "seen": 1791256527.529473,
+    "ast_hash": "fe9b27a383904847044489e43f75374a",
+    "semantic_hash": ""
+  },
+  "tests/php/DiagnosticTemplateCoverageTest.php": {
+    "mtime": 1791254313.229878,
+    "seen": 1791256527.5294785,
+    "ast_hash": "6c12cef14878d23039484ca969d8905b",
+    "semantic_hash": ""
+  },
+  "tests/php/DirectAccessTemplateTest.php": {
+    "mtime": 1791249751.9334462,
+    "seen": 1791256527.5294814,
+    "ast_hash": "9a2baa5a62653e5e60ea137c737ef536",
+    "semantic_hash": ""
+  },
+  "tests/php/EasyModeSaveQueriesTest.php": {
+    "mtime": 1791249751.9334462,
+    "seen": 1791256527.5294833,
+    "ast_hash": "51259c48c7118c13ca5643de18c27b12",
+    "semantic_hash": ""
+  },
+  "tests/php/ErrorHandlerRecoveryTest.php": {
+    "mtime": 1791249751.9334462,
+    "seen": 1791256527.5294864,
+    "ast_hash": "1b0a1b1e63f3bf614f855df725d4a177",
+    "semantic_hash": ""
+  },
+  "tests/php/ErrorHandlerVariantsTest.php": {
+    "mtime": 1791249751.934446,
+    "seen": 1791256527.529491,
+    "ast_hash": "81f7b0a0714926659ef19f8639caea6e",
+    "semantic_hash": ""
+  },
+  "tests/php/FrontendAdminBarTest.php": {
+    "mtime": 1791256276.4481034,
+    "seen": 1791256527.5294924,
+    "ast_hash": "e3530e6fbb2e7afa65c0ead93fd1619e",
+    "semantic_hash": ""
+  },
+  "tests/php/HttpOriginTest.php": {
+    "mtime": 1791249751.934446,
+    "seen": 1791256527.5295002,
+    "ast_hash": "46daf30e938cfe303dce469d74dc59b5",
+    "semantic_hash": ""
+  },
+  "tests/php/OptionalViewIntegrationTest.php": {
+    "mtime": 1791253831.9180815,
+    "seen": 1791256527.5295055,
+    "ast_hash": "3de3275b78fb24c163ee2388eab51d54",
+    "semantic_hash": ""
+  },
+  "tests/php/PetAssistantTemplateTest.php": {
+    "mtime": 1791253922.1308966,
+    "seen": 1791256527.5295107,
+    "ast_hash": "b93c4872f665c2d8c0decb5e885cd097",
+    "semantic_hash": ""
+  },
+  "tests/php/PluginAdditionalBehaviorTest.php": {
+    "mtime": 1791253837.8572452,
+    "seen": 1791256527.5295131,
+    "ast_hash": "d63642347c33fe506618370ee2b69b86",
+    "semantic_hash": ""
+  },
+  "tests/php/PopulatedTemplateTest.php": {
+    "mtime": 1791249751.938446,
+    "seen": 1791256527.5295196,
+    "ast_hash": "bc2c34b7de2deb15087657d2aa5f47a2",
+    "semantic_hash": ""
+  },
+  "tests/php/ProDetectionTest.php": {
+    "mtime": 1791249751.9394462,
+    "seen": 1791256527.5295215,
+    "ast_hash": "e3b477e9b9582e828584bb468630cf02",
+    "semantic_hash": ""
+  },
+  "tests/php/ProfilerCompatibilityTest.php": {
+    "mtime": 1791253727.3783095,
+    "seen": 1791256527.5295231,
+    "ast_hash": "01179b293f742dde3ce009079d8d84ea",
+    "semantic_hash": ""
+  },
+  "tests/php/RestCoverageTest.php": {
+    "mtime": 1791249751.941446,
+    "seen": 1791256527.5295303,
+    "ast_hash": "445e0d67199441cf35014dff88e5843a",
+    "semantic_hash": ""
+  },
+  "tests/php/Support/PresentationWordPress.php": {
+    "mtime": 1791254069.042815,
+    "seen": 1791256527.5295424,
+    "ast_hash": "c053b89a752fdc31552fbf9cfba452b3",
+    "semantic_hash": ""
+  },
+  "tests/php/Support/SubprocessCoverage.php": {
+    "mtime": 1791249751.944446,
+    "seen": 1791256527.529544,
+    "ast_hash": "1754d6caec1528aad1ee63f9aa3dfa91",
+    "semantic_hash": ""
+  },
+  "tests/php/Support/TemplateData.php": {
+    "mtime": 1791253866.31349,
+    "seen": 1791256527.5295455,
+    "ast_hash": "82028c2798a91996281eb5b8d141ead8",
+    "semantic_hash": ""
+  },
+  "tests/php/TemplateRenderingTest.php": {
+    "mtime": 1791253881.9202304,
+    "seen": 1791256527.5295503,
+    "ast_hash": "e2fc56d073d52e86ee9a6cf7b4f5bf82",
+    "semantic_hash": ""
+  },
+  "tests/php/fixtures/api-variants.php": {
+    "mtime": 1791249751.9494462,
+    "seen": 1791256527.5295591,
+    "ast_hash": "87b451a63dfe3aae3843d04d644d002c",
+    "semantic_hash": ""
+  },
+  "tests/php/fixtures/core-variants.php": {
+    "mtime": 1791254097.940554,
+    "seen": 1791256527.5295606,
+    "ast_hash": "35078bd5c19c4ca7129b9f8970a0f176",
+    "semantic_hash": ""
+  },
+  "tests/php/fixtures/direct-access.php": {
+    "mtime": 1791249751.9504461,
+    "seen": 1791256527.529562,
+    "ast_hash": "58d7e34e0fb044a42498af9a91a672f1",
+    "semantic_hash": ""
+  },
+  "tests/php/fixtures/error-handler-variants.php": {
+    "mtime": 1791249751.9504461,
+    "seen": 1791256527.5295641,
+    "ast_hash": "14e48016d2f0c621c066457f0290f5f1",
+    "semantic_hash": ""
+  },
+  "tests/php/fixtures/optional-view-integrations.php": {
+    "mtime": 1791249751.9504461,
+    "seen": 1791256527.5295687,
+    "ast_hash": "55be09111db3fb6d60457966634714c3",
+    "semantic_hash": ""
+  },
+  "tests/php/fixtures/pro-loader-boundary.php": {
+    "mtime": 1791249751.951446,
+    "seen": 1791256527.5295706,
+    "ast_hash": "e46f2d40e94ea801dbc3ce75ccd884c4",
+    "semantic_hash": ""
+  },
+  "tests/php/fixtures/ssl-health-boundary.php": {
+    "mtime": 1791249751.951446,
+    "seen": 1791256527.529572,
+    "ast_hash": "f8bd8aaeac8f67564807eedf0f3e279e",
+    "semantic_hash": ""
+  },
+  "tests/php/HarnessIsolationTest.php": {
+    "mtime": 1791249751.934446,
+    "seen": 1791256527.529498,
+    "ast_hash": "fd59386dd6350a86d2b107d9a029c75c",
+    "semantic_hash": ""
+  },
+  "docs/KNOWN_DEFECTS.md": {
+    "mtime": 1791249751.5314467,
+    "seen": 1791256527.5295842,
+    "ast_hash": "92188d99cf38728a8eebacc224d7b1fe",
+    "semantic_hash": ""
+  },
+  "docs/README.md": {
+    "mtime": 1791256516.5020335,
+    "seen": 1791256527.5295854,
+    "ast_hash": "1ab624d44fbcb46745dc43a81692076d",
+    "semantic_hash": ""
+  },
+  "assets/js/page-analysis.js": {
+    "mtime": 1791253053.2806582,
+    "seen": 1791256527.5292892,
+    "ast_hash": "002e57beabd18609c45500d631ae399f",
+    "semantic_hash": ""
+  },
+  "class/getting_started.php": {
+    "mtime": 1791252709.6390653,
+    "seen": 1791256527.5293174,
+    "ast_hash": "8308cf146a8ce6b15d0e4e9cdbae09e6",
+    "semantic_hash": ""
+  },
+  "class/monitoring.php": {
+    "mtime": 1791256261.1768277,
+    "seen": 1791256527.5293193,
+    "ast_hash": "a1b27a6fd919a5aa5d4ad8b82daf3bac",
+    "semantic_hash": ""
+  },
+  "class/page_analysis.php": {
+    "mtime": 1791256157.5028925,
+    "seen": 1791256527.5293245,
+    "ast_hash": "737e6708bc47838d93f6e907e7391268",
+    "semantic_hash": ""
+  },
+  "templates/backend/page_analysis.php": {
+    "mtime": 1791252974.5751421,
+    "seen": 1791256527.529386,
+    "ast_hash": "47031012289724ba534d47eafc9aaba4",
+    "semantic_hash": ""
+  },
+  "templates/easy/views/page-analysis.php": {
+    "mtime": 1791253053.2816854,
+    "seen": 1791256527.529411,
+    "ast_hash": "fb225d0da644318507f543735738deb0",
+    "semantic_hash": ""
+  },
+  "tests/js/page-analysis.test.cjs": {
+    "mtime": 1791254587.2718515,
+    "seen": 1791256527.5294402,
+    "ast_hash": "5ea34a985068c38b41fce5da618ffca4",
+    "semantic_hash": ""
+  },
+  "tests/php/GettingStartedTest.php": {
+    "mtime": 1791254097.9271307,
+    "seen": 1791256527.529495,
+    "ast_hash": "f7bf1c67b1504b4bce7c45c8b52329a5",
+    "semantic_hash": ""
+  },
+  "tests/php/MonitoringTest.php": {
+    "mtime": 1791256276.4488363,
+    "seen": 1791256527.5295029,
+    "ast_hash": "9c975e2c9910d185d74413110c9b8fae",
+    "semantic_hash": ""
+  },
+  "tests/php/PageAnalysisTest.php": {
+    "mtime": 1791256167.07348,
+    "seen": 1791256527.5295064,
+    "ast_hash": "6af926f8a3b70734d7f17847fa0ad488",
+    "semantic_hash": ""
+  }
+}

@@ -31,8 +31,42 @@ final class CurLoaderTest extends Sitepulse_Test_Case {
         update_option('sitepulse_curl_api_events', array_fill(0, 200, array('url' => 'old'))); Sitepulse_CurLoader::init(); $this->capture('https://api.test/new'); $events = Sitepulse_CurLoader::get_events(); $this->assertCount(200, $events); $this->assertSame('old', $events[0]['url']); $this->assertSame('https://api.test/new', $events[199]['url']);
         (new Sitepulse_CurLoader())->clear_events(); $this->assertSame(array(), Sitepulse_CurLoader::get_events());
     }
-    public function test_page_tracking_enables_capture_and_stores_in_page_transient(): void {
-        update_option('sitepulse_curl_api_enabled', false); update_option('sitepulse_pageloadhttp_curlstatus', true); update_option('sitepulse_current_tracked_pageid', 42); Sitepulse_Test_WP::$post_id = 42; Sitepulse_Test_WP::$posts[42] = array('post_status' => 'publish');
-        Sitepulse_CurLoader::init(); $this->capture(); $this->assertCount(1, get_transient('sitepulse_single_page_42')); $this->assertSame(array(), Sitepulse_CurLoader::get_events());
+    public function test_analysis_request_records_every_request_with_redacted_url_for_that_page_only(): void {
+        update_option('sitepulse_curl_api_enabled', false); $token = $this->startAnalysisRequest(); Sitepulse_CurLoader::init();
+        $this->capture('https://api.test/rates?token=secret&zone=eu', array(), .01); $this->capture('https://cdn.test/font.css', array(), 1.2, new WP_Error('timeout', 'Timed out'));
+        $this->assertSame(array(), Sitepulse_CurLoader::get_events());
+        Sitepulse_Page_Tracker::store_sample(); $http = get_transient('sitepulse_pa_sample_' . $token)['http'];
+        $this->assertCount(2, $http); $this->assertSame('https://api.test/rates?token=%2A%2A%2A%2A%2A%2A%2A%2A&zone=eu', $http[0]['url']); $this->assertSame('api.test', $http[0]['host']); $this->assertSame(201, $http[0]['code']);
+        $this->assertGreaterThanOrEqual(10, $http[0]['elapsed_ms']); $this->assertSame(0, $http[1]['code']); $this->assertGreaterThanOrEqual(1200, $http[1]['elapsed_ms']);
+    }
+    public function test_page_analysis_loopback_requests_are_not_site_traffic(): void {
+        Sitepulse_CurLoader::init(); $this->capture('https://example.test/shop/?sitepulse_analyze=abcdefghijklmnopqrstuvwxyz012345', array(), 3);
+        $this->assertSame(array(), Sitepulse_CurLoader::get_events());
+    }
+    public function test_analysis_events_are_capped_per_page(): void {
+        $this->startAnalysisRequest(); Sitepulse_CurLoader::init(); for ($i = 0; $i < 35; $i++) { $this->capture('https://api.test/' . $i, array(), .01); }
+        Sitepulse_Page_Tracker::store_sample(); $this->assertCount(30, get_transient('sitepulse_pa_sample_abcdefghijklmnopqrstuvwxyz012345')['http']);
+    }
+    public function test_analysis_request_names_the_plugin_that_made_each_request(): void {
+        $directory = WP_PLUGIN_DIR . '/rate-fetcher'; if (!is_dir($directory)) { mkdir($directory, 0777, true); }
+        file_put_contents($directory . '/client.php', '<?php function sitepulse_test_rate_fetcher_args() { return Sitepulse_CurLoader::tag_start_time(array(), "https://rates.test/v1"); }');
+        require_once $directory . '/client.php';
+        Sitepulse_Test_WP::$plugins = array('rate-fetcher/rate-fetcher.php' => array('Name' => 'Rate Fetcher'));
+        $token = $this->startAnalysisRequest(); Sitepulse_CurLoader::init();
+        $args = sitepulse_test_rate_fetcher_args();
+        $this->assertSame('client.php', basename($args['_wshp_trace'][0]['file'])); $this->assertSame('tag_start_time', $args['_wshp_trace'][0]['function']);
+        $this->assertNotContains(SITEPULSE_PATH . 'class/curloader.php', array_column($args['_wshp_trace'], 'file'));
+        $args['_wshp_start'] = microtime(true) - .2;
+        Sitepulse_CurLoader::capture(Sitepulse_Test_WP::response(array()), 'response', 'Requests', $args, 'https://rates.test/v1');
+        Sitepulse_Page_Tracker::store_sample(); $this->assertSame('Plugin: Rate Fetcher', get_transient('sitepulse_pa_sample_' . $token)['http'][0]['origin']);
+    }
+    /** @dataProvider singleFilePlugins */
+    public function test_requests_from_single_file_plugins_name_the_plugin($plugins, $expected): void {
+        Sitepulse_Test_WP::$plugins = $plugins; Sitepulse_CurLoader::init();
+        $this->capture('https://api.test/single', array(array('file' => WP_PLUGIN_DIR . '/rate-fetcher.php', 'line' => 6)));
+        $this->assertSame($expected, Sitepulse_CurLoader::get_events()[0]['origin']);
+    }
+    public static function singleFilePlugins(): array {
+        return array('installed' => array(array('rate-fetcher.php' => array('Name' => 'Rate Fetcher')), 'Plugin: Rate Fetcher'), 'name unavailable' => array(array(), 'Plugin: rate-fetcher'));
     }
 }

@@ -66,11 +66,67 @@ class Sitepulse_Backend {
 				true
 			);
 			wp_localize_script( 'sitepulse-deactivation-modal', 'SitePulseDeactivationData', [
-				'api_endpoint'   => 'https://api.sitepulse.me/api/feedback/deactivation',
-				'domain'         => esc_url_raw( home_url() ),
-				'plugin_version' => defined( 'SITEPULSE_VERSION' ) ? SITEPULSE_VERSION : '',
-				'wp_version'     => get_bloginfo( 'version' ),
+				'api_endpoint'      => 'https://api.sitepulse.me/api/feedback/deactivation',
+				'domain'            => esc_url_raw( home_url() ),
+				'plugin_version'    => defined( 'SITEPULSE_VERSION' ) ? SITEPULSE_VERSION : '',
+				'wp_version'        => get_bloginfo( 'version' ),
+				'rest_url'          => esc_url_raw( rest_url() ),
+				'nonce'             => wp_create_nonce( 'wp_rest' ),
+				'page_analysis_url' => Sitepulse_Page_Analysis::admin_link( home_url( '/' ), true ),
+				'support_url'       => 'https://wordpress.org/support/plugin/sitepulse/',
+				'i18n'              => [
+					'title'                   => __( 'Quick feedback', 'sitepulse' ),
+					'intro'                   => __( 'If you have a moment, please let us know why you are deactivating:', 'sitepulse' ),
+					'reason_no_longer_needed' => __( 'I no longer need the plugin', 'sitepulse' ),
+					'reason_found_better'     => __( 'I found a better plugin', 'sitepulse' ),
+					'reason_not_working'      => __( 'The plugin is not working', 'sitepulse' ),
+					'reason_too_slow'         => __( 'It\'s slowing down my site', 'sitepulse' ),
+					'reason_confusing'        => __( 'I couldn\'t understand how to use it', 'sitepulse' ),
+					'reason_temporary'        => __( 'It\'s a temporary deactivation', 'sitepulse' ),
+					'reason_missing_feature'  => __( 'Missing a specific feature', 'sitepulse' ),
+					'reason_other'            => __( 'Other', 'sitepulse' ),
+					'prompt_no_longer_needed' => __( 'What did you use SitePulse for? (optional)', 'sitepulse' ),
+					'prompt_found_better'     => __( 'Which plugin did you switch to, and what does it do better? (optional)', 'sitepulse' ),
+					'prompt_not_working'      => __( 'What isn\'t working? Errors, broken screens, conflicts with other plugins…', 'sitepulse' ),
+					'prompt_too_slow'         => __( 'Which pages feel slow? Did it change after activating SitePulse?', 'sitepulse' ),
+					'prompt_confusing'        => __( 'What were you trying to do? Your answer helps us make SitePulse clearer.', 'sitepulse' ),
+					'prompt_temporary'        => __( 'Anything we should know? (optional)', 'sitepulse' ),
+					'prompt_missing_feature'  => __( 'Which feature were you looking for?', 'sitepulse' ),
+					'prompt_other'            => __( 'Please share any details…', 'sitepulse' ),
+					'message_label'           => __( 'Your feedback', 'sitepulse' ),
+					'rating'                  => __( 'How would you rate your experience?', 'sitepulse' ),
+					'stars_1'                 => __( '1 star', 'sitepulse' ),
+					'stars_2'                 => __( '2 stars', 'sitepulse' ),
+					'stars_3'                 => __( '3 stars', 'sitepulse' ),
+					'stars_4'                 => __( '4 stars', 'sitepulse' ),
+					'stars_5'                 => __( '5 stars', 'sitepulse' ),
+					'submit'                  => __( 'Submit & Deactivate', 'sitepulse' ),
+					'submitting'              => __( 'Submitting…', 'sitepulse' ),
+					'skip'                    => __( 'Skip & Deactivate', 'sitepulse' ),
+					'pause_title'             => __( 'Only need a break? Pause monitoring instead.', 'sitepulse' ),
+					'pause_title_slow'        => __( 'Pausing monitoring removes SitePulse\'s overhead.', 'sitepulse' ),
+					'pause_text'              => __( 'SitePulse stops measuring page loads, so it adds no profiling overhead. Your settings and history stay, and you can resume from the SitePulse toolbar menu.', 'sitepulse' ),
+					'pause_button'            => __( 'Pause instead of deactivating', 'sitepulse' ),
+					'pausing'                 => __( 'Pausing…', 'sitepulse' ),
+					'pause_error'             => __( 'Could not pause monitoring. You can still deactivate below.', 'sitepulse' ),
+					'paused_title'            => __( 'Monitoring paused', 'sitepulse' ),
+					'paused_text'             => __( 'SitePulse stays active but no longer measures page loads. Choose "Resume monitoring" in the SitePulse toolbar menu whenever you need it again.', 'sitepulse' ),
+					'close'                   => __( 'Close', 'sitepulse' ),
+					'guide_title'             => __( 'SitePulse in three steps:', 'sitepulse' ),
+					'guide_step_1'            => __( 'Dashboard: your overall health score and what to fix first.', 'sitepulse' ),
+					'guide_step_2'            => __( 'Page Analysis: paste any address to see exactly what slows that page down.', 'sitepulse' ),
+					'guide_step_3'            => __( 'Plugin Activity: which plugins and theme code take the most time across your site.', 'sitepulse' ),
+					'guide_button'            => __( 'Analyze my homepage now', 'sitepulse' ),
+					'support_title'           => __( 'Sorry about that!', 'sitepulse' ),
+					'support_text'            => __( 'Tell us what happened below, or ask on the support forum so we can help you fix it.', 'sitepulse' ),
+					'support_button'          => __( 'Open the support forum', 'sitepulse' ),
+				],
 			] );
+		}
+
+		// Page Analysis runs on its own script in both interfaces.
+		if ( $current_screen && strpos( $current_screen->id, 'page_analysis' ) !== false ) {
+			self::enqueue_page_analysis_assets();
 		}
 
 		// If Easy Mode is active, load its assets instead of classic for all SitePulse pages
@@ -98,6 +154,71 @@ class Sitepulse_Backend {
 
 		wp_enqueue_style( 'sitepulse_bootstrap_css', SITEPULSE_ADMIN_ASSETS_URL . '/externals/bootstrap-5.3.8-dist/css/bootstrap.min.css', [], '5.3.8', 'all' );
 		wp_enqueue_script( 'sitepulse_bootstrap_js', SITEPULSE_ADMIN_ASSETS_URL . '/externals/bootstrap-5.3.8-dist/js/bootstrap.min.js', [], '5.3.8', true );
+	}
+
+	/**
+	 * Load the Page Analysis script and styles, shared by the Page Analysis screen and onboarding.
+	 */
+	public static function enqueue_page_analysis_assets() {
+		wp_enqueue_style( 'sitepulse-page-analysis', SITEPULSE_ADMIN_ASSETS_CSS_URL . 'page-analysis.css', [ 'dashicons' ], filemtime( SITEPULSE_ADMIN_ASSETS_CSS_PATH . 'page-analysis.css' ), 'all' );
+		wp_enqueue_script( 'sitepulse-page-analysis', SITEPULSE_ADMIN_ASSETS_JS_URL . 'page-analysis.js', [ 'jquery' ], filemtime( SITEPULSE_ADMIN_ASSETS_JS_PATH . 'page-analysis.js' ), true );
+		wp_localize_script( 'sitepulse-page-analysis', 'SitePulsePageAnalysisData', [
+			'rest_url'   => esc_url_raw( rest_url( 'sitepulse/v1/page_analysis/' ) ),
+			'nonce'      => wp_create_nonce( 'wp_rest' ),
+			'samples'    => Sitepulse_Page_Analysis::SAMPLES,
+			'admin_link' => Sitepulse_Page_Analysis::admin_link(),
+			'i18n'       => [
+				/* translators: 1: current page load, 2: total page loads */
+				'loading'          => __( 'Loading the page as a visitor (%1$d of %2$d)…', 'sitepulse' ),
+				'starting'         => __( 'Preparing the analysis…', 'sitepulse' ),
+				'building'         => __( 'Building your report…', 'sitepulse' ),
+				'waiting_visit'    => __( 'Waiting for your visit… Keep this tab open.', 'sitepulse' ),
+				'error'            => __( 'Something went wrong. Please try again.', 'sitepulse' ),
+				'analyze'          => __( 'Analyze page', 'sitepulse' ),
+				'analyzing'        => __( 'Analyzing…', 'sitepulse' ),
+				'run_again'        => __( 'Run again', 'sitepulse' ),
+				'open_page'        => __( 'Open page', 'sitepulse' ),
+				'server_time'      => __( 'Server time', 'sitepulse' ),
+				'server_time_hint' => __( 'Typical time WordPress needs to build the page', 'sitepulse' ),
+				/* translators: %s: duration of the first page load */
+				'first_load'       => __( 'First load: %s', 'sitepulse' ),
+				'queries'          => __( 'Database queries', 'sitepulse' ),
+				'queries_hint'     => __( 'Per page load', 'sitepulse' ),
+				'memory'           => __( 'Peak memory', 'sitepulse' ),
+				'memory_hint'      => __( 'Highest use while building the page', 'sitepulse' ),
+				'requests'         => __( 'External requests', 'sitepulse' ),
+				'requests_none'    => __( 'None, nothing to wait for', 'sitepulse' ),
+				/* translators: %s: time spent waiting for external requests */
+				'requests_hint'    => __( '%s of waiting per page load', 'sitepulse' ),
+				'findings'         => __( 'What we found', 'sitepulse' ),
+				'breakdown'        => __( 'Where the time goes', 'sitepulse' ),
+				'breakdown_hint'   => __( 'Time each plugin and your theme spend on their own work, averaged over all page loads.', 'sitepulse' ),
+				'core'             => __( 'WordPress core, database and everything else', 'sitepulse' ),
+				'no_sources'       => __( 'No plugin or theme work was measurable on this page.', 'sitepulse' ),
+				'http_title'       => __( 'External requests on this page', 'sitepulse' ),
+				'callbacks_title'  => __( 'Slowest callbacks (for developers)', 'sitepulse' ),
+				'col_source'       => __( 'Plugin or theme', 'sitepulse' ),
+				'col_time'         => __( 'Time', 'sitepulse' ),
+				'col_share'        => __( 'Share', 'sitepulse' ),
+				'col_address'      => __( 'Address', 'sitepulse' ),
+				'col_from'         => __( 'Called by', 'sitepulse' ),
+				'col_status'       => __( 'Status', 'sitepulse' ),
+				'col_hook'         => __( 'Hook', 'sitepulse' ),
+				'col_callback'     => __( 'Callback', 'sitepulse' ),
+				/* translators: %s: how many times a request runs per page load */
+				'per_load'         => __( '%s× per load', 'sitepulse' ),
+				'plugin'           => __( 'Plugin', 'sitepulse' ),
+				'theme'            => __( 'Theme', 'sitepulse' ),
+				/* translators: %d: number of page loads measured */
+				'method'           => __( 'Median of %d page loads as a logged-out visitor, measured on your server. Profiling adds a small overhead.', 'sitepulse' ),
+				'method_visit'     => __( 'Measured from your own visit, so the toolbar and logged-in features are included.', 'sitepulse' ),
+				'fallback_title'   => __( 'We couldn\'t load this page from your server', 'sitepulse' ),
+				'fallback_action'  => __( 'Open the page and measure my visit', 'sitepulse' ),
+				'fallback_hint'    => __( 'The page opens in a new tab. Come back here; the report appears as soon as the visit is measured.', 'sitepulse' ),
+				'remove'           => __( 'Remove', 'sitepulse' ),
+				'just_now'         => __( 'just now', 'sitepulse' ),
+			],
+		] );
 	}
 
 	public function wpdocs_this_screen() {
@@ -178,28 +299,41 @@ class Sitepulse_Backend {
 			1
 		);
 
-		// Add a submenu for the LoadSentinel
+		// Add a submenu for Page Analysis
+		$page_analysis = add_submenu_page(
+			$this->plugin->setPrefix( "sitepulse" ),
+			__( 'Page Analysis', 'sitepulse' ),
+			__( 'Page Analysis', 'sitepulse' ),
+			'manage_options',
+			Sitepulse_Page_Analysis::ADMIN_PAGE,
+			[ &$this, 'render_page_analysis' ],
+			2
+		);
+
+		array_push( $this->pages, $page_analysis );
+
+		// Add a submenu for Plugin Activity (hook and plugin profiler)
 		$page_resource_load = add_submenu_page(
 			$this->plugin->setPrefix( "sitepulse" ),
-			__( 'Insights', 'sitepulse' ),
-			__( 'Insights', 'sitepulse' ),
+			__( 'Plugin Activity', 'sitepulse' ),
+			__( 'Plugin Activity', 'sitepulse' ),
 			'manage_options',
 			$this->plugin->setPrefix( "sitepulse" ) . '_' . SITEPULSE_PROFILER_SLUG,
 			[ &$this, 'render_resource_load' ],
-			2
+			3
 		);
 
 		array_push( $this->pages, $page_resource_load );
 
-		// Add a submenu for the cURL API
+		// Add a submenu for External Requests (cURL/API monitor)
 		$page_curl_api = add_submenu_page(
 			$this->plugin->setPrefix( "sitepulse" ),
-			__( 'APIMonitor', 'sitepulse' ),
-			__( 'APIMonitor', 'sitepulse' ),
+			__( 'External Requests', 'sitepulse' ),
+			__( 'External Requests', 'sitepulse' ),
 			'manage_options',
 			$this->plugin->setPrefix( "sitepulse" ) . '_' . SITEPULSE_CURL_API_SLUG,
 			[ &$this, 'render_curl_api' ],
-			3
+			4
 		);
 
 		array_push( $this->pages, $page_curl_api );
@@ -636,9 +770,6 @@ class Sitepulse_Backend {
 	public function render_dashboard_section() {
 		$stats = get_option( SITEPULSE_PROFILER_KEY, [] );
 		$snapshot_time = get_option( SITEPULSE_PROFILER_CURRENT_TIME, null );
-		$loadstatus = get_option( "sitepulse_pageloadhttp_loadstatus" );
-		$curlstatus = get_option( "sitepulse_pageloadhttp_curlstatus" );
-		$sitepulse_current_tracked_pageid = get_option( "sitepulse_current_tracked_pageid" );
 
 		// List of activated plugins - use cached utility method
 		$active_plugins_count = class_exists( 'Sitepulse_Utils' )
@@ -801,9 +932,13 @@ class Sitepulse_Backend {
 				$active_plugins = get_option( 'active_plugins', array() );
 			}
 
-			$single_curl_events = false;
-			$single_load_events = false;
 			$error_log = $error_log_stats;
+			$getting_started_steps = Sitepulse_Getting_Started::get_steps( [
+				'ai_enabled'    => $sp_ai_external_api_enabled,
+				'has_ai_report' => $has_ai_report,
+				'is_ai_pending' => $is_ai_pending,
+			] );
+			$show_getting_started = Sitepulse_Getting_Started::should_show( $getting_started_steps );
 
 			Sitepulse_Easy_Mode::render( $easy_view_name, compact(
 				'stats', 'curl_events', 'mem', 'overall_score', 'speed_score',
@@ -822,43 +957,55 @@ class Sitepulse_Backend {
 				'sp_settings_saved', 'sitepulse_settings', 'current_settings',
 				'status_info', 'active_plugins',
 				'loadsentinel_score', 'api_score', 'load_time_score',
-				'single_curl_events', 'single_load_events',
 				'error_log', 'fatal_count', 'warning_count',
+				'getting_started_steps', 'show_getting_started',
 				'last_vulnerability_check', 'mem_usage_percent',
 				'plugin_percent', 'disk_write'
 			) );
 			return;
 		}
 
+		// Classic dashboard view (basic or developer) saved for this user.
+		$sp_dashboard_view = Sitepulse_Easy_Mode::get_dashboard_view();
+
 		// Dashboard template.
 		require_once SITEPULSE_PATH . 'templates/backend/dashboard.php';
 	}
 
+
+	/** Admin: Page Analysis */
+	public function render_page_analysis() {
+		if ( ! current_user_can( 'manage_options' ) )
+			return;
+
+		$analysis_suggestions = Sitepulse_Page_Analysis::get_suggestions();
+		$analysis_recent      = Sitepulse_Page_Analysis::get_recent();
+		$analysis_request     = [
+			'url'      => isset( $_GET['url'] ) ? sanitize_text_field( wp_unslash( $_GET['url'] ) ) : '',
+			'autorun'  => ! empty( $_GET['autorun'] ),
+			'analysis' => isset( $_GET['analysis'] ) ? sanitize_key( wp_unslash( $_GET['analysis'] ) ) : '',
+		];
+
+		// Memory ram used
+		$mem = $this->plugin->sp_get_memory_info();
+
+		if ( class_exists( 'Sitepulse_Easy_Mode' ) && Sitepulse_Easy_Mode::is_enabled() ) {
+			Sitepulse_Easy_Mode::render( 'page-analysis', compact(
+				'mem', 'analysis_suggestions', 'analysis_recent', 'analysis_request'
+			) );
+			return;
+		}
+
+		require_once SITEPULSE_PATH . 'templates/backend/page_analysis.php';
+	}
 
 	/** Admin: resource_load */
 	public function render_resource_load() {
 		if ( ! current_user_can( 'manage_options' ) )
 			return;
 
-		// full report mode
-		$sitepulse_report_mode_active = get_option( "sitepulse_report_mode_active" );
-		$sitepulse_current_tracked_pageid = get_option( "sitepulse_current_tracked_pageid" );
+		Sitepulse_Getting_Started::mark_visited( 'resource-load' );
 		$stats = get_option( SITEPULSE_PROFILER_KEY, [] );
-
-		$single_load_events = false;
-		if ( $sitepulse_report_mode_active && $sitepulse_current_tracked_pageid ) {
-			$sitepulse_load_single_page_id = sanitize_text_field( wp_unslash( $sitepulse_current_tracked_pageid ) );
-
-			if ( ! empty( $sitepulse_load_single_page_id ) && is_numeric( $sitepulse_load_single_page_id ) ) {
-				$sitepulse_load_single_page_id = $sitepulse_load_single_page_id;
-
-				$post_load_events = get_transient( 'sitepulse_load_single_page_' . $sitepulse_load_single_page_id );
-				if ( $post_load_events ) {
-					$stats = $post_load_events;
-					$single_load_events = true;
-				}
-			}
-		}
 
 		$snapshot_time = get_option( SITEPULSE_PROFILER_CURRENT_TIME, null );
 
@@ -872,8 +1019,7 @@ class Sitepulse_Backend {
 
 		if ( class_exists( 'Sitepulse_Easy_Mode' ) && Sitepulse_Easy_Mode::is_enabled() ) {
 			Sitepulse_Easy_Mode::render( 'resource-load', compact(
-				'stats', 'snapshot_time', 'active_plugins_count',
-				'mem', 'single_load_events'
+				'stats', 'snapshot_time', 'active_plugins_count', 'mem'
 			) );
 			return;
 		}
@@ -930,27 +1076,11 @@ class Sitepulse_Backend {
 		if ( ! current_user_can( 'manage_options' ) )
 			return;
 
-		// full report mode
-		$sitepulse_report_mode_active = get_option( "sitepulse_report_mode_active" );
-		$sitepulse_current_tracked_pageid = get_option( "sitepulse_current_tracked_pageid" );
+		Sitepulse_Getting_Started::mark_visited( 'api-monitor' );
 
 		// Main Method
 		$curLoader = new Sitepulse_CurLoader();
 		$curl_events = $curLoader::get_events();
-
-		$single_curl_events = false;
-		if ( $sitepulse_report_mode_active && $sitepulse_current_tracked_pageid ) {
-			$safewpsp_sinpage_id = sanitize_text_field( wp_unslash( $sitepulse_current_tracked_pageid ) );
-			if ( isset( $safewpsp_sinpage_id ) && ! empty( $safewpsp_sinpage_id ) && is_numeric( $safewpsp_sinpage_id ) ) {
-				$wpsp_sinpage_id = $safewpsp_sinpage_id;
-
-				$post_curl_events = get_transient( 'sitepulse_single_page_' . $wpsp_sinpage_id );
-				if ( $post_curl_events ) {
-					$curl_events = $post_curl_events;
-					$single_curl_events = true;
-				}
-			}
-		}
 
 		// Snapshot time
 		$snapshot_time = get_option( SITEPULSE_PROFILER_CURRENT_TIME, null );
@@ -966,8 +1096,7 @@ class Sitepulse_Backend {
 
 		if ( class_exists( 'Sitepulse_Easy_Mode' ) && Sitepulse_Easy_Mode::is_enabled() ) {
 			Sitepulse_Easy_Mode::render( 'api-monitor', compact(
-				'curl_events', 'snapshot_time', 'active_plugins_count',
-				'mem', 'single_curl_events'
+				'curl_events', 'snapshot_time', 'active_plugins_count', 'mem'
 			) );
 			return;
 		}

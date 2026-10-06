@@ -5,7 +5,18 @@ const { browser } = require('./helpers/browser.cjs');
 const localization = {
   SitePulseDeactivationData: {
     api_endpoint: 'https://feedback.sitepulse.test/deactivate',
-    domain: 'HTTPS://sitepulse.test/', plugin_version: '1.2.3', wp_version: '6.8'
+    domain: 'HTTPS://sitepulse.test/', plugin_version: '1.2.3', wp_version: '6.8',
+    rest_url: 'https://sitepulse.test/wp-json/', nonce: 'nonce-test',
+    page_analysis_url: 'https://sitepulse.test/wp-admin/admin.php?page=wpsp_sitepulse_page_analysis&autorun=1',
+    support_url: 'https://wordpress.org/support/plugin/sitepulse/',
+    i18n: {
+      title: 'Quick feedback', reason_confusing: 'No entendí cómo usarlo', prompt_confusing: 'What were you trying to do?',
+      prompt_temporary: 'Anything we should know? (optional)', prompt_missing_feature: 'Which feature were you looking for?',
+      pause_title: 'Only need a break?', pause_title_slow: 'Pausing removes overhead.', pause_text: 'Settings stay.', pause_button: 'Pause instead',
+      pausing: 'Pausing…', pause_error: 'Could not pause.', paused_title: 'Monitoring paused', paused_text: 'Resume from the toolbar.', close: 'Close',
+      guide_title: 'SitePulse in three steps:', guide_step_1: 'Dashboard', guide_step_2: 'Page Analysis', guide_step_3: 'Plugin Activity', guide_button: 'Analyze my homepage now',
+      support_title: 'Sorry about that!', support_text: 'Tell us more.', support_button: 'Open the support forum', submitting: 'Submitting…'
+    }
   }
 };
 async function setup(t, options = {}) {
@@ -33,15 +44,108 @@ test('deactivation requires a reason and rating before feedback can be submitted
   assert.equal(network.ajax.length, 0);
 });
 
-test('contextual feedback expands for issues, counts characters, and collapses for temporary deactivation', async t => {
+test('every reason opens an optional message box with a question that fits it', async t => {
   const { $ } = await setup(t);
   $('input[value="missing_feature"]').prop('checked', true).trigger('change');
   assert.notEqual($('.sp-deact-other-wrap').css('display'), 'none');
-  assert.match($('#sp-deact-other-message').attr('placeholder'), /feature/i);
+  assert.equal($('#sp-deact-other-message').attr('placeholder'), 'Which feature were you looking for?');
   $('#sp-deact-other-message').val('More detail').trigger('input');
   assert.equal($('#sp-deact-char-current').text(), '11');
   $('input[value="temporary"]').prop('checked', true).trigger('change');
-  assert.equal($('.sp-deact-other-wrap').css('display'), 'none');
+  assert.notEqual($('.sp-deact-other-wrap').css('display'), 'none');
+  assert.equal($('#sp-deact-other-message').attr('placeholder'), 'Anything we should know? (optional)');
+  $('input[value="found_better"]').prop('checked', true).trigger('change');
+  assert.equal($('#sp-deact-other-message').attr('placeholder'), 'prompt_found_better');
+  assert.equal($('.sp-deact-help').attr('hidden'), 'hidden');
+});
+
+test('screen shows translated reasons while feedback keeps the stable English label', async t => {
+  const { $, network } = await setup(t);
+  assert.equal($('input[value="confusing"]').next().text(), 'No entendí cómo usarlo');
+  assert.equal($('#sp-deact-title').text(), 'Quick feedback');
+  $('input[value="confusing"]').prop('checked', true).trigger('change');
+  $('.sp-deact-star[data-rating="2"]').trigger('click');
+  $('#sp-deact-submit').trigger('click');
+  assert.equal(JSON.parse(network.ajax[0].body).reason_label, "I couldn't understand how to use it");
+  assert.equal($('#sp-deact-submit').text(), 'Submitting…');
+});
+
+test('confused users get a three-step guide and a one-click homepage analysis', async t => {
+  const { $ } = await setup(t);
+  $('input[value="confusing"]').prop('checked', true).trigger('change');
+  assert.equal($('.sp-deact-help').attr('hidden'), undefined);
+  assert.deepEqual($('.sp-deact-help li').map((i, el) => el.textContent).get(), ['Dashboard', 'Page Analysis', 'Plugin Activity']);
+  assert.equal($('.sp-deact-help a').attr('href'), 'https://sitepulse.test/wp-admin/admin.php?page=wpsp_sitepulse_page_analysis&autorun=1');
+  assert.equal($('#sp-deact-other-message').attr('placeholder'), 'What were you trying to do?');
+});
+
+test('a broken plugin report points to the support forum in a new tab', async t => {
+  const { $ } = await setup(t);
+  $('input[value="not_working"]').prop('checked', true).trigger('change');
+  assert.equal($('.sp-deact-help strong').text(), 'Sorry about that!');
+  assert.equal($('.sp-deact-help a').attr('href'), 'https://wordpress.org/support/plugin/sitepulse/');
+  assert.equal($('.sp-deact-help a').attr('target'), '_blank');
+});
+
+for (const [reason, title] of [['temporary', 'Only need a break?'], ['too_slow', 'Pausing removes overhead.']]) {
+  test(`${reason} deactivation can pause monitoring instead and keep the plugin active`, async t => {
+    const { $, network, window, clock, flush } = await setup(t);
+    $(`input[value="${reason}"]`).prop('checked', true).trigger('change');
+    assert.equal($('.sp-deact-help strong').text(), title);
+    $('.sp-deact-pause').trigger('click');
+    assert.equal($('.sp-deact-pause').prop('disabled'), true);
+    assert.equal($('.sp-deact-pause').text(), 'Pausing…');
+    const call = network.ajax[0];
+    assert.equal(call.url, 'https://sitepulse.test/wp-json/sitepulse/v1/monitoring/pause');
+    assert.equal(call.headers['X-WP-Nonce'], 'nonce-test');
+    assert.deepEqual(JSON.parse(call.body), { _wpnonce: 'nonce-test' });
+    call.respond({ success: true, paused: true });
+    await flush();
+    assert.equal($('.sp-deact-paused strong').text(), 'Monitoring paused');
+    assert.equal($('#sp-deact-submit').length, 0);
+    $('.sp-deact-close').trigger('click');
+    await clock.advance(300);
+    assert.equal($('#sitepulse-deactivation-modal').length, 0);
+    assert.equal(window.location.hash, '');
+    assert.equal(window.document.activeElement.id, 'deactivate-sitepulse');
+  });
+}
+
+test('a failed pause is explained and deactivation stays available', async t => {
+  const { $, network, flush } = await setup(t);
+  $('input[value="temporary"]').prop('checked', true).trigger('change');
+  $('.sp-deact-pause').trigger('click');
+  network.ajax[0].respond({ message: 'Forbidden' }, 403);
+  await flush();
+  assert.equal($('.sp-deact-pause').prop('disabled'), false);
+  assert.equal($('.sp-deact-pause').text(), 'Pause instead');
+  assert.equal($('.sp-deact-error').text(), 'Could not pause.');
+  assert.equal($('#sp-deact-skip').length, 1);
+});
+
+test('reopening the dialog never duplicates its handlers', async t => {
+  const { $, network, window, clock } = await setup(t);
+  $(window.document).trigger($.Event('keydown', { key: 'Escape' }));
+  await clock.advance(300);
+  $('#deactivate-sitepulse').trigger('click');
+  $('#deactivate-sitepulse').trigger('click');
+  assert.equal($('#sitepulse-deactivation-modal').length, 1);
+  $('input[value="other"]').prop('checked', true).trigger('change');
+  $('.sp-deact-star[data-rating="5"]').trigger('click');
+  $('#sp-deact-submit').trigger('click');
+  assert.equal(network.ajax.length, 1);
+});
+
+test('stars can be rated from the keyboard', async t => {
+  const { $ } = await setup(t);
+  $('.sp-deact-star[data-rating="3"]').trigger($.Event('keydown', { key: 'Tab' }));
+  assert.equal($('#sp-deact-rating').val(), '0');
+  $('.sp-deact-star[data-rating="3"]').trigger($.Event('keydown', { key: 'Enter' }));
+  assert.equal($('#sp-deact-rating').val(), '3');
+  assert.equal($('.sp-deact-star[data-rating="3"]').attr('aria-pressed'), 'true');
+  assert.equal($('.sp-deact-star[data-rating="4"]').attr('aria-pressed'), 'false');
+  $('.sp-deact-star[data-rating="1"]').trigger($.Event('keydown', { key: ' ' }));
+  assert.equal($('#sp-deact-rating').val(), '1');
 });
 
 for (const status of [200, 503]) {

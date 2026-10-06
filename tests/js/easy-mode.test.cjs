@@ -211,3 +211,15 @@ test('declining SAVEQUERIES does not write to the server', async t => {
   assert.equal(network.ajax.length, 0);
   assert.equal($('.sp-enable-savequeries').prop('disabled'), false);
 });
+
+for (const [status, hidden] of [[200, true], [500, false]]) {
+  test(`dismissing the getting-started checklist hides it and ${hidden ? 'stays hidden' : 'comes back if saving fails'} (HTTP ${status})`, async t => {
+    const { $, network, flush } = await setup(t, '<div class="sp-getting-started"><button class="sp-getting-started-dismiss">×</button><p>Steps</p></div>');
+    $('.sp-getting-started-dismiss').trigger('click');
+    assert.equal($('.sp-getting-started').css('display'), 'none');
+    assertRest(network.ajax[0], 'getting_started/dismiss', {});
+    network.ajax[0].respond(status === 200 ? { success: true } : { message: 'Error' }, status);
+    await flush();
+    assert.equal($('.sp-getting-started').css('display') === 'none', hidden);
+  });
+}

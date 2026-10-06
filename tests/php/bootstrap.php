@@ -16,7 +16,7 @@ $constants = array(
     'WPINC' => 'wp-includes', 'WP_DEBUG' => false, 'WP_DEBUG_LOG' => false, 'WP_DEBUG_DISPLAY' => false,
     'WP_MEMORY_LIMIT' => '256M', 'WP_MAX_MEMORY_LIMIT' => '512M',
     'SITEPULSE_PATH' => SITEPULSE_TEST_ROOT . '/', 'SITEPULSE_CLASS_PATH' => SITEPULSE_TEST_ROOT . '/class/',
-    'SITEPULSE_PLUGIN_FILE' => SITEPULSE_TEST_ROOT . '/loader.php', 'SITEPULSE_VERSION' => '1.4.5',
+    'SITEPULSE_PLUGIN_FILE' => SITEPULSE_TEST_ROOT . '/loader.php', 'SITEPULSE_VERSION' => '1.4.6',
     'SITEPULSE_PREFIX' => 'wpsp', 'SITEPULSE_PREFIX_SEPARATOR' => '_', 'SITEPULSE_NAME' => 'SitePulse',
     'SITEPULSE_SLUG' => 'sitepulse', 'SITEPULSE_DEBUG' => false, 'SITEPULSE_STRESS_MODE' => false,
     'SITEPULSE_URL' => 'https://example.test/wp-content/plugins/sitepulse/',

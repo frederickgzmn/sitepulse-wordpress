@@ -43,6 +43,19 @@ final class Sitepulse_Test_WP {
     public static $spawn_cron_calls = 0;
     public static $finished_requests = 0;
     public static $now = '2026-01-01 12:00:00';
+    public static $passwords = array();
+    public static $num_queries = 0;
+    public static $is_404 = false;
+    public static $is_front_page = false;
+    public static $is_search = false;
+    public static $is_archive = false;
+    public static $post_type = '';
+    public static $post_types = array();
+    public static $posts_by_type = array();
+    public static $post_queries = array();
+    public static $document_title = '';
+    public static $referer = false;
+    public static $admin_bar_showing = true;
     public static function rememberClassDefaults($class) {
         // PHP 7.4 reflection returns the current static values, not their
         // declared defaults. Capture each class before tests can mutate it.
@@ -285,3 +298,35 @@ require_once __DIR__ . '/PresentationWordPress.php';
 
 function is_singular($post_types = '') { return Sitepulse_Test_WP::$is_singular; }
 function is_home() { return Sitepulse_Test_WP::$is_home; }
+
+/** URL helpers with WordPress semantics: new values are added as given, existing ones re-encoded, false removes. */
+function add_query_arg(...$args) {
+    if (is_array($args[0])) { $params = $args[0]; $url = $args[1] ?? ($_SERVER['REQUEST_URI'] ?? ''); }
+    else { $params = array($args[0] => $args[1]); $url = $args[2] ?? ($_SERVER['REQUEST_URI'] ?? ''); }
+    $fragment = ''; $hash = strpos($url, '#'); if ($hash !== false) { $fragment = substr($url, $hash); $url = substr($url, 0, $hash); }
+    $base = $url; $query = ''; $mark = strpos($url, '?'); if ($mark !== false) { $base = substr($url, 0, $mark); $query = substr($url, $mark + 1); }
+    parse_str($query, $existing); $existing = array_map('urlencode', $existing);
+    foreach ($params as $key => $value) { if ($value === false) { unset($existing[$key]); } else { $existing[$key] = $value; } }
+    $pairs = array(); foreach ($existing as $key => $value) { $pairs[] = $key . '=' . $value; }
+    return $base . ($pairs ? '?' . implode('&', $pairs) : '') . $fragment;
+}
+function remove_query_arg($key, $query = false) { foreach ((array) $key as $name) { $query = add_query_arg($name, false, $query); } return $query; }
+function metadata_exists($meta_type, $object_id, $meta_key) { return array_key_exists($meta_key, Sitepulse_Test_WP::$user_meta[$object_id] ?? array()); }
+function wp_generate_password($length = 12, $special_chars = true, $extra_special_chars = false) { return Sitepulse_Test_WP::$passwords ? array_shift(Sitepulse_Test_WP::$passwords) : substr(str_shuffle(str_repeat('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', $length)), 0, $length); }
+if (!in_array('get_num_queries', $GLOBALS['sitepulse_test_omitted_wp_functions'] ?? array(), true)) { function get_num_queries() { return Sitepulse_Test_WP::$num_queries; } }
+function is_404() { return Sitepulse_Test_WP::$is_404; }
+function is_front_page() { return Sitepulse_Test_WP::$is_front_page; }
+function is_search() { return Sitepulse_Test_WP::$is_search; }
+function is_archive() { return Sitepulse_Test_WP::$is_archive; }
+function get_post_type($post = null) { return Sitepulse_Test_WP::$post_type; }
+function get_post_type_object($post_type) { return Sitepulse_Test_WP::$post_types[$post_type] ?? null; }
+function get_post_types($args = array(), $output = 'names') { return Sitepulse_Test_WP::$post_types; }
+function get_posts($args = array()) { Sitepulse_Test_WP::$post_queries[] = $args; return Sitepulse_Test_WP::$posts_by_type[$args['post_type']] ?? array(); }
+if (!in_array('wp_get_document_title', $GLOBALS['sitepulse_test_omitted_wp_functions'] ?? array(), true)) { function wp_get_document_title() { return Sitepulse_Test_WP::$document_title; } }
+function wp_nonce_url($actionurl, $action = -1, $name = '_wpnonce') { return add_query_arg($name, wp_create_nonce($action), $actionurl); }
+function check_admin_referer($action = -1, $query_arg = '_wpnonce') { if (!wp_verify_nonce($_REQUEST[$query_arg] ?? '', $action)) { throw new Sitepulse_Test_Die('The link you followed has expired.'); } return 1; }
+function wp_get_referer() { return !empty($_REQUEST['_wp_http_referer']) ? wp_unslash($_REQUEST['_wp_http_referer']) : Sitepulse_Test_WP::$referer; }
+/** Public post type double with WordPress's object shape. */
+function sitepulse_test_post_type($name, $singular) { return (object) array('name' => $name, 'labels' => (object) array('singular_name' => $singular)); }
+function is_admin_bar_showing() { return Sitepulse_Test_WP::$admin_bar_showing; }
+function untrailingslashit($value) { return rtrim((string) $value, '/\\'); }

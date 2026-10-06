@@ -51,9 +51,10 @@ More views — including Developer Mode, settings, and single-page analytics —
 
 ### Smart Experience
 
-* **Dual dashboard views** — beginner-friendly *Basic View* and *Developer View*; switch anytime.
-* **3-step onboarding wizard** that establishes your first performance baseline.
-* **Admin bar widget** for quick metrics from anywhere in wp-admin.
+* **Page Analysis** — paste any address (product, post, archive, shop, search) or click *Analyze this page* in the toolbar to see which plugins, theme code and external requests slow that page, with plain-English findings.
+* **Simple and Advanced dashboards** — a guided Simple dashboard by default, the classic dashboard as the *Advanced view*; preferences are saved per user.
+* **3-step onboarding wizard** that ends with a real check-up of your homepage.
+* **Admin bar widget** for quick metrics, page analysis and pausing monitoring from anywhere.
 * **Google PageSpeed Insights & AI diagnostics** as optional cloud features.
 
 ## Measured Footprint

@@ -50,4 +50,22 @@ if ($input['mode'] === 'debug_trace') {
     Sitepulse_Profiler::start_theme_bootstrap();
     Sitepulse_Profiler::capture_theme_bootstrap();
     echo json_encode(array_values(Sitepulse_Profiler::get_stats_by_hook('theme_bootstrap')));
+} elseif ($input['mode'] === 'tracker_without_profiler') {
+    set_transient('sitepulse_pa_token_abcdefghijklmnopqrstuvwxyz012345', 'analysis1');
+    $_GET['sitepulse_analyze'] = 'abcdefghijklmnopqrstuvwxyz012345';
+    Sitepulse_Page_Tracker::init();
+    Sitepulse_Page_Tracker::store_sample();
+    echo json_encode(get_transient('sitepulse_pa_sample_abcdefghijklmnopqrstuvwxyz012345'));
+} elseif ($input['mode'] === 'analysis_plugin_names') {
+    file_put_contents(ABSPATH . 'wp-admin/includes/plugin.php', '<?php function get_plugins() { return array("lazy/lazy.php" => array("Name" => "Lazy Plugin")); }');
+    $sample = array('server_ms' => 100.0, 'memory_peak' => 1, 'queries' => 1, 'status' => 200, 'page' => array('title' => 'T', 'kind' => 'Page'), 'callbacks' => array(), 'http' => array(),
+        'sources' => array(array('source' => 'lazy', 'type' => 'plugin', 'self_ms' => 10.0, 'calls' => 1)));
+    $report = Sitepulse_Page_Analysis::build_report(array('id' => 'a', 'url' => 'https://example.test/', 'created_at' => 1, 'pending_tokens' => array(), 'samples' => array($sample)));
+    echo json_encode($report['sources'][0]['name']);
+} elseif ($input['mode'] === 'monitoring_toggle_exit') {
+    Sitepulse_Test_WP::$redirect_throws = false;
+    $_REQUEST['_wpnonce'] = 'nonce-sitepulse_toggle_monitoring';
+    register_shutdown_function(static function () { echo json_encode(array('redirects' => Sitepulse_Test_WP::$redirects, 'paused' => Sitepulse_Monitoring::is_paused())); });
+    Sitepulse_Monitoring::handle_toggle();
+    echo 'unexpected continuation';
 }

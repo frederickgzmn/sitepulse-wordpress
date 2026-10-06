@@ -14,7 +14,7 @@ final class CoreVariantsTest extends Sitepulse_Test_Case {
         $result = sitepulse_test_subprocess($this, __DIR__ . '/fixtures/core-variants.php', array('mode' => 'guard', 'file' => $file));
         $this->assertSame(0, $result['status']); $this->assertSame('', $result['output']); $this->assertSame('', $result['error']);
     }
-    public static function guardedFiles(): array { return array_map(static function ($file) { return array($file); }, array('settings', 'setup', 'utils', 'onboarding', 'whitelabel_service', 'product_analytics', 'easy_mode', 'page_tracker', 'profiler', 'plugin_profiler', 'curloader')); }
+    public static function guardedFiles(): array { return array_map(static function ($file) { return array($file); }, array('settings', 'setup', 'utils', 'onboarding', 'whitelabel_service', 'product_analytics', 'easy_mode', 'page_tracker', 'page_analysis', 'monitoring', 'getting_started', 'profiler', 'plugin_profiler', 'curloader')); }
     /** @dataProvider traceSummaries */
     public function test_debug_trace_handles_available_missing_and_malformed_wordpress_summaries($trace_api, $summary, $expected): void {
         $this->assertSame($expected, $this->runVariant(array('mode' => 'debug_trace', 'trace_api' => $trace_api, 'summary' => $summary)));

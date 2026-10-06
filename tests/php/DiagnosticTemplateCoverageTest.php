@@ -18,7 +18,7 @@ final class DiagnosticTemplateCoverageTest extends Sitepulse_Test_Case {
     private function data(): array {
         return array(
             'sitepulse_lowhttp_enabled' => 1, 'sitepulse_profiler_enabled' => 1,
-            'loadstatus' => false, 'curlstatus' => false, 'sitepulse_current_tracked_pageid' => 42,
+            'sp_dashboard_view' => 'developer',
             'snapshot_time' => '2026-10-04 12:00:00', 'stats' => array(), 'curl_events' => array(),
             'curLoader' => new Sitepulse_CurLoader(), 'plugin_profiler_stats' => array(),
             'mem' => array('percent' => '25%', 'percent_class' => 'bg-success', 'formatted' => '32 MB / 128 MB'),
@@ -148,9 +148,37 @@ final class DiagnosticTemplateCoverageTest extends Sitepulse_Test_Case {
         $this->assertStringContainsString('Enable query monitoring', $html);
     }
 
+    public function test_easy_home_guides_new_users_and_keeps_the_promo_below_the_health_numbers(): void {
+        $steps = array(
+            array('id' => 'analyze', 'done' => true, 'title' => 'Analyze one page', 'text' => 'See it.', 'url' => 'https://example.test/analyze', 'action' => 'Analyze homepage'),
+            array('id' => 'plugins', 'done' => false, 'title' => 'Find your <heaviest> plugins', 'text' => 'Rankings.', 'url' => 'https://example.test/plugins', 'action' => 'Open Plugin Activity'),
+            array('id' => 'requests', 'done' => false, 'title' => 'Check external requests', 'text' => 'Waits.', 'url' => 'https://example.test/requests', 'action' => 'Open External Requests'),
+        );
+        $html = $this->render('easy/views/home.php', array('show_getting_started' => true, 'getting_started_steps' => $steps));
+        $this->assertStringContainsString('Get started with SitePulse', $html); $this->assertStringContainsString('1 of 3 done.', $html); $this->assertStringContainsString('width: 33%;', $html);
+        $this->assertSame(1, substr_count($html, 'sp-getting-started-step is-done')); $this->assertStringContainsString('Find your &lt;heaviest&gt; plugins', $html);
+        $this->assertStringContainsString('href="https://example.test/plugins">Open Plugin Activity</a>', $html); $this->assertStringNotContainsString('>Analyze homepage<', $html);
+        $this->assertStringContainsString('<input type="hidden" name="page" value="wpsp_sitepulse_page_analysis">', $html); $this->assertStringContainsString('id="sp-ai-card"', $html);
+        $this->assertGreaterThan(strpos($html, 'Key Numbers'), strpos($html, 'Claim Your Early Access'));
+        $this->assertStringContainsString('Performance Monitor', $html); $this->assertStringNotContainsString('Activity Monitor', $html);
+        $this->assertStringNotContainsString('Get started with SitePulse', $this->render('easy/views/home.php'));
+    }
+
+    /** @dataProvider classicViews */
+    public function test_classic_dashboard_renders_the_saved_view_without_waiting_for_javascript($view, $basic_style, $developer_style, $offer): void {
+        $html = $this->render('backend/dashboard.php', array('sp_dashboard_view' => $view));
+        $this->assertStringContainsString('<div id="sp-basic-view" class="sp-view-mode"' . $basic_style . '>', $html);
+        $this->assertStringContainsString('<div id="sp-developer-view" class="sp-view-mode"' . $developer_style . '>', $html);
+        $this->assertStringContainsString('data-view="' . $offer . '"', $html); $this->assertStringContainsString('class="sp-analyze-card"', $html);
+        $this->assertGreaterThan(strpos($html, 'Your Site Health Overview'), strpos($html, 'Claim Your Early Access'));
+        $this->assertStringContainsString('External Requests', $html); $this->assertStringNotContainsString('LoadSentinel', $html);
+    }
+    public static function classicViews(): array {
+        return array('basic' => array('basic', '', ' style="display: none;"', 'developer'), 'developer' => array('developer', ' style="display: none;"', '', 'basic'));
+    }
+
     private function populated(): array {
         $data = $this->data();
-        $data['loadstatus'] = true;
         $data['has_valid_pagespeed'] = true; $data['ps_data'] = self::pagespeed(); $data['ps_performance_score'] = 96;
         $data['total_load_time'] = 6000; $data['show_performance_warnings'] = true; $data['is_overall_slow'] = true;
         $data['error_count'] = 5; $data['fatal_count'] = 2; $data['warning_count'] = 3;

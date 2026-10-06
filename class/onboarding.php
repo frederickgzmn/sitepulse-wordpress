@@ -156,8 +156,8 @@ class Sitepulse_Onboarding extends Sitepulse_Setup {
 		
 		// Check if we're on the onboarding page
 		if ( $screen && $screen->id === 'admin_page_' . $this->setPrefix( 'sitepulse_onboarding' ) ) {
-			// Return a proper title to prevent null being passed to strip_tags
-			return 'SitePulse Onboarding' . $admin_title;
+			// Return a proper title to prevent null being passed to strip_tags; the early $title may already provide it
+			return false === strpos( (string) $admin_title, 'SitePulse Onboarding' ) ? 'SitePulse Onboarding' . $admin_title : $admin_title;
 		}
 		
 		return $admin_title;
@@ -237,10 +237,13 @@ class Sitepulse_Onboarding extends Sitepulse_Setup {
 			true
 		);
 		
+		// The first check-up runs on the Page Analysis engine.
+		Sitepulse_Backend::enqueue_page_analysis_assets();
+
 		wp_enqueue_script(
 			$this->setPrefix( 'onboarding_script' ),
 			SITEPULSE_ADMIN_ASSETS_JS_URL . 'onboarding.js',
-			[ 'jquery', 'sitepulse_bootstrap_js' ],
+			[ 'jquery', 'sitepulse_bootstrap_js', 'sitepulse-page-analysis' ],
 			filemtime( SITEPULSE_ADMIN_ASSETS_JS_PATH . 'onboarding.js' ),
 			true
 		);
@@ -250,9 +253,16 @@ class Sitepulse_Onboarding extends Sitepulse_Setup {
 			$this->setPrefix( 'onboarding_script' ),
 			'SitePulseOnboarding',
 			[
-				'rest_url' => esc_url_raw( rest_url() ),
-				'nonce'    => wp_create_nonce( 'wp_rest' ),
+				'rest_url'  => esc_url_raw( rest_url() ),
+				'nonce'     => wp_create_nonce( 'wp_rest' ),
 				'admin_url' => admin_url( 'admin.php?page=wpsp_sitepulse' ),
+				'home_url'  => home_url( '/' ),
+				'i18n'      => [
+					'skip_confirm'   => __( 'Skip the setup? You can run it again from SitePulse Settings.', 'sitepulse' ),
+					'finished'       => __( 'All set! Opening your dashboard…', 'sitepulse' ),
+					'finish_error'   => __( 'Could not save your choices. Please try again.', 'sitepulse' ),
+					'checkup_failed' => __( 'Something went wrong while loading the page.', 'sitepulse' ),
+				],
 			]
 		);
 	}

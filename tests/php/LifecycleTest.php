@@ -43,6 +43,26 @@ final class LifecycleTest extends Sitepulse_Test_Case {
         $this->assertTrue($result['activated']['redirect']);
         $this->assertNotEmpty($result['activated']['scheduled']);
         $this->assertSame(array(), $result['remaining']);
+        $this->assertSame(array(), $result['leftovers'], 'Activation clears a pause and the retired single-page tracking state.');
+    }
+
+    public function test_updates_clean_up_retired_tracking_data_once(): void {
+        $result = $this->runLifecycle(array('mode' => 'upgrade'));
+        $this->assertSame(10, $result['hooked']);
+        $this->assertSame(array('page' => false, 'list' => false, 'version' => 2, 'curl' => false), $result['first'], 'A tracker saved as "disabled" is repaired to off.');
+        $this->assertSame(7, $result['second_run_kept'], 'The migration runs only once per schema version.');
+        $this->assertTrue($this->runLifecycle(array('mode' => 'upgrade', 'curl' => true))['first']['curl'], 'An enabled tracker stays enabled.');
+    }
+
+    public function test_page_analysis_request_is_detected_before_the_profilers_start(): void {
+        $result = $this->runLifecycle(array('mode' => 'analysis_bootstrap'));
+        $this->assertSame(array('analysis' => true, 'profiler' => true, 'sample_hook' => PHP_INT_MAX, 'persist_hook' => 10, 'toggle' => true), $result);
+    }
+
+    public function test_paused_monitoring_notice_offers_one_click_resume(): void {
+        $result = $this->runLifecycle(array('mode' => 'notice', 'enabled' => false, 'dismissed' => false, 'paused' => true));
+        $this->assertStringContainsString('notice-info', $result['notice']); $this->assertStringContainsString('Your settings and history are kept.', $result['notice']);
+        $this->assertStringContainsString('admin-post.php?action=sitepulse_toggle_monitoring&amp;_wp_http_referer=%2F&amp;_wpnonce=nonce-sitepulse_toggle_monitoring">Resume monitoring</a>', $result['notice']);
     }
 
     public function test_disabled_notice_is_hidden_after_dismissal_or_enabling_trackers(): void {
@@ -53,10 +73,10 @@ final class LifecycleTest extends Sitepulse_Test_Case {
     }
 
     public function test_uninstall_removes_settings_and_dismissals_but_preserves_other_plugins(): void {
-        $result = $this->runLifecycle(array('mode' => 'uninstall', 'options' => array('sitepulse_settings' => array('cron_disabled' => true), 'sitepulse_profiler_stats' => array('data'), 'sitepulse_curl_api_events' => array('data'), 'sitepulse_onboarding_completed' => true, 'unrelated' => 'keep')));
+        $result = $this->runLifecycle(array('mode' => 'uninstall', 'options' => array('sitepulse_settings' => array('cron_disabled' => true), 'sitepulse_profiler_stats' => array('data'), 'sitepulse_curl_api_events' => array('data'), 'sitepulse_onboarding_completed' => true, 'sitepulse_page_analyses' => array(array('id' => 'a')), 'sitepulse_monitoring_paused' => 1, 'sitepulse_schema_version' => 2, 'sitepulse_error_log' => array('entry'), 'sitepulse_plugin_profiler_stats' => array('data'), 'sitepulse_plugin_profiler_current_time' => 'now', 'sitepulse_plugin_profiler_total_time' => 12, 'unrelated' => 'keep')));
         $this->assertSame(array('unrelated' => 'keep'), $result['options']);
         $this->assertSame(array('unrelated' => 'keep'), $result['user_meta'][1]);
-        $this->assertFalse($result['redirect']);
+        $this->assertFalse($result['redirect']); $this->assertSame(array(), $result['transients']);
     }
     public function test_loader_direct_access_guard_terminates_without_initializing_wordpress(): void {
         $result = sitepulse_test_subprocess($this, __DIR__ . '/fixtures/lifecycle.php', array('mode' => 'direct_access'));

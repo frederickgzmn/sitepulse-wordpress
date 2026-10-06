@@ -1,6 +1,6 @@
 <?php
 /**
- * Easy Mode — API Monitor view.
+ * Easy Mode — External Requests view.
  *
  * Zones:
  *  1. Overview    — 4 metric cards (requests, slow, plugins, timestamp)
@@ -13,7 +13,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $sp_events = isset( $curl_events ) ? $curl_events : array();
-$sp_single = isset( $single_curl_events ) ? $single_curl_events : false;
 $sp_snap   = isset( $snapshot_time ) ? $snapshot_time : null;
 $sp_plugins_ct = isset( $active_plugins_count ) ? (int) $active_plugins_count : 0;
 
@@ -29,25 +28,19 @@ foreach ( $sp_events as $ev ) {
 <!-- Page Header -->
 <div class="sp-page-header sp-dashboard-header">
 	<div class="sp-dashboard-header-left">
-		<h2 class="sp-page-title"><?php echo esc_html__( 'Outgoing Connections', 'sitepulse' ); ?></h2>
-		<p class="sp-page-subtitle"><?php echo esc_html__( 'See what your site is connecting to in the background — updates, analytics, and more', 'sitepulse' ); ?></p>
-	</div>
-	<div class="sp-dashboard-header-right">
-		<?php if ( $sp_single ) : ?>
-			<span class="sp-badge sp-badge-warning"><?php echo esc_html__( 'Viewing One Page Only', 'sitepulse' ); ?></span>
-		<?php endif; ?>
+		<h2 class="sp-page-title"><?php echo esc_html__( 'External Requests', 'sitepulse' ); ?></h2>
+		<p class="sp-page-subtitle"><?php echo esc_html__( 'Slow calls your site makes to outside services: updates, analytics, payment and shipping APIs, and more', 'sitepulse' ); ?></p>
 	</div>
 </div>
 
-<?php if ( $sp_single ) : ?>
 <div class="sp-alert sp-alert-info sp-mb-16">
-	<span class="dashicons dashicons-info"></span>
+	<span class="dashicons dashicons-search"></span>
 	<div>
-		<strong><?php echo esc_html__( 'Single Page View Active', 'sitepulse' ); ?></strong>
-		<span class="sp-text-xs" style="display:block;margin-top:2px;"><?php echo esc_html__( 'Only showing connections made during a single page load.', 'sitepulse' ); ?></span>
+		<strong><?php echo esc_html__( 'Which page makes these requests?', 'sitepulse' ); ?></strong>
+		<span class="sp-text-xs" style="display:block;margin-top:2px;"><?php echo esc_html__( 'This log collects slow requests from your whole site. Page Analysis lists every request one page makes while it loads.', 'sitepulse' ); ?></span>
+		<a class="sp-text-xs sp-fw-600" href="<?php echo esc_url( Sitepulse_Page_Analysis::admin_link() ); ?>"><?php echo esc_html__( 'Analyze a page', 'sitepulse' ); ?> &rarr;</a>
 	</div>
 </div>
-<?php endif; ?>
 
 
 <!-- ═══════════════════════════════════════════════════════════════════════
@@ -169,7 +162,7 @@ foreach ( $sp_events as $ev ) {
 			<div class="sp-empty" style="padding: 48px;">
 				<div class="sp-empty-icon"><span class="dashicons dashicons-rest-api" style="font-size:36px;width:36px;height:36px;color:var(--sp-info);"></span></div>
 				<p class="sp-empty-title"><?php echo esc_html__( 'No Connections Recorded Yet', 'sitepulse' ); ?></p>
-				<p class="sp-empty-desc"><?php echo esc_html__( 'Turn on "Outgoing Connections" tracking on the Dashboard to see what your site connects to.', 'sitepulse' ); ?></p>
+				<p class="sp-empty-desc"><?php echo esc_html__( 'Turn on "External Requests" tracking on the Dashboard to see what your site connects to.', 'sitepulse' ); ?></p>
 			</div>
 		<?php endif; ?>
 	</div>

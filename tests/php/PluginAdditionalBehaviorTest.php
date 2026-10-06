@@ -3,10 +3,19 @@ require_once __DIR__ . '/Support/LocalFilesystem.php';
 final class PluginAdditionalBehaviorTest extends Sitepulse_Test_Case {
     public function test_initialization_installs_frontend_and_admin_hooks_only_in_admin_context(): void {
         $plugin = new Sitepulse_Plugin(); $plugin->init();
-        $this->assertNotFalse(has_action('admin_menu')); $this->assertNotFalse(has_action('wp_footer')); $this->assertNotFalse(has_action('admin_bar_menu'));
-        $plugin->enqueue_styles_and_scripts(); $this->assertArrayHasKey('jquery', Sitepulse_Test_WP::$scripts); $this->assertSame(SITEPULSE_ADMIN_ASSETS_CSS_URL . 'sitepulse_general.css', Sitepulse_Test_WP::$styles['wpsp_admin_bar']['src']);
+        $this->assertNotFalse(has_action('admin_menu')); $this->assertFalse(has_action('wp_footer')); $this->assertNotFalse(has_action('admin_bar_menu'));
+        $plugin->enqueue_styles_and_scripts(); $this->assertArrayNotHasKey('jquery', Sitepulse_Test_WP::$scripts); $this->assertSame(SITEPULSE_ADMIN_ASSETS_CSS_URL . 'sitepulse_general.css', Sitepulse_Test_WP::$styles['wpsp_admin_bar']['src']);
         Sitepulse_Test_WP::reset(); Sitepulse_Test_WP::$is_admin = false; (new Sitepulse_Plugin())->init();
-        $this->assertFalse(has_action('admin_menu')); $this->assertNotFalse(has_action('wp_footer'));
+        $this->assertFalse(has_action('admin_menu')); $this->assertNotFalse(has_action('admin_bar_menu'));
+    }
+    /** @dataProvider frontEndVisitors */
+    public function test_front_end_loads_toolbar_styles_only_for_administrators_who_see_the_toolbar($can_manage, $toolbar, $loaded): void {
+        Sitepulse_Test_WP::$is_admin = false; Sitepulse_Test_WP::$capabilities['manage_options'] = $can_manage; Sitepulse_Test_WP::$admin_bar_showing = $toolbar;
+        (new Sitepulse_Plugin())->enqueue_styles_and_scripts();
+        $this->assertSame($loaded, isset(Sitepulse_Test_WP::$styles['wpsp_admin_bar'])); $this->assertSame(array(), Sitepulse_Test_WP::$scripts);
+    }
+    public static function frontEndVisitors(): array {
+        return array('visitor' => array(false, false, false), 'subscriber with toolbar' => array(false, true, false), 'admin with toolbar hidden' => array(true, false, false), 'admin with toolbar' => array(true, true, true));
     }
     public function test_disk_benchmark_reports_unavailable_filesystem_without_writing(): void {
         $GLOBALS['wp_filesystem'] = null; Sitepulse_Test_WP::$filesystem_factory = static function () { return null; };

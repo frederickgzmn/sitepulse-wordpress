@@ -244,3 +244,75 @@
         font-size: 24px;
     }
 }
+
+/* Contextual help for the chosen reason */
+.sp-deact-help {
+    margin: 4px 0 14px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid #c3dafe;
+    background: #eff6ff;
+    font-size: 13px;
+    color: #1e3a8a;
+}
+
+.sp-deact-help[hidden] {
+    display: none;
+}
+
+.sp-deact-help strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #1e3a8a;
+}
+
+.sp-deact-help p {
+    margin: 0 0 10px;
+}
+
+.sp-deact-help ol {
+    margin: 6px 0 12px 18px;
+    padding: 0;
+}
+
+.sp-deact-help li {
+    margin-bottom: 4px;
+}
+
+.sp-deact-error {
+    margin: 10px 0 0 !important;
+    color: #b32d2e;
+    font-weight: 600;
+}
+
+.sp-deact-star:focus-visible {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
+/* Confirmation after pausing instead of deactivating */
+.sp-deact-paused {
+    padding: 12px 0;
+    text-align: center;
+    color: #1d2327;
+}
+
+.sp-deact-paused .dashicons {
+    width: 40px;
+    height: 40px;
+    font-size: 40px;
+    color: #00a32a;
+}
+
+.sp-deact-paused strong {
+    display: block;
+    margin: 8px 0 6px;
+    font-size: 16px;
+}
+
+.sp-deact-paused p {
+    margin: 0;
+    font-size: 13px;
+    color: #50575e;
+}

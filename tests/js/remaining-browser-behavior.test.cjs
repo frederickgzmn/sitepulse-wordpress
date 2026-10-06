@@ -32,7 +32,6 @@ for (const [selector, element] of [
   ['.sp_profiler', '<input class="sp_profiler" type="checkbox">'],
   ['.sp_http_load', '<input class="sp_http_load" type="checkbox">'],
   ['.sp_dark_mode', '<input class="sp_dark_mode" type="checkbox">'],
-  ['.sp_report_mode', '<input class="sp_report_mode" type="checkbox">'],
   ['.sp_curl_api_clear_events', '<button class="sp_curl_api_clear_events">Clear</button>'],
   ['.sp-collect-plugin-data', '<button class="sp-collect-plugin-data">Collect</button>']
 ]) {
@@ -51,7 +50,6 @@ for (const [selector, element, expected] of [
   ['.sp_curl_and_profiler_clear_events', '<button class="sp_curl_and_profiler_clear_events">Clear</button>', 2],
   ['.sp_profiler', '<input id="sp-profiler" class="sp_profiler" type="checkbox">', 1],
   ['.sp_http_load', '<input id="sp-http-load" class="sp_http_load" type="checkbox">', 1],
-  ['.sp_report_mode', '<input class="sp_report_mode" type="checkbox">', 1],
   ['.fix_enable_savequeries', '<button class="fix_enable_savequeries">Enable</button>', 1],
   ['.sp-new-experience-cta', '<button class="sp-new-experience-cta" data-ajax-url="https://sitepulse.test/wp-admin/admin-ajax.php">Switch</button>', 1],
   ['#sp_reset_onboarding', '<button id="sp_reset_onboarding">Reset</button>', 1],

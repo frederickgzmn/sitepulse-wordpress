@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       SitePulse - Performance Monitor and AI Diagnostics
  * Description:       SitePulse gives you real-time insights into your WordPress site’s performance, slow queries, and bottlenecks - so you can keep your site fast, healthy, and optimized.
- * Version:           1.4.5
+ * Version:           1.4.6
  * Author:            Frederic Guzman
  * Author URI:        https://www.nilbug.com
  * Text Domain:       sitepulse
@@ -40,7 +40,7 @@ if ( ! defined( 'SITEPULSE_STRESS_MODE' ) ) {
 	define( 'SITEPULSE_STRESS_MODE', false );
 }
 
-define( 'SITEPULSE_VERSION',               '1.4.5' );
+define( 'SITEPULSE_VERSION',               '1.4.6' );
 define( 'SITEPULSE_NAME',                  'SitePulse' );
 define( 'SITEPULSE_SLUG',                  'sitepulse' );
 define( 'SITEPULSE_PREFIX',                'wpsp' );
@@ -73,9 +73,6 @@ define( 'SITEPULSE_CURL_API_KEY',               'sitepulse_curl_api_events' );
 define( 'SITEPULSE_CURL_API_ENABLED',       	  'sitepulse_curl_api_enabled' );
 define( 'SITEPULSE_CURL_API_SLUG',          	  'curl_api' );
 define( 'SITEPULSE_CURL_API_DEFAULT_THRESHOLD', 1 );
-
-// Real time tracking constants
-define( 'SITEPULSE_REALTIME_TRACKING_TIME', 30 ); // In seconds
 
 // Load error handler FIRST to catch any errors during plugin loading
 require_once SITEPULSE_CLASS_PATH . 'error_handler.php';
@@ -188,6 +185,9 @@ require_once SITEPULSE_CLASS_PATH . '/setup.php';
 require_once SITEPULSE_CLASS_PATH . '/plugin.php';
 require_once SITEPULSE_CLASS_PATH . 'onboarding.php';
 require_once SITEPULSE_CLASS_PATH . 'whitelabel_service.php';
+require_once SITEPULSE_CLASS_PATH . 'page_analysis.php';
+require_once SITEPULSE_CLASS_PATH . 'monitoring.php';
+require_once SITEPULSE_CLASS_PATH . 'getting_started.php';
 
 // Constant for pro detection - set early for performance
 // This is checked by core to conditionally load/skip widgets when pro is active
@@ -207,6 +207,11 @@ require_once SITEPULSE_PATH . 'inc/cron_fallback.php';
 require_once SITEPULSE_PATH . 'inc/ai_diagnostic_cron.php';
 
 class Sitepulse_Loader {
+	/**
+	 * Version of the stored data layout; raise it when an update needs to migrate data.
+	 */
+	const SCHEMA_VERSION = 2;
+
 	// Constructor
 	public function __construct() {
 
@@ -214,6 +219,9 @@ class Sitepulse_Loader {
 		if ( defined( 'DOING_AUTOSAVE' ) ) {
 			return;
 		}
+
+		// Detect Page Analysis requests first: they switch the profilers into single-request mode.
+		Sitepulse_Page_Tracker::init();
 
 		if ( class_exists( 'Sitepulse_Profiler' ) ) {
 			Sitepulse_Profiler::init();
@@ -245,6 +253,9 @@ class Sitepulse_Loader {
 		// Initialize onboarding
 		Sitepulse_Onboarding::getInstance();
 
+		// Pause/resume monitoring from the toolbar
+		Sitepulse_Monitoring::init();
+
 		// Initialize Easy Mode (toggleable dashboard experience)
 		if ( class_exists( 'Sitepulse_Easy_Mode' ) ) {
 			Sitepulse_Easy_Mode::init();
@@ -258,6 +269,8 @@ class Sitepulse_Loader {
 		add_action( 'admin_notices', [ $this, 'admin_notice_trackers_disabled' ] );
 		// Admin notice for onboarding
 		add_action( 'admin_notices', [ $this, 'admin_notice_onboarding' ] );
+		// Migrate stored data after updates
+		add_action( 'admin_init', [ $this, 'maybe_upgrade' ] );
 		
 		// Allow pro version or other extensions to hook after initialization
 		do_action( 'sitepulse_after_init' );
@@ -312,6 +325,8 @@ class Sitepulse_Loader {
 		update_option( SITEPULSE_PROFILER_ENABLED, true );
 		update_option( SITEPULSE_CURL_API_ENABLED, true );
 		update_option( 'sitepulse_plugins_profiler_enabled', true );
+		delete_option( Sitepulse_Monitoring::PAUSED_OPTION );
+		$this->upgrade_data();
 		
 		// Set transient to trigger onboarding redirect
 		set_transient( 'sitepulse_activation_redirect', true, 30 );
@@ -320,6 +335,34 @@ class Sitepulse_Loader {
 		if ( class_exists( 'Sitepulse_Cron_Manager' ) ) {
 			Sitepulse_Cron_Manager::schedule_daily_api_request();
 		}
+	}
+
+	/**
+	 * Bring stored data up to date after an update; updates do not run the activation hook.
+	 */
+	public function maybe_upgrade() {
+		if ( (int) get_option( 'sitepulse_schema_version', 0 ) < self::SCHEMA_VERSION ) {
+			$this->upgrade_data();
+		}
+	}
+
+	/**
+	 * Remove state of the retired single-page tracking mode, repair the stored
+	 * External Requests switch and record the schema version.
+	 */
+	public function upgrade_data() {
+		foreach ( array( 'sitepulse_report_mode_active', 'sitepulse_pageloadhttp_curlstatus', 'sitepulse_pageloadhttp_loadstatus', 'sitepulse_current_tracked_pageid' ) as $legacy_option ) {
+			delete_option( $legacy_option );
+		}
+		delete_transient( 'sitepulse_load_single_page_list' );
+		delete_transient( 'sitepulse_single_page_list' );
+
+		// Earlier versions saved a switched-off External Requests tracker as the string "disabled", which reads as on.
+		if ( 'disabled' === get_option( SITEPULSE_CURL_API_ENABLED ) ) {
+			update_option( SITEPULSE_CURL_API_ENABLED, false, false );
+		}
+
+		update_option( 'sitepulse_schema_version', self::SCHEMA_VERSION );
 	}
 
 	// Admin dismissable notice when trackers are disabled
@@ -334,6 +377,16 @@ class Sitepulse_Loader {
 		// check if notice was dismissed
 		$dismissed = get_user_meta( get_current_user_id(), 'sitepulse_trackers_disabled_notice_dismissed', true );
 		if ( $dismissed ) {
+			return;
+		}
+
+		if ( Sitepulse_Monitoring::is_paused() ) {
+			printf(
+				'<div id="sitepulse-trackers-disabled-notice" class="notice notice-info is-dismissible"><p>%1$s <a href="%2$s">%3$s</a></p></div>',
+				esc_html__( 'SitePulse monitoring is paused, so no performance data is being collected. Your settings and history are kept.', 'sitepulse' ),
+				esc_url( Sitepulse_Monitoring::toggle_url() ),
+				esc_html__( 'Resume monitoring', 'sitepulse' )
+			);
 			return;
 		}
 

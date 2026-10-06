@@ -16,8 +16,8 @@ final class OptionalViewIntegrationTest extends Sitepulse_Test_Case {
     public static function backendViews(): array {
         return array(
             array('render_dashboard_section', 'SitePulse', '/\b2 Active Plugins\b/'),
-            array('render_resource_load', 'Activity Monitor', '/\bActive Plugins 2\b/'),
-            array('render_curl_api', 'Outgoing Connections', '/\b2 Active Plugins\b/'),
+            array('render_resource_load', 'Plugin Activity', '/\bActive Plugins 2\b/'),
+            array('render_curl_api', 'External Requests', '/\b2 Active Plugins\b/'),
         );
     }
     public function test_performance_view_formats_plugin_timings_without_optional_profiler_adapter(): void {

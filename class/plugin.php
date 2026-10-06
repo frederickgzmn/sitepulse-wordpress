@@ -29,7 +29,12 @@ class Sitepulse_Plugin extends Sitepulse_Setup {
 
 	
     public function enqueue_styles_and_scripts() {
-		wp_enqueue_script('jquery'); // use WP core jQuery
+		// Visitors never see the SitePulse toolbar menu, so the front end only
+		// loads its styles for administrators who do. Admin scripts declare jQuery themselves.
+		if ( ! is_admin() && ! ( is_admin_bar_showing() && current_user_can( 'manage_options' ) ) ) {
+			return;
+		}
+
 		wp_enqueue_style($this->setPrefix('wpsp_admin_bar'), SITEPULSE_ADMIN_ASSETS_CSS_URL . 'sitepulse_general.css', [], filemtime(SITEPULSE_ADMIN_ASSETS_CSS_PATH . 'sitepulse_general.css'), 'all');
 	}
 

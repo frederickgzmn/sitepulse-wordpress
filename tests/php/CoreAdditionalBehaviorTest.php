@@ -37,21 +37,11 @@ final class CoreAdditionalBehaviorTest extends Sitepulse_Test_Case {
         Sitepulse_Test_WP::$screen = (object) array('id' => 'admin_page_wpsp_sitepulse_onboarding');
         $this->assertStringContainsString('sitepulse_css_class', $onboarding->add_onboarding_body_class('body'));
         $this->assertSame('SitePulse OnboardingExisting', $onboarding->set_onboarding_title('Existing', ''));
+        $this->assertSame('SitePulse Onboarding ‹ Demo Shop', $onboarding->set_onboarding_title('SitePulse Onboarding ‹ Demo Shop', 'SitePulse Onboarding'));
         $onboarding->set_page_title_early();
         $this->assertSame('SitePulse Onboarding', $GLOBALS['title']);
         $this->assertSame('wpsp_sitepulse_onboarding', $GLOBALS['submenu_file']);
         $this->assertSame('', $GLOBALS['parent_file']);
-    }
-    public function test_disabled_tracking_status_helpers_and_missing_page_id_have_safe_defaults(): void {
-        $this->assertNull(Sitepulse_Page_Tracker::get_tracked_page_id());
-        $this->assertFalse(Sitepulse_Page_Tracker::get_load_status());
-        $this->assertFalse(Sitepulse_Page_Tracker::get_curl_status());
-        update_option('sitepulse_current_tracked_pageid', '42');
-        update_option('sitepulse_pageloadhttp_loadstatus', true);
-        update_option('sitepulse_pageloadhttp_curlstatus', true);
-        $this->assertSame(42, Sitepulse_Page_Tracker::get_tracked_page_id());
-        $this->assertTrue(Sitepulse_Page_Tracker::get_load_status());
-        $this->assertTrue(Sitepulse_Page_Tracker::get_curl_status());
     }
     public function test_analytics_corrupt_once_index_is_recovered_and_nonscalar_context_is_omitted(): void {
         update_option('sitepulse_product_events_once', 'broken');

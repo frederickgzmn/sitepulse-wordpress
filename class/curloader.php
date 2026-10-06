@@ -10,13 +10,14 @@ class Sitepulse_CurLoader {
     public static function init() {
         self::$enabled   = (bool) get_option(SITEPULSE_CURL_API_ENABLED, true);
 
-        // Enable for Single report tracking page using Page Tracker helper
-        if ( class_exists( 'Sitepulse_Page_Tracker' ) && Sitepulse_Page_Tracker::is_curl_tracking_active() ) {
-            self::$enabled = true;
-        }
-
         // Allow wp-config override: define('WPSLOWHTTP_THRESHOLD', 1.5);
         self::$threshold = defined('WPSLOWHTTP_THRESHOLD') ? (float) WPSLOWHTTP_THRESHOLD : SITEPULSE_CURL_API_DEFAULT_THRESHOLD;
+
+        // A page analysis request records every outgoing request, however fast.
+        if ( class_exists( 'Sitepulse_Page_Tracker' ) && Sitepulse_Page_Tracker::is_analysis_request() ) {
+            self::$enabled   = true;
+            self::$threshold = 0.0;
+        }
 
         // Attach a start time to each request
         add_filter('http_request_args', [__CLASS__, 'tag_start_time'], 5, 2);
@@ -38,6 +39,9 @@ class Sitepulse_CurLoader {
 
     public static function capture( $response, $context, $class, $args, $url ) {
         if (!$args || !self::$enabled || $context !== 'response') return;
+
+        // SitePulse's own Page Analysis requests are measurements, not site traffic.
+        if ( class_exists( 'Sitepulse_Page_Tracker' ) && false !== strpos( (string) $url, Sitepulse_Page_Tracker::QUERY_VAR . '=' ) ) return;
 
         $start   = $args['_wshp_start'] ?? null;
         $elapsed = $start ? (microtime(true) - $start) : null;
@@ -115,7 +119,8 @@ class Sitepulse_CurLoader {
             // Regular plugin?
             if ($plugdir && 0 === strncmp($fp, $plugdir, strlen($plugdir))) {
                 $rel = trim(substr($fp, strlen($plugdir)+1), '/');
-                $slug = explode('/', $rel)[0] ?? '';
+                // Folder name, or the file name without .php for a single-file plugin.
+                $slug = false !== strpos($rel, '/') ? explode('/', $rel)[0] : basename($rel, '.php');
                 $label = 'Plugin: ' . self::plugin_name_from_slug($slug, $plugins);
                 break;
             }
@@ -235,7 +240,7 @@ class Sitepulse_CurLoader {
 
     private static function plugin_name_from_slug($slug, $plugins) {
         foreach ($plugins as $file => $data) {
-            if (0 === strncmp($file, $slug . '/', strlen($slug . '/'))) {
+            if (0 === strncmp($file, $slug . '/', strlen($slug . '/')) || $file === $slug . '.php') {
                 return $data['Name'] ?? $slug;
             }
         }
@@ -252,17 +257,23 @@ class Sitepulse_CurLoader {
     }
 
     private static function push_event(array $event) {
+        // Requests made by an analyzed page belong to that page's report only.
+        if ( class_exists( 'Sitepulse_Page_Tracker' ) && Sitepulse_Page_Tracker::is_analysis_request() ) {
+            Sitepulse_Page_Tracker::record_http_event( [
+                'url'        => Sitepulse_Utils::redact_url_query( (string) $event['url'] ),
+                'host'       => $event['host'],
+                'code'       => $event['code'],
+                'origin'     => $event['origin'],
+                'elapsed_ms' => round( (float) $event['elapsed'] * 1000, 1 ),
+            ] );
+            return;
+        }
+
         $events = get_option(SITEPULSE_CURL_API_KEY, []);
         $event['date'] = gmdate('Y-m-d H:i:s');
         $events[] = $event;
         if (count($events) > self::MAX_EVENTS) {
             $events = array_slice($events, -self::MAX_EVENTS);
-        }
-
-        // Use Page Tracker helper for single page storage
-        if ( class_exists( 'Sitepulse_Page_Tracker' ) && Sitepulse_Page_Tracker::save_single_page_events( $events, 'curl' ) ) {
-            // Events saved to single page transient
-            return;
         }
 
         // Save to global option
@@ -274,6 +285,18 @@ class Sitepulse_CurLoader {
     }
 
     private static function compact_backtrace(): array {
+        // A page analysis profiles a single page load, so it can afford a real
+        // backtrace to name the plugin or theme behind every outgoing request.
+        if ( class_exists( 'Sitepulse_Page_Tracker' ) && Sitepulse_Page_Tracker::is_analysis_request() ) {
+            $own    = wp_normalize_path( dirname( SITEPULSE_PLUGIN_FILE ) ) . '/';
+            $frames = [];
+            foreach ( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 40 ) as $frame ) {
+                if ( empty( $frame['file'] ) || 0 === strpos( wp_normalize_path( $frame['file'] ), $own ) ) continue;
+                $frames[] = [ 'file' => $frame['file'], 'line' => $frame['line'] ?? 0, 'function' => $frame['function'] ?? '' ];
+            }
+            return $frames;
+        }
+
         // Keep it light; limit frames and omit args for performance
         // Use WordPress-recommended approach with error handling
         if (!WP_DEBUG) {
