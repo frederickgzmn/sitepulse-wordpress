@@ -289,6 +289,12 @@ class Sitepulse_CurLoader {
         return array_map(static fn($event) => array_merge(self::EVENT_DEFAULTS, array_filter($event, static fn($value) => null !== $value)), $events);
     }
 
+    /** Events of the last 24 hours, oldest first; warnings, scores and reports describe only these. */
+    public static function get_recent_events(): array {
+        $since = time() - Sitepulse_Profiler::RECENT_SECONDS;
+        return array_values(array_filter(self::get_events(), static fn($event) => (int) $event['ts'] >= $since));
+    }
+
     private static function compact_backtrace(): array {
         // A page analysis profiles a single page load, so it can afford a real
         // backtrace to name the plugin or theme behind every outgoing request.

@@ -142,9 +142,9 @@ class Sitepulse_Api_Service {
 			// Limit payload to 2MB to prevent timeouts (adjust if needed)
 			$max_payload_size = 2 * 1024 * 1024; // 2MB
 			if ( $payload_size > $max_payload_size ) {
-				// API requests were already capped at ten; reduce the remaining resources.
+				// API requests were already capped at ten; keep the fifty slowest resources.
 				if ( is_array( $payload['resources'] ) && count( $payload['resources'] ) > 50 ) {
-					$payload['resources'] = array_slice( $payload['resources'], -50 );
+					$payload['resources'] = array_slice( $payload['resources'], 0, 50 );
 				}
 				$payload_json = wp_json_encode( $payload );
 			}
@@ -168,35 +168,36 @@ class Sitepulse_Api_Service {
 	}
 
 	/**
-	 * Get resources data from profiler
+	 * Get resources data from profiler: activity of the last 24 hours, slowest first,
+	 * so reports and diagnoses do not blame code that has since changed.
 	 *
 	 * @return array Resources data
 	 */
 	private static function get_resources_data() {
-		$resources = get_option( SITEPULSE_PROFILER_KEY, array() );
-
-		// Ensure we return an array
-		if ( ! is_array( $resources ) ) {
-			return array();
-		}
-
-		return $resources;
+		self::load_trackers();
+		return Sitepulse_Profiler::get_recent_stats();
 	}
 
 	/**
-	 * Get API/Request data from curl loader
+	 * Get API/Request data from curl loader: slow requests of the last 24 hours, oldest first
 	 *
 	 * @return array API requests data
 	 */
 	private static function get_api_requests_data() {
-		$api_requests = get_option( SITEPULSE_CURL_API_KEY, array() );
+		self::load_trackers();
+		return Sitepulse_CurLoader::get_recent_events();
+	}
 
-		// Ensure we return an array
-		if ( ! is_array( $api_requests ) ) {
-			return array();
+	/**
+	 * Load the trackers whose activity the reports describe; cron can load this class on its own.
+	 */
+	private static function load_trackers() {
+		if ( ! class_exists( 'Sitepulse_Profiler' ) ) {
+			require_once SITEPULSE_CLASS_PATH . 'profiler.php';
 		}
-
-		return $api_requests;
+		if ( ! class_exists( 'Sitepulse_CurLoader' ) ) {
+			require_once SITEPULSE_CLASS_PATH . 'curloader.php';
+		}
 	}
 
 	/**

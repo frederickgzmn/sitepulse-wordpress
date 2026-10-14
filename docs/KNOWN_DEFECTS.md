@@ -19,6 +19,13 @@ The defects below were reproduced with expected-correct tests, then repaired. Th
 | Translation loading uses the plugin translations directory on disk. | [LifecycleTest](php/LifecycleTest.php) |
 | A failed configuration rewrite returns an error before a duplicate SAVEQUERIES declaration can be added. | [PluginAdditionalBehaviorTest](php/PluginAdditionalBehaviorTest.php) |
 | A failed query diagnostic displays its error and retains the SAVEQUERIES enable action. | [DiagnosticTemplateCoverageTest](php/DiagnosticTemplateCoverageTest.php) |
+| Warnings, rankings and scores use the last 24 hours and each plugin's own time per page load, so code that was fixed, removed or only runs often is not flagged. | [RecentDashboardTest](php/RecentDashboardTest.php), [BackendTest](php/BackendTest.php) |
+| Recent figures combine the current 24-hour window with the part of the previous one still inside it, and count each page load once. | [RecentActivityTest](php/RecentActivityTest.php), [ProfilerTest](php/ProfilerTest.php) |
+| Saved activity of code that has not run for two days is removed. | [ProfilerTest](php/ProfilerTest.php) |
+| Slow external requests older than 24 hours are neither warnings nor diagnosis input; the External Requests log keeps them. | [RecentDashboardTest](php/RecentDashboardTest.php), [RecentActivityTest](php/RecentActivityTest.php), [ApiServiceTest](php/ApiServiceTest.php) |
+| Reports and AI diagnoses describe the last 24 hours, and an oversized report keeps the slowest entries. | [ApiServiceTest](php/ApiServiceTest.php), [ApiCoverageTest](php/ApiCoverageTest.php) |
+| Plugin averages cover the last 24 hours and the slowest plugins are listed first. | [PluginProfilerTest](php/PluginProfilerTest.php) |
+| The dashboard assistant shows the slowest item's time and takes the heaviest plugin from its recent average. | [PetAssistantTemplateTest](php/PetAssistantTemplateTest.php) |
 
 ## JavaScript
 

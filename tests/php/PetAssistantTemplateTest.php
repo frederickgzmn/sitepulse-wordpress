@@ -14,7 +14,7 @@ final class PetAssistantTemplateTest extends Sitepulse_Test_Case {
             array('home', array('overall_score' => 40, 'total_load_time' => 4000, 'mem' => array('percent' => '90%'), 'error_count' => 10, 'active_plugins_count' => 40, 'speed_score' => 30, 'plugins_score' => 30, 'memory_score' => 30, 'show_performance_warnings' => true, 'weekly_trends' => array(array('score' => 90), array('score' => 20)), 'has_valid_pagespeed' => true, 'ps_performance_score' => 40), 'Speed score: 30'),
             array('home', array('overall_score' => 65, 'total_load_time' => 2000, 'mem' => array('percent' => '70%'), 'error_count' => 2, 'weekly_trends' => array(array('score' => 20), array('score' => 90)), 'has_valid_pagespeed' => true, 'ps_performance_score' => 70), 'Up 70 pts'),
             array('home', array('overall_score' => 95, 'total_load_time' => 500, 'error_count' => 0), 'Great shape!'),
-            array('performance', array('all_slow_items' => array(array('name' => 'SitePulse'), array('name' => 'Nilbug'), array('name' => 'External', 'time' => 1500), array('name' => 'Theme'), array('name' => 'Shop'), array('name' => 'Gallery'))), 'External'),
+            array('performance', array('all_slow_items' => array(array('name' => 'SitePulse'), array('name' => 'Nilbug'), array('name' => 'External', 'time_ms' => 1500.0), array('name' => 'Theme'), array('name' => 'Shop'), array('name' => 'Gallery'))), 'Slowest: &quot;External&quot; at 1,500ms'),
             array('resource-load', array(), 'Page Analysis shows what runs on that page only'),
             array('page-analysis', array(), 'product, cart and checkout'),
             array('security', array('vulnerabilities' => array(array('vulnerabilities' => array('CVE-TEST'))), 'error_log' => array('fatal_count' => 2, 'warning_count' => 5)), 'vulnerability(ies) found'),
@@ -38,6 +38,17 @@ final class PetAssistantTemplateTest extends Sitepulse_Test_Case {
         $html = $this->render($data);
         $this->assertStringContainsString($expected, $html);
         $this->assertStringContainsString('Compress images', $html);
+    }
+    public function test_heaviest_plugin_tip_uses_the_recent_average_and_ignores_retired_timings(): void {
+        $_SERVER['HTTPS'] = 'on';
+        $plugins = array(
+            array('plugin_name' => 'Fast Now', 'avg_ms' => 40.0, 'total_time' => 9000),
+            array('plugin_name' => 'Heavy Shop', 'avg_ms' => 640.0),
+            array('plugin_name' => 'SitePulse', 'avg_ms' => 2000.0),
+        );
+        $html = $this->render(array('easy_view' => 'performance', 'plugin_profiler_stats' => $plugins));
+        $this->assertStringContainsString('Heaviest plugin: &quot;Heavy Shop&quot; (640ms)', $html);
+        $this->assertStringNotContainsString('Fast Now', $html);
     }
     public function test_healthy_site_has_no_prescriptions(): void {
         $_SERVER['HTTPS'] = 'on';

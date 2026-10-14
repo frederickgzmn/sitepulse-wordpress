@@ -166,6 +166,9 @@ Open the page on your site and choose **SitePulse → Analyze this page** in the
 = Page Analysis says my server could not load the page. What now? =
 Some hosts, firewalls and password-protected staging sites block a site from requesting its own pages. Click **Open the page and measure my visit**: the page opens in a new tab, SitePulse measures that visit, and the report appears in the first tab. The same happens if a page cache or CDN answers instead of WordPress.
 
+= What time period do the warnings and rankings cover? =
+The last 24 hours. Speed warnings, Plugin Activity, scores and AI diagnostics are based on the time each plugin's and theme's own code adds to a page load during the last 24 hours. A plugin you fixed, updated or deactivated stops being flagged within a day, and code that runs very often but quickly is not flagged however much its time adds up. Activity of code that has not run for two days is removed. The External Requests screen keeps its full log.
+
 = Can I pause SitePulse instead of deactivating it? =
 Yes. Choose **Pause monitoring** in the SitePulse toolbar menu (or "Pause instead of deactivating" when you deactivate). SitePulse stops measuring page loads, so it adds no profiling overhead, and keeps your settings and history. Choose **Resume monitoring** when you need it again.
 
@@ -201,6 +204,13 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 ---
 
 == Changelog ==
+= 1.4.7 =
+* Fixed: after SitePulse had been running for a while, warnings kept blaming plugins that were slow in the past or that simply ran often. Warnings, rankings, scores and AI diagnostics now use the last 24 hours and the time each plugin's own code adds to a page load.
+* Fixed: slow external requests from earlier days no longer appear as warnings or in diagnoses; the External Requests log still lists them.
+* Fixed: "Slowest Plugins" lists plugins slowest first, with averages over the last 24 hours.
+* Fixed: the dashboard assistant showed "?ms" for the slowest item and based its heaviest-plugin tip on outdated timings.
+* Improved: Plugin Activity forgets code that has not run for two days, so stored data stays small.
+
 = 1.4.6 =
 * New: Page Analysis. Analyze any page (products, posts, archives, your shop, search results) and see which plugins, theme code and external requests slow it down, with plain-English findings. Replaces the old single-page tracking, which only supported posts and pages and mixed in data from other requests.
 * New: "Analyze this page" in the toolbar on every front-end page.

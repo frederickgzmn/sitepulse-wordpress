@@ -70,7 +70,7 @@ $sp_profiler_on = get_option( 'sitepulse_profiler_enabled', null );
 		</div>
 		<div class="sp-card-body">
 			<div class="sp-flex sp-justify-between sp-items-center sp-mb-12">
-				<span class="sp-text-sm"><?php echo esc_html__( 'Actions Recorded', 'sitepulse' ); ?></span>
+				<span class="sp-text-sm"><?php echo esc_html__( 'Actions in the Last 24 Hours', 'sitepulse' ); ?></span>
 				<span class="sp-badge sp-badge-accent"><?php echo esc_html( count( $sp_stats ) ); ?></span>
 			</div>
 			<div class="sp-flex sp-justify-between sp-items-center sp-mb-12">
@@ -95,7 +95,7 @@ $sp_profiler_on = get_option( 'sitepulse_profiler_enabled', null );
 <div>
 	<div class="sp-zone-header sp-zone-header--info">
 		<span class="dashicons dashicons-info-outline"></span>
-		<span class="sp-zone-title"><?php /* translators: %d: number of seconds */ echo esc_html( sprintf( __( 'Active means the callback ran recently; Inactive means it has not run in the last %d seconds.', 'sitepulse' ), SITEPULSE_SETTINGS_PROFILER_INACTIVE_AFTER_SECONDS ) ); ?></span>
+		<span class="sp-zone-title"><?php /* translators: %d: number of seconds */ echo esc_html( sprintf( __( 'Figures cover the last 24 hours, slowest first. Active means the callback ran recently; Inactive means it has not run in the last %d seconds.', 'sitepulse' ), SITEPULSE_SETTINGS_PROFILER_INACTIVE_AFTER_SECONDS ) ); ?></span>
 	</div>
 </div>
 
@@ -112,11 +112,9 @@ $sp_profiler_on = get_option( 'sitepulse_profiler_enabled', null );
 	<div class="sp-card-body sp-p-0">
 		<?php if ( ! empty( $sp_stats ) ) : ?>
 			<?php
-			// Sort by total time descending
+			// Slowest first: own time per page load over the last 24 hours
 			usort( $sp_stats, function( $a, $b ) {
-				$a_time = isset( $a['total_ms'] ) ? $a['total_ms'] : 0;
-				$b_time = isset( $b['total_ms'] ) ? $b['total_ms'] : 0;
-				return $b_time <=> $a_time;
+				return $b['load_ms'] <=> $a['load_ms'];
 			});
 			?>
 			<div class="sp-table-responsive">
@@ -128,6 +126,7 @@ $sp_profiler_on = get_option( 'sitepulse_profiler_enabled', null );
 							<th><?php echo esc_html__( 'File', 'sitepulse' ); ?></th>
 							<th><?php echo esc_html__( 'Signature', 'sitepulse' ); ?></th>
 							<th><?php echo esc_html__( 'Calls', 'sitepulse' ); ?></th>
+							<th title="<?php echo esc_attr__( 'Time spent in this code itself on each page load it ran on', 'sitepulse' ); ?>"><?php echo esc_html__( 'Per Page Load', 'sitepulse' ); ?></th>
 							<th><?php echo esc_html__( 'Current Load Time', 'sitepulse' ); ?></th>
 							<th><?php echo esc_html__( 'Avg Time', 'sitepulse' ); ?></th>
 							<th><?php echo esc_html__( 'Status', 'sitepulse' ); ?></th>
@@ -136,10 +135,10 @@ $sp_profiler_on = get_option( 'sitepulse_profiler_enabled', null );
 					</thead>
 					<tbody>
 						<?php foreach ( array_slice( $sp_stats, 0, 50 ) as $footprint ) :
-							$fp_time = isset( $footprint['total_ms'] ) ? (float) $footprint['total_ms'] : 0;
 							$load_time = isset( $footprint['current_load_time'] ) ? (float) $footprint['current_load_time'] : 0;
 							$fp_calls = isset( $footprint['calls'] ) ? (int) $footprint['calls'] : 1;
-							$fp_avg = $fp_calls > 0 ? round( $fp_time / $fp_calls, 1 ) : 0;
+							$fp_avg = round( (float) $footprint['avg_ms'], 1 );
+							$fp_load = (float) $footprint['load_ms'];
 						?>
 						<tr>
 							<td class="sp-text-xs sp-fw-500"><?php echo esc_html( isset( $footprint['source'] ) ? $footprint['source'] : '—' ); ?></td>
@@ -147,6 +146,11 @@ $sp_profiler_on = get_option( 'sitepulse_profiler_enabled', null );
 							<td class="sp-cell-mono sp-text-xs sp-cell-truncate" style="max-width:140px;" title="<?php echo esc_attr( isset( $footprint['fileline'] ) ? $footprint['fileline'] : '' ); ?>"><?php echo esc_html( isset( $footprint['fileline'] ) ? $footprint['fileline'] : '—' ); ?></td>
 							<td class="sp-cell-mono sp-text-xs sp-cell-truncate" style="max-width:140px;" title="<?php echo esc_attr( isset( $footprint['sig'] ) ? $footprint['sig'] : '' ); ?>"><?php echo esc_html( isset( $footprint['sig'] ) ? $footprint['sig'] : '—' ); ?></td>
 							<td class="sp-text-center"><?php echo esc_html( $fp_calls ); ?></td>
+							<td>
+								<span class="sp-badge <?php echo $fp_load > 1000 ? 'sp-badge-danger' : ( $fp_load > 500 ? 'sp-badge-warning' : 'sp-badge-success' ); ?>">
+									<?php echo esc_html( Sitepulse_Utils::format_time( $fp_load, 'ms' ) ); ?>
+								</span>
+							</td>
 							<td class="sp-text-center">
 								<?php
 								// Microseconds to seconds
@@ -220,8 +224,8 @@ $sp_profiler_on = get_option( 'sitepulse_profiler_enabled', null );
 		<?php else : ?>
 			<div class="sp-empty" style="padding: 48px;">
 				<div class="sp-empty-icon"><span class="dashicons dashicons-performance" style="font-size:36px;width:36px;height:36px;color:var(--sp-info);"></span></div>
-				<p class="sp-empty-title"><?php echo esc_html__( 'No Activity Recorded Yet', 'sitepulse' ); ?></p>
-				<p class="sp-empty-desc"><?php echo esc_html__( 'Turn on the Performance Monitor to start tracking what happens behind the scenes.', 'sitepulse' ); ?></p>
+				<p class="sp-empty-title"><?php echo esc_html__( 'No Activity in the Last 24 Hours', 'sitepulse' ); ?></p>
+				<p class="sp-empty-desc"><?php echo esc_html__( 'Make sure the Performance Monitor is on, then visit a few pages of your site to see what runs behind the scenes.', 'sitepulse' ); ?></p>
 			</div>
 		<?php endif; ?>
 	</div>

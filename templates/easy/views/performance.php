@@ -132,7 +132,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<span class="dashicons dashicons-admin-plugins"></span>
 					<?php echo esc_html__( 'Slow Plugins & Themes', 'sitepulse' ); ?>
 				</h3>
-				<p class="sp-card-subtitle"><?php echo esc_html__( 'Items taking longer than half a second to load', 'sitepulse' ); ?></p>
+				<p class="sp-card-subtitle"><?php echo esc_html__( 'Code that added over half a second to page loads in the last 24 hours', 'sitepulse' ); ?></p>
 			</div>
 		</div>
 		<div class="sp-card-body sp-p-0">
@@ -227,7 +227,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<span class="dashicons dashicons-admin-plugins"></span>
 				<?php echo esc_html__( 'Slowest Plugins', 'sitepulse' ); ?>
 			</h3>
-			<p class="sp-card-subtitle"><?php echo esc_html__( 'Memory and loading time for each plugin', 'sitepulse' ); ?></p>
+			<p class="sp-card-subtitle"><?php echo esc_html__( 'Loading time of each plugin, slowest first; the average covers the last 24 hours', 'sitepulse' ); ?></p>
 		</div>
 		<div class="sp-flex sp-items-center sp-gap-12">
 			<span class="sp-badge sp-badge-neutral"><?php echo isset( $plugin_profiler_stats ) ? count( $plugin_profiler_stats ) : 0; ?> <?php echo esc_html__( 'Plugins', 'sitepulse' ); ?></span>

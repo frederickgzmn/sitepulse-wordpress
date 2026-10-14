@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/Support/RecentActivity.php';
 
 /** Exercises the real API service; only WordPress HTTP and storage are doubled. */
 final class ApiServiceTest extends Sitepulse_Test_Case {
@@ -33,8 +34,10 @@ final class ApiServiceTest extends Sitepulse_Test_Case {
     }
 
     public function test_site_report_sends_identity_metrics_and_only_ten_recent_http_events(): void {
-        update_option(SITEPULSE_PROFILER_KEY, array('init' => array('elapsed' => 0.25)));
-        update_option(SITEPULSE_CURL_API_KEY, range(1, 14));
+        update_option(SITEPULSE_PROFILER_KEY, array('init' => sitepulse_test_recent_stat(array('key' => 'init'), 250.0), 'last-week' => sitepulse_test_recent_stat(array('key' => 'last-week'), 3000.0, 1, 7 * DAY_IN_SECONDS)));
+        $events = array(sitepulse_test_http_event(array('url' => 'https://old.test/'), 2 * DAY_IN_SECONDS));
+        foreach (range(1, 14) as $i) { $events[] = sitepulse_test_http_event(array('url' => 'https://api.test/' . $i)); }
+        update_option(SITEPULSE_CURL_API_KEY, $events);
         update_option('sitepulse_license_key', 'existing-license');
         $this->queue(array('license_key' => 'existing-license'));
 
@@ -47,8 +50,11 @@ final class ApiServiceTest extends Sitepulse_Test_Case {
         $this->assertTrue($request['args']['sslverify']);
         $this->assertSame(30, $request['args']['timeout']);
         $payload = $this->payload();
-        $this->assertSame(array('init' => array('elapsed' => 0.25)), $payload['resources']);
-        $this->assertSame(array(5, 6, 7, 8, 9, 10, 11, 12, 13, 14), $payload['api_requests']);
+        // Only activity of the last 24 hours is reported, with figures that cover that time.
+        $this->assertSame(array('init'), array_keys($payload['resources']));
+        $this->assertEquals(250.0, $payload['resources']['init']['load_ms']);
+        $this->assertArrayNotHasKey('window_ms', $payload['resources']['init']);
+        $this->assertSame(array_map(static function ($i) { return 'https://api.test/' . $i; }, range(5, 14)), array_column($payload['api_requests'], 'url'));
         $this->assertSame('existing-license', $payload['license_key']);
         $this->assertSame('192.0.2.25', $payload['ip_address']);
         $this->assertSame(home_url(), $payload['domain']);
@@ -139,7 +145,7 @@ final class ApiServiceTest extends Sitepulse_Test_Case {
 
     /** @dataProvider largePayloads */
     public function test_large_reports_receive_bounded_longer_timeouts(int $bytes, int $timeout): void {
-        update_option(SITEPULSE_PROFILER_KEY, array('init' => str_repeat('x', $bytes)));
+        update_option(SITEPULSE_PROFILER_KEY, array('init' => sitepulse_test_recent_stat(array('sig' => str_repeat('x', $bytes)))));
         $this->queue(array());
         Sitepulse_Api_Service::send_website_data();
         $this->assertSame($timeout, Sitepulse_Test_WP::$http_requests[0]['args']['timeout']);
@@ -198,8 +204,8 @@ final class ApiServiceTest extends Sitepulse_Test_Case {
     }
 
     public function test_ai_request_registers_first_and_persists_pending_state_and_queue_position(): void {
-        update_option(SITEPULSE_CURL_API_KEY, range(1, 25));
-        update_option(SITEPULSE_PROFILER_KEY, array('init' => array('elapsed' => 0.1)));
+        update_option(SITEPULSE_CURL_API_KEY, array_map(static function ($i) { return sitepulse_test_http_event(array('url' => 'https://api.test/' . $i)); }, range(1, 25)));
+        update_option(SITEPULSE_PROFILER_KEY, array('init' => sitepulse_test_recent_stat(array('key' => 'init')), 'retired' => sitepulse_test_recent_stat(array('key' => 'retired'), 100.0, 1, 3 * DAY_IN_SECONDS)));
         update_option('sitepulse_vulnerabilities_list', array(array('name' => 'XSS', 'version' => 'high')));
         $this->queue(array('license_key' => 'issued-license'));
         $this->queue(array('success' => true, 'status' => 'pending', 'ai_diagnostic_report_id' => 'report-42', 'queue_position' => 7));
@@ -209,8 +215,9 @@ final class ApiServiceTest extends Sitepulse_Test_Case {
         $this->assertSame('issued-license', $payload['license_key']);
         $this->assertTrue($payload['force_new']);
         $this->assertStringNotContainsString('://', $payload['domain']);
-        $this->assertSame(array(6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25), $payload['metrics']['api_requests']);
-        $this->assertSame(array('init' => array('elapsed' => 0.1)), $payload['metrics']['hooks']);
+        $this->assertSame(array_map(static function ($i) { return 'https://api.test/' . $i; }, range(6, 25)), array_column($payload['metrics']['api_requests'], 'url'));
+        // The diagnosis is about current behavior: code that stopped running is left out.
+        $this->assertSame(array('init'), array_keys($payload['metrics']['hooks']));
         $this->assertSame(array(array('name' => 'XSS', 'version' => 'high')), $payload['metrics']['vulnerabilities']);
         $this->assertSame('pending', get_option('sitepulse_ai_diagnostic_status'));
         $this->assertSame('report-42', get_option('sitepulse_ai_diagnostic_report_id'));

@@ -279,7 +279,7 @@ switch ( $dr_view ) {
 			}
 			if ( $slowest ) {
 				$slow_name = $slowest['name'] ?? $slowest['hook'] ?? 'Unknown';
-				$slow_time = isset( $slowest['time'] ) ? number_format( (float) $slowest['time'], 0 ) : '?';
+				$slow_time = isset( $slowest['time_ms'] ) ? number_format( (float) $slowest['time_ms'], 0 ) : '?';
 				$dr_page_recs[] = [
 					'icon' => '🐌',
 					'text' => sprintf( __( 'Slowest: "%s" at %sms. Update or replace it.', 'sitepulse' ), $slow_name, $slow_time ),
@@ -302,7 +302,8 @@ switch ( $dr_view ) {
 			foreach ( $plugin_profiler_stats as $ps ) {
 				$pname = $ps['plugin_name'] ?? $ps['name'] ?? '';
 				if ( $dr_is_self( $pname ) ) continue; // Skip self
-				$pt = isset( $ps['total_time'] ) ? (float) $ps['total_time'] : 0;
+				// Average load time over the last 24 hours; older timings may describe a plugin that has since improved.
+				$pt = isset( $ps['avg_ms'] ) ? (float) $ps['avg_ms'] : 0;
 				if ( $pt > $heaviest_time ) {
 					$heaviest_time   = $pt;
 					$heaviest_plugin = $pname;
