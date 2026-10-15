@@ -1,7 +1,7 @@
 # Graph Report - sitepulse  (2026-10-15)
 
 ## Corpus Check
-- 176 files · ~357,855 words
+- 176 files · ~357,880 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 19 file(s) not represented in the graph (top: .css 8, .map 7, (none) 2)
 
@@ -654,7 +654,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does ``POST /api/website/remote/inventory`` connect `Commands` to `Screen`?**
   _High betweenness centrality (0.048) - this node is a cross-community bridge._
 - **Why does `update_option()` connect `update_option` to `Sitepulse_Error_Handler`, `PageTrackerTest`, `Sitepulse_CurLoader`, `Sitepulse_Cron_Manager`, `Sitepulse_Easy_Mode`, `Sitepulse_Remote_Backups`, `WordPress.php`, `Sitepulse_Test_Local_Filesystem`, `RemoteBackupCommandsTest`, `home_url`, `RestApiTest`, `add_action`, `RestCoverageTest`, `ApiServiceTest`, `Sitepulse_Onboarding`, `Sitepulse_Frontend`, `Sitepulse_Remote_Management`, `Sitepulse_Test_WP`, `.time`, `is_wp_error`, `Sitepulse_Remote_Updates`, `RemoteUpdatesTest`, `Sitepulse_Monitoring`, `Sitepulse_Plugin`, `Sitepulse_Test_Case`, `Sitepulse_Profiler`, `get_option`, `do_action`, `TemplateRenderingTest`, `Sitepulse_Remote_Events`, `Sitepulse_Page_Analysis`, `Sitepulse_Whitelabel_Service`, `get_transient`, `Sitepulse_Test_Database`, `has_action`, `Sitepulse_Utils`, `ProfilerCompatibilityTest`, `delete_option`, `Sitepulse_Settings`, `Sitepulse_Page_Tracker`, `PopulatedTemplateTest`, `WP_REST_Request`?**
-  _High betweenness centrality (0.037) - this node is a cross-community bridge._
+  _High betweenness centrality (0.036) - this node is a cross-community bridge._
 - **Are the 192 inferred relationships involving `update_option()` (e.g. with `.check_ai_diagnostic_status()` and `.make_ai_diagnostic_api_request()`) actually correct?**
   _`update_option()` has 192 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 142 inferred relationships involving `get_option()` (e.g. with `.check_ai_diagnostic_status()` and `.check_vulnerabilities()`) actually correct?**
