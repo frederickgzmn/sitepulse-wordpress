@@ -80,6 +80,7 @@ if ($input['mode'] === 'order') {
     wp_schedule_event(time() + 30, 'hourly', 'sitepulse_fallback_cron_check');
     wp_schedule_event(time() + 30, 'hourly', 'sitepulse_cron_fallback_immediate');
     wp_schedule_event(time() + 30, 'hourly', 'sitepulse_check_ai_diagnostic_status');
+    wp_schedule_single_event(time() + 300, 'sitepulse_remote_check_in');
     $sitepulse_loader->deactivate();
     echo json_encode(array('activated' => $activated, 'remaining' => array_column(Sitepulse_Test_WP::$scheduled, 'hook'), 'leftovers' => $leftovers));
 } elseif ($input['mode'] === 'notice') {

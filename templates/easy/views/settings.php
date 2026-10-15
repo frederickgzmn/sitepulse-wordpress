@@ -169,7 +169,7 @@ $sp_cron_failure = isset( $sp_status['cron_status'] ) && $sp_status['cron_status
 
 </form>
 
-<?php do_action( 'sitepulse_settings_after_form' ); ?>
+<?php do_action( 'sitepulse_settings_after_form', 'easy' ); ?>
 
 
 <!-- ═══════════════════════════════════════════════════════════════════════

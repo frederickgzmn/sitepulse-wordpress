@@ -32,6 +32,9 @@ delete_option('sitepulse_error_log');
 delete_option('sitepulse_plugin_profiler_stats');
 delete_option('sitepulse_plugin_profiler_current_time');
 delete_option('sitepulse_plugin_profiler_total_time');
+delete_option('sitepulse_remote_state');
+delete_option('sitepulse_remote_events');
+delete_option('sitepulse_remote_log');
 
 // Remove all user meta
 delete_metadata( 'user', 0, 'sitepulse_trackers_disabled_notice_dismissed', '', true );
