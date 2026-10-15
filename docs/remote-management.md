@@ -301,6 +301,7 @@ The SitePulse dashboard calls these from trusted IPs with the existing portal au
 | `POST /api/portal/remote-management/notifications` | — | Notification settings and the 20 latest notifications |
 | `POST /api/portal/remote-management/notifications/save` | `notifications` (the settings format), `rotate_webhook_secret` (optional), `requested_by` | Change the notification settings |
 | `POST /api/portal/remote-management/notifications/test` | `requested_by` | Send a test message to every configured channel |
+| `POST /api/portal/remote-management/alerts` | `sites` (1–100 `{ "domain", "license_key" }`, instead of `domain` and `license_key`), `after` (the id of the last alert read), `limit` (≤ 200, default 100) | Alerts of those sites after `after`, oldest first: `{ "alerts": [ { "id", "domain", "trigger", "subject", "message", "data", "created_at" } ], "unknown_sites": [...] }` |
 | `POST /api/portal/remote-management/roles` | — | Who may view or manage the site |
 | `POST /api/portal/remote-management/roles/save` | `roles`, `requested_by` | Change the site's roles |
 | `POST /api/portal/remote-management/rotate-key` | `requested_by` | Give the site a new signing key (see "Key rotation") |
@@ -475,7 +476,7 @@ A report summarizes one month of a site for its client, in the site's time zone 
 
 ### Notifications
 
-Each site has its notification settings; until the dashboard saves them, there are no channels and nothing is sent:
+Each site has its notification settings. Until the dashboard saves them, there are no channels and nothing is sent, but every alert whose trigger is on is still **recorded** (status `recorded`). The SitePulse dashboard reads recorded alerts with `alerts` and sends them through its own Slack connection:
 
 ```json
 {
@@ -511,7 +512,7 @@ The API checks `backup_overdue` and `check_ins_stopped` every 15 minutes, only f
 
   Redirects are not followed, the timeout is 10 seconds, and any 2xx status counts as delivered.
 
-The notifications log keeps `id`, `trigger`, `subject`, `message`, `status` (`pending`, `sent`, `partial`, `failed`), `channels` (each channel's `pending`, `sent` or `failed`), `created_at` and `sent_at`. `notifications`, and `notifications/save`, answer `{ "settings", "triggers", "recent" }`, where `recent` holds the 20 latest log entries. `notifications/test` sends a `test` notification right away and returns its log entry, or 422 when the site has no channel.
+The notifications log keeps `id`, `trigger`, `subject`, `message`, `status` (`pending`, `sent`, `partial`, `failed`, or `recorded` without channels), `channels` (each channel's `pending`, `sent` or `failed`), `created_at` and `sent_at`. `notifications`, and `notifications/save`, answer `{ "settings", "triggers", "recent" }`, where `recent` holds the 20 latest log entries. `notifications/test` sends a `test` notification right away and returns its log entry, or 422 when the site has no channel.
 
 ## Retention
 
