@@ -480,18 +480,83 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         $this->assertEqualsWithDelta(time() + 60, wp_next_scheduled(Sitepulse_Remote_Updates::JOB_HOOK), 2);
     }
 
-    public function test_an_interrupted_update_is_reported(): void {
+    public function test_an_interrupted_update_is_restored_and_the_site_leaves_maintenance_mode(): void {
         $this->plugin('seo/seo.php', '1.1');
         $this->start('update_plugins', array('plugins' => array('seo/seo.php', 'forms/forms.php'), 'backup_first' => false));
         update_option(Sitepulse_Remote_Updates::JOB_OPTION, array_replace($this->job(), array('phase' => 'updating', 'baseline' => array(), 'current' => array('from' => '1.0'))));
+        // The stopped request left WordPress's maintenance file and the new version half-checked.
+        file_put_contents(ABSPATH . '.maintenance', '<?php $upgrading = ' . time() . '; ?>');
+        $this->files[] = ABSPATH . '.maintenance';
+        Sitepulse_Test_Upgrades::$on_restore = function () { $this->plugin('seo/seo.php', '1.0'); };
         $this->api();
 
         Sitepulse_Remote_Updates::run_job();
 
+        $this->assertFileDoesNotExist(ABSPATH . '.maintenance');
+        $backup = array(array('dir' => 'plugins', 'slug' => 'seo', 'src' => WP_PLUGIN_DIR));
+        $this->assertSame(array(array('restore', $backup), array('delete_temp_backup', $backup)), Sitepulse_Test_Upgrades::$calls);
         $this->assertSame(array(
-            array('id' => 'seo/seo.php', 'from' => '1.0', 'to' => '1.1', 'ok' => false, 'error' => 'interrupted', 'rolled_back' => false),
+            array('id' => 'seo/seo.php', 'from' => '1.0', 'to' => '1.0', 'ok' => false, 'error' => 'interrupted', 'rolled_back' => true),
             array('id' => 'forms/forms.php', 'from' => null, 'to' => null, 'ok' => false, 'error' => 'skipped', 'rolled_back' => false),
         ), $this->results()['result']['items']);
+    }
+
+    public function test_a_request_that_dies_mid_update_puts_the_site_back_as_it_ends(): void {
+        $this->plugin('seo/seo.php', '1.0');
+        $this->offer('plugin', 'seo/seo.php', '1.1');
+        Sitepulse_Test_Upgrades::$outcomes['plugin:seo/seo.php'] = function () {
+            $this->plugin('seo/seo.php', '1.1');
+            // A PHP time limit: WordPress runs its shutdown actions, then the request is gone.
+            do_action('shutdown');
+            throw new RuntimeException('Maximum execution time exceeded');
+        };
+        Sitepulse_Test_Upgrades::$on_restore = function () { $this->plugin('seo/seo.php', '1.0'); };
+        $this->start('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_first' => false));
+        $this->api();
+
+        try {
+            Sitepulse_Remote_Updates::run_job();
+            $this->fail('The request should have ended.');
+        } catch (RuntimeException $e) {
+            $this->assertSame('Maximum execution time exceeded', $e->getMessage());
+        }
+
+        $backup = array(array('dir' => 'plugins', 'slug' => 'seo', 'src' => WP_PLUGIN_DIR));
+        $this->assertSame(array(array('maintenance', true), array('upgrade', 'plugin', 'seo/seo.php'), array('maintenance', false), array('restore', $backup), array('delete_temp_backup', $backup)), Sitepulse_Test_Upgrades::$calls, 'Out of maintenance mode and back to the previous version as the request ends.');
+        $this->assertSame(array('from' => '1.0', 'rolled_back' => true), $this->job()['current']);
+        $this->assertFalse(get_transient(Sitepulse_Remote_Updates::LOCK), 'The next step does not wait for the lock to expire.');
+        $this->assertFalse(has_action('shutdown'));
+
+        Sitepulse_Remote_Updates::run_job();
+
+        $this->assertSame(array(array('id' => 'seo/seo.php', 'from' => '1.0', 'to' => '1.0', 'ok' => false, 'error' => 'interrupted', 'rolled_back' => true)), $this->results()['result']['items']);
+        $this->assertCount(5, Sitepulse_Test_Upgrades::$calls, 'Nothing is restored twice.');
+    }
+
+    public function test_the_shutdown_recovery_is_removed_once_an_update_finishes(): void {
+        $this->plugin('seo/seo.php', '1.0');
+        $this->offer('plugin', 'seo/seo.php', '1.1');
+        Sitepulse_Test_Upgrades::$outcomes['plugin:seo/seo.php'] = function () { $this->plugin('seo/seo.php', '1.1'); return true; };
+        $this->start('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_first' => false));
+        $this->api();
+
+        Sitepulse_Remote_Updates::run_job();
+        do_action('shutdown');
+
+        $this->assertFalse(has_action('shutdown'));
+        $this->assertSame(array(array('maintenance', true), array('upgrade', 'plugin', 'seo/seo.php'), array('maintenance', false)), Sitepulse_Test_Upgrades::$calls);
+    }
+
+    public function test_an_interrupted_update_without_a_backup_is_reported_as_it_is(): void {
+        $this->plugin('seo/seo.php', '1.1');
+        $this->start('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_first' => false));
+        update_option(Sitepulse_Remote_Updates::JOB_OPTION, array_replace($this->job(), array('phase' => 'updating', 'baseline' => array(), 'current' => array('from' => '1.0'))));
+        Sitepulse_Test_Upgrades::$restore = false;
+        $this->api();
+
+        Sitepulse_Remote_Updates::run_job();
+
+        $this->assertSame(array(array('id' => 'seo/seo.php', 'from' => '1.0', 'to' => '1.1', 'ok' => false, 'error' => 'interrupted', 'rolled_back' => false)), $this->results()['result']['items']);
     }
 
     public function test_blocking_remote_management_stops_an_update(): void {
@@ -614,14 +679,15 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
             array('id' => '01JAUTO0000000000000000000', 'type' => 'set_auto_updates', 'args' => array('kind' => 'theme', 'items' => array('astra'), 'enabled' => true)),
         );
         Sitepulse_Test_WP::$http_queue = array(sitepulse_test_remote_response(array('success' => true, 'remote_management' => array('enabled' => true, 'active' => true, 'check_in_seconds' => 300), 'commands' => $commands)));
-        $this->api(3);
+        $this->api(4);
 
         Sitepulse_Remote_Management::check_in();
 
         $endpoints = array_map('sitepulse_test_remote_endpoint', array_keys(Sitepulse_Test_WP::$http_requests));
-        $this->assertSame(array('check-in', 'command-result', 'command-result', 'inventory'), $endpoints, 'The update answers later; the others at once.');
-        $this->assertSame('update_running', sitepulse_test_remote_request_body(1)['error']);
-        $this->assertSame(array('command' => '01JUPDATE00000000000000000', 'kind' => 'theme', 'phase' => 'backup', 'done' => 0, 'total' => 2), array_diff_key(sitepulse_test_remote_request_body(3)['updates']['job'], array('started_at' => 1)));
+        $this->assertSame(array('check-in', 'command-result', 'command-result', 'command-result', 'inventory'), $endpoints, 'The update says it started and answers later; the others answer at once.');
+        $this->assertSame(array('id' => '01JUPDATE00000000000000000', 'status' => 'running', 'result' => null, 'error' => null), sitepulse_test_remote_request_body(1));
+        $this->assertSame('update_running', sitepulse_test_remote_request_body(2)['error']);
+        $this->assertSame(array('command' => '01JUPDATE00000000000000000', 'kind' => 'theme', 'phase' => 'backup', 'done' => 0, 'total' => 2), array_diff_key(sitepulse_test_remote_request_body(4)['updates']['job'], array('started_at' => 1)));
         $this->assertSame(array(
             'Dashboard request started: update 2 themes.',
             'Dashboard request failed: update WordPress to 7.1.3 (update_running).',

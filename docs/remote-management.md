@@ -18,7 +18,7 @@ Out of scope for remote actions, by design: restoring or deleting backups, insta
 
 ## Signing
 
-The license key is the shared secret. It never travels in remote-management requests.
+The license key is the shared secret, until the dashboard rotates the site's key (see "Key rotation"); from then on that key signs remote-management requests and responses instead of the license. The license never travels in remote-management requests; a rotated key travels once, in the check-in response that offers it.
 
 ### Site → API
 
@@ -102,6 +102,12 @@ Called every `check_in_seconds` (5 minutes while active, hourly otherwise). The 
 ```
 
 `enabled` is the dashboard switch; `active` also requires a supported backup provider and no local block. `backup_provider` is the backup plugin picked in the dashboard (`updraftplus`, `backwpup`) or `null`. Commands are only returned while `active` is true. A delivered command moves from `queued` to `sent`.
+
+While a key rotation is pending (see "Key rotation"), `remote_management` also holds `new_key`, the site's next signing key (32 to 128 characters). It is sent whether or not remote management is active.
+
+### `POST /api/website/remote/key`
+
+Confirms a key rotation. The plugin sends `{ "schema": 1 }` signed with the **new** key it received at check-in. The API then makes that key the site's signing key and answers `{ "success": true }`, signed with the new key. The plugin stores the new key (option `sitepulse_remote_key`) only after this answer; until then it keeps signing with the old key, and the API keeps offering the new one at each check-in. Asking again with the new key after it was confirmed also succeeds, so a lost answer is harmless. A request signed with a key that is not pending or newly confirmed gets 409 `no_rotation_pending`.
 
 ### `POST /api/website/remote/inventory`
 
@@ -201,6 +207,8 @@ Response: `{ "success": true, "accepted": 1 }`.
 
 `status` is `done` or `failed`; `error` is a short machine-readable code (`unsupported_command`, `expired`, `inventory_failed`, …). Response: `{ "success": true }`. The API ignores results for commands that already finished.
 
+A command that answers later (the update commands) is first reported as `{ "id", "status": "running", "result": null, "error": null }` when the site starts it; the API records `started_at` and moves it from `sent` to `running`. The final `done` or `failed` is accepted from `sent` or `running`.
+
 ## Commands
 
 | Type | `args` | Phase |
@@ -249,37 +257,53 @@ Updates always run through WordPress's own upgrader, so packages come from WordP
 2. **Backup first** (when `backup_first`): a full backup with the managed backup plugin, as `backup_now` makes it. Nothing is updated when no supported backup plugin is active (`no_backup_plugin`), the backup fails (`backup_failed`) or takes longer than `backup_wait` minutes (`backup_timeout`).
 3. **Health baseline.** The plugin loads the home page, wp-admin and, with WooCommerce, the cart and checkout pages, using WordPress's own fatal-error check (the "scrape" request the plugin editor uses). A site that already fails is not updated (`site_unhealthy`), nor a site that cannot load its own home page, because its updates could not be checked (`health_check_unavailable`, typically a host that blocks such "loopback" requests).
 4. **One item at a time.** WordPress's upgrader installs the update offered for the item, with maintenance mode only while files are replaced. Then the same pages are loaded again. The update fails its health check when a page shows a PHP fatal error (in any code, such as another plugin that relied on the updated one), answers with a 5xx status it did not have before, stops answering, ends before WordPress's error check can report (where it reported before; a PHP fatal error can end a page that way), or SitePulse's error log records a fatal error in the updated plugin's, theme's or WordPress's files. A plugin or theme that fails is rolled back to its previous version (WordPress 6.3 and later keep a copy during the update) and the remaining items are skipped. WordPress core cannot be rolled back automatically. When the site administrator blocks remote management while an update runs, the items not updated yet are skipped (`blocked`).
+5. **Interrupted updates.** When the request updating an item stops before it finishes (a PHP time limit or a fatal error), WordPress still runs its shutdown actions, and SitePulse uses them first:
+   - it leaves maintenance mode;
+   - it restores the item from WordPress's temporary backup before WordPress deletes that backup;
+   - it frees the update for its next step.
+
+   A request that is killed outright cannot do this. Then WordPress keeps the site in maintenance mode for up to 10 minutes and refuses cron requests meanwhile. The next step afterwards removes the maintenance file (`.maintenance`) and restores the item the same way. Either way the item is reported as `interrupted`, with `rolled_back` telling whether it was restored, and the rest is skipped.
 
 Result: `done` when every item is up to date afterwards, otherwise `failed` with the error of the first problem (`update_failed` when an item failed). `result` is `{ "backup": { "provider", "job" } | null, "items": [ { "id", "from", "to", "ok", "error", "rolled_back" } ] }`; an item that failed its health check also has `problems`, up to five short descriptions such as `https://example.com/: HTTP 500`. Item errors: `up_to_date` (no update offered; `ok` stays `true`), `not_installed`, `requirements` (the update needs a newer PHP or WordPress), `no_package` (a premium plugin without a valid license), `install_failed` (WordPress could not install it and kept the old version), `health_check_failed`, `interrupted` (the request updating it stopped, for example at a PHP time limit) and `skipped` (not tried after a failure). Items with `up_to_date`, `not_installed`, `requirements` or `no_package` do not stop the others. The plugin reports the update as an `update.completed` event with `initiator` `sitepulse` and `rolled_back` on each item.
 
 `set_auto_updates` turns WordPress's own automatic updates on or off for installed plugins or themes (the "Enable auto-updates" links in wp-admin) and answers at once: `result` is `{ "kind", "enabled", "items" }` with the items whose setting changed.
 
+**Command states.** `queued` → `sent` (delivered at a check-in) → `running` (started; update commands only) → `done` or `failed`; or `expired` and `cancelled`. Each command records `requested_by`, `attempts`, `started_at` and `retry_of`.
+
+- **Redelivery:** a command that was never delivered is queued again for another 15 minutes, up to 3 attempts (`attempts`), within 45 minutes of its creation. After that, it expires, so an old request never comes back to life.
+- **No answer:** a delivered command without a result expires with `no_result` after 1 hour, or 6 hours for update commands. Such a command is never resent automatically, because the site may have run it.
+- **Retry:** `commands/retry` queues a copy of a `failed`, `expired` or `cancelled` command as a new command with `retry_of` set to the original.
+
 A command expires 15 minutes after it is created unless it was delivered. The plugin runs up to 20 commands per check-in, in WordPress's background (cron) request. It remembers the ids of the last 50 commands so it never runs one twice, answers `expired` for a command whose `expires_at` has passed, and answers `unsupported_command` for types it does not know.
 
 ## Dashboard (portal) endpoints
 
-The SitePulse dashboard calls these from trusted IPs with the existing portal authentication (`X-API-Key` and the HMAC `X-Portal-Auth` header), plus the site's `domain` and `license_key` in the body. Only dashboard users who own the license can reach a site; the license alone never creates commands.
+The SitePulse dashboard calls these from trusted IPs with the existing portal authentication (`X-API-Key` and the HMAC `X-Portal-Auth` header), plus the site's `domain` and `license_key` in the body. Only dashboard users who own the license can reach a site; the license alone never creates commands. Every endpoint that changes something takes `requested_by`, the email of the dashboard user acting, which the site's roles must allow (see "Roles").
 
 | Endpoint | Body | Purpose |
 |---|---|---|
 | `POST /api/portal/remote-management` | — | Status: switch, `active`, last check-in, what the site reported, backup warnings |
 | `POST /api/portal/remote-management/update` | `enabled`, `requested_by` | Turn remote management on or off |
 | `POST /api/portal/remote-management/inventory` | — | Latest software and backup inventory, backup warnings |
-| `POST /api/portal/remote-management/backup-provider` | `backup_provider` (`updraftplus`, `backwpup` or `null`) | Pick the backup plugin to manage when both are active |
+| `POST /api/portal/remote-management/backup-provider` | `backup_provider` (`updraftplus`, `backwpup` or `null`), `requested_by` | Pick the backup plugin to manage when both are active |
 | `POST /api/portal/remote-management/update-policy` | — | The site's update policy (defaults until it is changed) |
-| `POST /api/portal/remote-management/update-policy/save` | `policy` (the update policy format) | Change the site's update policy |
+| `POST /api/portal/remote-management/update-policy/save` | `policy` (the update policy format), `requested_by` | Change the site's update policy |
 | `POST /api/portal/remote-management/events` | `limit` (≤ 100), `before` (event time) | Event history, newest first |
 | `POST /api/portal/remote-management/commands` | `limit` (≤ 100) | Recent commands and their results |
 | `POST /api/portal/remote-management/commands/create` | `type`, `args`, `requested_by` | Queue a command (requires `active`); `apply_backup_preset` takes `args.preset_id`, a preset owned by `requested_by` |
-| `POST /api/portal/remote-management/commands/cancel` | `id` | Cancel a command that was not delivered yet |
+| `POST /api/portal/remote-management/commands/cancel` | `id`, `requested_by` | Cancel a command that was not delivered yet |
+| `POST /api/portal/remote-management/commands/retry` | `id`, `requested_by` | Queue a copy of a `failed`, `expired` or `cancelled` command (requires `active`) |
 | `POST /api/portal/remote-management/timeline` | `limit` (≤ 100, default 50), `before` (time), `categories` (optional list) | The site's activity timeline, newest first |
 | `POST /api/portal/remote-management/reports` | — | The site's stored monthly reports |
-| `POST /api/portal/remote-management/reports/generate` | `month` (`YYYY-MM`) | Build (or rebuild) a month's report and return it |
+| `POST /api/portal/remote-management/reports/generate` | `month` (`YYYY-MM`), `requested_by` | Build (or rebuild) a month's report and return it |
 | `POST /api/portal/remote-management/reports/download` | `month` | A link to the report as a PDF, valid for 24 hours |
-| `POST /api/portal/remote-management/reports/send` | `month` | Email the report to the site's report recipients now |
+| `POST /api/portal/remote-management/reports/send` | `month`, `requested_by` | Email the report to the site's report recipients now |
 | `POST /api/portal/remote-management/notifications` | — | Notification settings and the 20 latest notifications |
-| `POST /api/portal/remote-management/notifications/save` | `notifications` (the settings format), `rotate_webhook_secret` (optional) | Change the notification settings |
-| `POST /api/portal/remote-management/notifications/test` | — | Send a test message to every configured channel |
+| `POST /api/portal/remote-management/notifications/save` | `notifications` (the settings format), `rotate_webhook_secret` (optional), `requested_by` | Change the notification settings |
+| `POST /api/portal/remote-management/notifications/test` | `requested_by` | Send a test message to every configured channel |
+| `POST /api/portal/remote-management/roles` | — | Who may view or manage the site |
+| `POST /api/portal/remote-management/roles/save` | `roles`, `requested_by` | Change the site's roles |
+| `POST /api/portal/remote-management/rotate-key` | `requested_by` | Give the site a new signing key (see "Key rotation") |
 
 Backup presets belong to a dashboard user (their email) instead of a site, so these endpoints take `email` instead of `domain` and `license_key`:
 
@@ -288,6 +312,53 @@ Backup presets belong to a dashboard user (their email) instead of a site, so th
 | `POST /api/portal/remote-management/presets` | `email` | The user's presets, by name |
 | `POST /api/portal/remote-management/presets/save` | `email`, `id` (to change one), `name` (unique per user), `settings` (the preset format) | Create or change a preset |
 | `POST /api/portal/remote-management/presets/delete` | `email`, `id` | Delete a preset; commands already queued keep their copy |
+
+Rollouts also belong to a dashboard user and span several sites, each named with its `domain` and `license_key`:
+
+| Endpoint | Body | Purpose |
+|---|---|---|
+| `POST /api/portal/remote-management/rollouts` | `email` | The user's rollouts, newest first (up to 50) |
+| `POST /api/portal/remote-management/rollouts/create` | `email`, `type`, `args`, `sites` (2–100 `{ "domain", "license_key" }`), `canary` (default 2), `wait_minutes` (0–1440, default 0) | Start a rollout |
+| `POST /api/portal/remote-management/rollouts/show` | `email`, `id` | A rollout with each site's command and status |
+| `POST /api/portal/remote-management/rollouts/cancel` | `email`, `id` | Stop a rollout and cancel its commands that were not delivered yet |
+
+### Roles
+
+A site has no roles until the dashboard saves some; until then, every dashboard user who reaches the site may manage it. Once saved, `roles` is a list of `{ "email", "role" }`:
+
+| Role | May |
+|---|---|
+| `viewer` | Read only (no endpoint that takes `requested_by`) |
+| `manager` | Everything that changes the site except roles and the signing key: the switch, backup plugin, update policy, commands and retries, reports, notifications, rollouts |
+| `admin` | Everything, including `roles/save` and `rotate-key` |
+
+- **Refusals:** a `requested_by` without the role an endpoint needs gets 403 `not_allowed`.
+- **Saving roles:** `roles/save` must keep at least one `admin`. Once roles exist, only an `admin` may change them. The first save must list `requested_by` as an `admin`, so nobody locks themselves out.
+- **Commands:** they keep `requested_by`, as before.
+
+### Key rotation
+
+`rotate-key` (admin) gives the site a new random signing key, for example when a backup holding the site's license may have leaked. The license itself does not change: free license keys are derived from the site and checked that way by every SitePulse service, and Pro keys belong to the license account. A leaked license no longer works against remote management.
+
+1. The API keeps the new key as pending. The site goes on signing with its current key (the license, or an earlier rotated key), which stays valid.
+2. At the next check-in the API sends `new_key`, and the site confirms it with `POST /api/website/remote/key`, signed with the new key.
+3. On that confirmation the API makes the new key the site's signing key. The old one keeps working for 7 days, only so that a site that never received the confirmation can recover. At its next check-in the API offers the new key again, and the confirmation succeeds.
+
+Rotating again before the site confirmed replaces the pending key. The timeline shows a `key.rotated` entry in the `key` category, with `requested_by`.
+
+### Rollouts
+
+A rollout queues the same command on several sites, a few at a time:
+
+1. **Canary:** the command is queued on the first `canary` sites (1 to one less than the number of sites).
+2. **Wait:** when every canary command is `done`, the rollout waits `wait_minutes`. As soon as a canary command fails, expires or is cancelled, or when every canary site was skipped, the rollout stops (`halted`) and the other sites are not touched; canary commands already queued are left as they are.
+3. **The rest:** the command is queued on every other site. The rollout is `completed` when all of them have finished, whatever their results.
+
+- **Statuses:** `canary`, `waiting`, `rolling_out`, `completed`, `halted`, `cancelled`.
+- **Sites:** each site is `pending`, `queued`, `done`, `failed`, `skipped` (with `reason`: `not_active` or `not_allowed`, checked when its stage starts) or `cancelled`, and carries its `command` id.
+- **Commands:** `type` and `args` are those of `commands/create`, except `cancel_backup` and `apply_backup_preset`.
+- **Progress:** the API advances a rollout when a command result arrives and every 15 minutes.
+- **Retention:** finished rollouts are kept 90 days.
 
 ### Backup warnings
 
@@ -362,7 +433,8 @@ The API marks:
 | `plugin` | `plugin.activated`, `plugin.deactivated` | events |
 | `theme` | `theme.switched` | events |
 | `error` | `error.fatal` | events |
-| `command` | `command.queued` (with `requested_by`), `command.finished` (with `status`, `error`, and `visual_scan`: `{ "status", "pages_total", "pages_changed" }` when one ran) | commands |
+| `key` | `key.rotated` (with `requested_by`) | key rotations |
+| `command` | `command.queued` (with `requested_by`), `command.started`, `command.finished` (with `status`, `error`, and `visual_scan`: `{ "status", "pages_total", "pages_changed" }` when one ran) | commands |
 | `notification` | `notification.sent` (with `trigger`, `status`, `channels`) | notifications |
 
 ### Monthly reports
@@ -443,7 +515,18 @@ The notifications log keeps `id`, `trigger`, `subject`, `message`, `status` (`pe
 
 ## Retention
 
-The API keeps events, finished commands and notifications for 90 days, monthly reports for 13 months (their PDF links expire after 24 hours), and only the latest inventory per site. The plugin keeps up to 200 undelivered events (the oldest are dropped first), the last 100 remote-management activity entries and up to 50 pending update measurements; it sends events only while remote management is active, up to 50 per request. Uninstalling the plugin deletes all of them.
+The API keeps events, finished commands, notifications and finished rollouts for 90 days, monthly reports for 13 months (their PDF links expire after 24 hours), and only the latest inventory per site. The plugin keeps up to 200 undelivered events (the oldest are dropped first), the last 100 remote-management activity entries and up to 50 pending update measurements; it sends events only while remote management is active, up to 50 per request. Uninstalling the plugin deletes all of them.
+
+## Development
+
+`scripts/remote-api-mock.php`, in the plugin repository, is a small stand-in for the API for local development. Run it with `SITEPULSE_MOCK_LICENSE=<the site's license> php -S 127.0.0.1:8099 scripts/remote-api-mock.php`, and define `SITEPULSE_REMOTE_API_BASE` as `http://127.0.0.1:8099` in the site's `wp-config.php`.
+
+- **The site endpoints:** it checks and signs requests as the API does, and answers check-ins as active every minute.
+- **Commands:** `GET /mock/queue?type=…&args=<JSON>` queues one.
+- **Key rotation:** `GET /mock/rotate?key=…` offers a new signing key at the next check-in.
+- **State:** `GET /mock/state` shows what the site sent (check-ins, inventory, events, command results). It is kept in a JSON file, `SITEPULSE_MOCK_STATE`, which defaults to the system's temporary folder.
+
+It is not shipped with the plugin.
 
 ## Phases
 

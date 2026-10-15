@@ -37,6 +37,7 @@ delete_option('sitepulse_remote_events');
 delete_option('sitepulse_remote_log');
 delete_option('sitepulse_remote_update_job');
 delete_option('sitepulse_remote_activity');
+delete_option('sitepulse_remote_key');
 
 // Remove all user meta
 delete_metadata( 'user', 0, 'sitepulse_trackers_disabled_notice_dismissed', '', true );

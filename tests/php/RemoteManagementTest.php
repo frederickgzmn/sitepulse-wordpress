@@ -278,6 +278,66 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         $this->assertFalse(get_option(Sitepulse_Remote_Activity::OPTION), 'Pending measurements and the error log position are forgotten.');
     }
 
+    /** The signature of the nth request, made with a license. */
+    private function signedWith(int $index, string $license): bool {
+        $request = Sitepulse_Test_WP::$http_requests[$index];
+        $headers = $request['args']['headers'];
+        return hash_equals(Sitepulse_Remote_Client::request_signature('POST', parse_url($request['url'], PHP_URL_PATH), $headers['X-SitePulse-Domain'], $headers['X-SitePulse-Timestamp'], $headers['X-SitePulse-Nonce'], $request['args']['body'], $license), $headers['X-SitePulse-Signature']);
+    }
+
+    public function test_a_rotated_key_is_kept_once_the_api_confirms_it(): void {
+        $this->manage();
+        $this->queueEvents(1);
+        $key = 'rk_' . str_repeat('a1B2', 10);
+        $this->queue($this->answer(self::ACTIVE + array('new_key' => $key)), sitepulse_test_remote_response(array('success' => true), 200, array('license' => $key)), sitepulse_test_remote_response(array('success' => true), 200, array('license' => $key)));
+
+        Sitepulse_Remote_Management::check_in();
+
+        $this->assertSame(array('check-in', 'key', 'events'), $this->endpoints());
+        $this->assertSame(array('schema' => 1), sitepulse_test_remote_request_body(1));
+        $this->assertTrue($this->signedWith(1, $key), 'The new key proves itself to the API.');
+        $this->assertTrue($this->signedWith(2, $key), 'The rest of the check-in uses the new key.');
+        $this->assertSame(array($key, SITEPULSE_TEST_LICENSE), array(get_option(Sitepulse_Remote_Management::KEY_OPTION), get_option('sitepulse_license_key')), 'The license itself does not change.');
+        $this->assertSame(array('Remote management key replaced from the SitePulse dashboard.'), $this->messages());
+
+        // Later check-ins and late results are signed with it too.
+        $this->queue(sitepulse_test_remote_response(array('success' => true, 'remote_management' => self::ACTIVE), 200, array('license' => $key)), sitepulse_test_remote_response(array('success' => true), 200, array('license' => $key)));
+        Sitepulse_Remote_Management::check_in();
+        Sitepulse_Remote_Management::finish_command('01JDONE0000000000000000000', 'refresh_inventory', array(), Sitepulse_Remote_Management::command_result('done', null, null));
+        $this->assertTrue($this->signedWith(3, $key));
+        $this->assertTrue($this->signedWith(4, $key));
+    }
+
+    public function test_the_old_key_stays_until_the_api_confirms_the_new_one(): void {
+        $this->manage();
+        $this->queueEvents(1);
+        $this->queue($this->answer(self::ACTIVE + array('new_key' => 'rk_' . str_repeat('a1B2', 10))), sitepulse_test_remote_response(array('success' => false), 409), sitepulse_test_remote_response());
+
+        Sitepulse_Remote_Management::check_in();
+
+        $this->assertSame(array('check-in', 'key', 'events'), $this->endpoints());
+        $this->assertTrue($this->signedWith(2, SITEPULSE_TEST_LICENSE));
+        $this->assertFalse(get_option(Sitepulse_Remote_Management::KEY_OPTION));
+        $this->assertSame(array(), $this->messages());
+    }
+
+    /** @dataProvider ignoredKeys */
+    public function test_a_key_offer_that_is_not_a_new_key_is_ignored($offer, $current): void {
+        $this->manage();
+        if (null !== $current) { update_option(Sitepulse_Remote_Management::KEY_OPTION, $current); }
+        $this->queue(sitepulse_test_remote_response(array('success' => true, 'remote_management' => self::ACTIVE + array('new_key' => $offer)), 200, array('license' => $current ?? SITEPULSE_TEST_LICENSE)));
+
+        Sitepulse_Remote_Management::check_in();
+
+        $this->assertSame(array('check-in'), $this->endpoints());
+        $this->assertSame($current ?? false, get_option(Sitepulse_Remote_Management::KEY_OPTION));
+    }
+
+    public static function ignoredKeys(): array {
+        $key = 'rk_' . str_repeat('a1B2', 10);
+        return array('the current key' => array($key, $key), 'too short' => array('rk_1', null), 'not a key' => array('rk_bad key <script> ' . str_repeat('x', 30), null), 'not a string' => array(array($key), null));
+    }
+
     public function test_check_ins_send_the_site_activity_while_managed(): void {
         $this->manage();
         $yesterday = (int) floor(time() / DAY_IN_SECONDS) - 1;
