@@ -494,6 +494,11 @@ class Sitepulse_Remote_Updates {
 				}
 			)
 		);
+		foreach ( $attempted as $item ) {
+			if ( $item['ok'] && ! $item['rolled_back'] ) {
+				Sitepulse_Remote_Activity::watch( $job['kind'], 'core' === $job['kind'] ? 'wordpress' : $item['id'], $item['from'], $item['to'] );
+			}
+		}
 		if ( $attempted ) {
 			Sitepulse_Remote_Management::record_event(
 				'update.completed',

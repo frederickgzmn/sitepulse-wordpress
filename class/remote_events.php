@@ -107,6 +107,14 @@ class Sitepulse_Remote_Events {
 			}
 		}
 
+		if ( 'translation' !== $kind ) {
+			foreach ( $items as $item ) {
+				if ( $item['ok'] ) {
+					Sitepulse_Remote_Activity::watch( $kind, $item['id'], $item['from'], $item['to'] );
+				}
+			}
+		}
+
 		// Core updates are reported by core_updated(), with both versions.
 		if ( $items ) {
 			Sitepulse_Remote_Management::record_event(
@@ -130,14 +138,18 @@ class Sitepulse_Remote_Events {
 			return;
 		}
 
+		$item = self::item( 'wordpress', self::$core_version, (string) $version );
 		Sitepulse_Remote_Management::record_event(
 			'update.completed',
 			array(
 				'kind'      => 'core',
 				'initiator' => self::initiator(),
-				'items'     => array( self::item( 'wordpress', self::$core_version, (string) $version ) ),
+				'items'     => array( $item ),
 			)
 		);
+		if ( $item['ok'] ) {
+			Sitepulse_Remote_Activity::watch( 'core', 'wordpress', $item['from'], $item['to'] );
+		}
 	}
 
 	/**

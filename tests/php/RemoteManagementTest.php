@@ -265,6 +265,7 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
 
     public function test_turning_off_stops_commands_and_is_logged(): void {
         $this->manage();
+        update_option(Sitepulse_Remote_Activity::OPTION, array('errors_until' => 5));
         $this->queue($this->answer(array('active' => true) + self::IDLE, array(array('id' => '01JREFRESH0000000000000000', 'type' => 'refresh_inventory'))));
         update_option('sitepulse_settings', array('remote_management_blocked' => true));
 
@@ -274,6 +275,22 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         $this->assertTrue(sitepulse_test_remote_request_body(0)['blocked']);
         $this->assertFalse(Sitepulse_Remote_Management::state()['active'], 'A local block wins over the dashboard.');
         $this->assertSame(array('Remote management turned off.'), $this->messages());
+        $this->assertFalse(get_option(Sitepulse_Remote_Activity::OPTION), 'Pending measurements and the error log position are forgotten.');
+    }
+
+    public function test_check_ins_send_the_site_activity_while_managed(): void {
+        $this->manage();
+        $yesterday = (int) floor(time() / DAY_IN_SECONDS) - 1;
+        update_option('sitepulse_profiler_stats', array('seo' => array('fileline' => 'wp-content/plugins/seo/seo.php:3', 'window' => $yesterday, 'window_self_ms' => 600.0, 'window_loads' => 30)));
+        $this->queue($this->answer(self::ACTIVE), sitepulse_test_remote_response());
+
+        Sitepulse_Remote_Management::check_in();
+
+        $this->assertSame(array('check-in', 'events'), $this->endpoints());
+        $event = sitepulse_test_remote_request_body(1)['events'][0];
+        // JSON carries 20.0 as 20.
+        $this->assertEquals(array('performance.daily', 20, array(array('kind' => 'plugin', 'id' => 'seo', 'ms' => 20))), array($event['type'], $event['data']['ms'], $event['data']['top']));
+        $this->assertGreaterThan(0, get_option(Sitepulse_Remote_Activity::OPTION)['errors_until'], 'New fatal errors are read from now on.');
     }
 
     public function test_api_intervals_are_kept_within_safe_bounds(): void {
