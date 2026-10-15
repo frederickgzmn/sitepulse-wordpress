@@ -13255,7 +13255,7 @@
       "file_type": "code",
       "norm_label": ".pages()",
       "source_file": "class/remote_health.php",
-      "source_location": "L119"
+      "source_location": "L117"
     },
     {
       "id": "tests_php_support_remotemanagement_backwpup_option_defaults_job",
@@ -16315,7 +16315,7 @@
       "file_type": "code",
       "norm_label": ".load()",
       "source_file": "class/remote_health.php",
-      "source_location": "L136"
+      "source_location": "L134"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_finish_command",
@@ -20551,7 +20551,7 @@
       "file_type": "code",
       "norm_label": ".first_line()",
       "source_file": "class/remote_health.php",
-      "source_location": "L111"
+      "source_location": "L109"
     },
     {
       "id": "class_remote_updates_sitepulse_remote_updates_step",
@@ -126944,7 +126944,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_health.php",
-      "source_location": "L111",
+      "source_location": "L109",
       "weight": 1.0
     },
     {
@@ -126955,7 +126955,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_health.php",
-      "source_location": "L119",
+      "source_location": "L117",
       "weight": 1.0
     },
     {
@@ -126966,7 +126966,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_health.php",
-      "source_location": "L136",
+      "source_location": "L134",
       "weight": 1.0
     },
     {
@@ -147030,7 +147030,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L137",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
@@ -147042,7 +147042,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L138",
+      "source_location": "L136",
       "weight": 1.0
     },
     {
@@ -147054,7 +147054,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L139",
+      "source_location": "L137",
       "weight": 1.0
     },
     {
@@ -147066,7 +147066,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L141",
+      "source_location": "L139",
       "weight": 1.0
     },
     {
@@ -147078,7 +147078,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L142",
+      "source_location": "L140",
       "weight": 1.0
     },
     {
@@ -147090,7 +147090,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L153",
+      "source_location": "L151",
       "weight": 1.0
     },
     {
@@ -147102,7 +147102,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L156",
+      "source_location": "L154",
       "weight": 1.0
     },
     {
@@ -147114,7 +147114,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L158",
+      "source_location": "L156",
       "weight": 1.0
     },
     {
@@ -147126,7 +147126,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L166",
+      "source_location": "L164",
       "weight": 1.0
     },
     {
@@ -147138,7 +147138,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L174",
+      "source_location": "L172",
       "weight": 1.0
     },
     {
@@ -147150,7 +147150,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L94",
+      "source_location": "L92",
       "weight": 1.0
     },
     {
@@ -147162,7 +147162,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L96",
+      "source_location": "L94",
       "weight": 1.0
     },
     {
@@ -147174,7 +147174,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L120",
+      "source_location": "L118",
       "weight": 1.0
     },
     {
@@ -147186,7 +147186,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L120",
+      "source_location": "L118",
       "weight": 1.0
     },
     {
@@ -147198,7 +147198,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_health.php",
-      "source_location": "L122",
+      "source_location": "L120",
       "weight": 1.0
     },
     {
