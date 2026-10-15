@@ -1,6 +1,10 @@
 <?php
 $input = json_decode($argv[1], true);
 $root = dirname(__DIR__, 3);
+// The server's disk space is an external boundary; replace the disabled native function (PHP 8+).
+if (isset($input['disk_free'])) {
+    function disk_free_space($directory) { return json_decode($GLOBALS['argv'][1], true)['disk_free']; }
+}
 // WordPress configuration constants cannot change inside one process.
 foreach ($input['constants'] ?? array() as $name => $value) { define($name, $value); }
 require $root . '/vendor/autoload.php';
@@ -18,6 +22,13 @@ if ($input['mode'] === 'api_base') {
 } elseif ($input['mode'] === 'inventory') {
     $updates = Sitepulse_Remote_Inventory::collect()['updates'];
     echo json_encode(array('reason' => $updates['reason'], 'auto_update' => $updates['core']['auto_update']));
+} elseif ($input['mode'] === 'hosts') {
+    echo json_encode(Sitepulse_Remote_Inventory::collect()['updates']['management_tools']);
+} elseif ($input['mode'] === 'disk') {
+    echo json_encode(array(
+        'disk_free' => Sitepulse_Remote_Inventory::collect()['site']['disk_free'],
+        'update' => Sitepulse_Remote_Updates::run_command('01JDISK0000000000000000000', 'update_plugins', array('plugins' => array('seo/seo.php'))),
+    ));
 } elseif ($input['mode'] === 'pro') {
     ob_start();
     Sitepulse_Remote_Management::render_settings();

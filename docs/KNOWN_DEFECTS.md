@@ -16,6 +16,7 @@ The defects below were reproduced with expected-correct tests, then repaired. Th
 | A memory-diagnostic exception returns an error and closes the output buffer opened by that request. | [ApiVariantsTest](php/ApiVariantsTest.php) |
 | Frontend load durations choose the correct seconds/minutes/hours unit without converting a formatted string back to a number. | [FrontendAdminBarTest](php/FrontendAdminBarTest.php) |
 | Fatal-error recovery messages retain their format placeholders, and SitePulse's own fatal notifications are not blocked by its email filter. | [ErrorHandlerRecoveryTest](php/ErrorHandlerRecoveryTest.php) |
+| An uncaught exception on a page WordPress checks for fatal errors (after a change in its plugin or theme editor) reaches that check as the fatal error it is, and is logged once. | [ErrorHandlerVariantsTest](php/ErrorHandlerVariantsTest.php) |
 | Translation loading uses the plugin translations directory on disk. | [LifecycleTest](php/LifecycleTest.php) |
 | A failed configuration rewrite returns an error before a duplicate SAVEQUERIES declaration can be added. | [PluginAdditionalBehaviorTest](php/PluginAdditionalBehaviorTest.php) |
 | A failed query diagnostic displays its error and retains the SAVEQUERIES enable action. | [DiagnosticTemplateCoverageTest](php/DiagnosticTemplateCoverageTest.php) |

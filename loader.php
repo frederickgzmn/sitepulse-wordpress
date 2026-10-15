@@ -211,6 +211,8 @@ require_once SITEPULSE_CLASS_PATH . 'remote_client.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_backups.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_inventory.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_events.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_health.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_updates.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_management.php';
 
 class Sitepulse_Loader {
@@ -327,8 +329,9 @@ class Sitepulse_Loader {
 			Sitepulse_AI_Diagnostic_Cron::unschedule();
 		}
 
-		// Stop checking in with the SitePulse dashboard
+		// Stop checking in with the SitePulse dashboard and running its updates
 		Sitepulse_Remote_Management::unschedule();
+		Sitepulse_Remote_Updates::unschedule();
 	}
 
 	/**

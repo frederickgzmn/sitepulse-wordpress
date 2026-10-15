@@ -1,0 +1,638 @@
+<?php
+/**
+ * SitePulse remote management updates
+ *
+ * Runs the dashboard's plugin, theme and WordPress updates through WordPress's own
+ * upgrader: a backup first, a health baseline, then one item at a time, each checked
+ * and rolled back when it breaks the site. An update runs across WordPress cron
+ * requests and is answered to the API when it is done.
+ *
+ * @package SitePulse
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Class Sitepulse_Remote_Updates
+ */
+class Sitepulse_Remote_Updates {
+
+	/** Dashboard commands this class runs. */
+	const COMMANDS = array( 'update_plugins', 'update_themes', 'update_core', 'set_auto_updates' );
+
+	/** What each update command updates, and the argument that lists it. */
+	const KINDS = array(
+		'update_plugins' => array( 'plugin', 'plugins' ),
+		'update_themes'  => array( 'theme', 'themes' ),
+		'update_core'    => array( 'core', 'version' ),
+	);
+
+	/** Cron hook that runs the update. */
+	const JOB_HOOK = 'sitepulse_remote_update_job';
+
+	/** The update being run. */
+	const JOB_OPTION = 'sitepulse_remote_update_job';
+
+	/** Held while a request runs the update. */
+	const LOCK = 'sitepulse_remote_update_lock';
+
+	/** Free space an update needs in wp-content. */
+	const MIN_FREE_BYTES = 104857600;
+
+	/** Seconds a request works on the update before the next request continues it. */
+	const STEP_SECONDS = 30;
+
+	/** Seconds between checks while a backup runs. */
+	const POLL_SECONDS = 60;
+
+	/** Most items per command. */
+	const MAX_ITEMS = 50;
+
+	/** Item errors that do not stop the other items. */
+	const SKIPPABLE = array( 'up_to_date', 'not_installed', 'requirements', 'no_package' );
+
+	/**
+	 * Seconds to wait after an update before checking the site. Like WordPress's own automatic
+	 * updates, this lets PHP's opcode cache pick up the new files (it rechecks them every 2 seconds
+	 * by default). Filter: sitepulse_remote_health_check_delay.
+	 */
+	const HEALTH_CHECK_DELAY = 2;
+
+	/** Item errors of items WordPress tried to update. */
+	const ATTEMPTED = array( null, 'install_failed', 'health_check_failed', 'interrupted' );
+
+	/**
+	 * Run the update in cron, and keep it scheduled.
+	 */
+	public static function init() {
+		add_action( self::JOB_HOOK, array( __CLASS__, 'run_job' ) );
+
+		if ( ( is_admin() || wp_doing_cron() ) && null !== self::job() && ! wp_next_scheduled( self::JOB_HOOK ) ) {
+			self::schedule( 0 );
+		}
+	}
+
+	/**
+	 * Start a command. set_auto_updates is answered at once; an update when it is done.
+	 *
+	 * @param string $id   Command id.
+	 * @param string $type Command type.
+	 * @param array  $args Command arguments.
+	 * @return array|null status, result and error for the API; null while the update runs.
+	 */
+	public static function run_command( $id, $type, array $args ) {
+		if ( 'set_auto_updates' === $type ) {
+			return self::set_auto_updates( $args );
+		}
+
+		$kind  = self::KINDS[ $type ][0];
+		$items = 'core' === $kind ? self::strings( array( $args['version'] ?? null ) ) : self::strings( $args[ self::KINDS[ $type ][1] ] ?? null );
+		$wait  = $args['backup_wait'] ?? 60;
+		if ( ! $items || count( $items ) > self::MAX_ITEMS || ! is_int( $wait ) || $wait < 5 || $wait > 240 ) {
+			return self::failed( 'invalid_arguments' );
+		}
+		if ( null !== self::job() ) {
+			return self::failed( 'update_running' );
+		}
+
+		self::load_admin_api();
+		if ( ! wp_is_file_mod_allowed( 'sitepulse_remote_updates' ) || 'direct' !== get_filesystem_method() ) {
+			return self::failed( 'cannot_update' );
+		}
+		$free = function_exists( 'disk_free_space' ) ? @disk_free_space( WP_CONTENT_DIR ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- WordPress core reads it the same way before updates.
+		if ( false !== $free && $free < self::MIN_FREE_BYTES ) {
+			return self::failed( 'not_enough_disk' );
+		}
+
+		$backup_first = false !== ( $args['backup_first'] ?? true );
+		self::save_job(
+			array(
+				'command'      => $id,
+				'type'         => $type,
+				'args'         => $args,
+				'kind'         => $kind,
+				'items'        => $items,
+				'backup_first' => $backup_first,
+				'backup_wait'  => $wait,
+				'phase'        => $backup_first ? 'backup' : 'baseline',
+				'backup'       => null,
+				'baseline'     => null,
+				'current'      => null,
+				'results'      => array(),
+				'started_at'   => time(),
+				'finished'     => false,
+				'error'        => null,
+			)
+		);
+		self::schedule( 0 );
+
+		return null;
+	}
+
+	/**
+	 * Continue the update for a while, then let the next cron request go on.
+	 */
+	public static function run_job() {
+		$job = self::job();
+		if ( null === $job ) {
+			return;
+		}
+		// Another request is working on it.
+		if ( get_transient( self::LOCK ) ) {
+			self::schedule( self::POLL_SECONDS );
+			return;
+		}
+
+		set_transient( self::LOCK, 1, 10 * MINUTE_IN_SECONDS );
+		if ( function_exists( 'set_time_limit' ) ) {
+			set_time_limit( 10 * MINUTE_IN_SECONDS );
+		}
+		self::load_admin_api();
+
+		$started = time();
+		do {
+			$job = self::step( $job );
+			self::save_job( $job );
+		} while ( ! $job['finished'] && ! isset( $job['wait'] ) && time() - $started < self::STEP_SECONDS );
+		delete_transient( self::LOCK );
+
+		if ( $job['finished'] ) {
+			self::finish( $job );
+			return;
+		}
+		self::schedule( $job['wait'] ?? 0 );
+	}
+
+	/**
+	 * @return array|null Progress of the update for the inventory.
+	 */
+	public static function job_status() {
+		$job = self::job();
+		if ( null === $job ) {
+			return null;
+		}
+
+		return array(
+			'command'    => $job['command'],
+			'kind'       => $job['kind'],
+			'phase'      => $job['phase'],
+			'done'       => count( $job['results'] ),
+			'total'      => count( $job['items'] ),
+			'started_at' => gmdate( 'Y-m-d\TH:i:s\Z', (int) $job['started_at'] ),
+		);
+	}
+
+	/**
+	 * Stop running updates; the plugin is being deactivated.
+	 */
+	public static function unschedule() {
+		wp_clear_scheduled_hook( self::JOB_HOOK );
+	}
+
+	/**
+	 * @param array $job The update.
+	 * @return array The update after one step: a backup check, the baseline or one item.
+	 */
+	private static function step( array $job ) {
+		unset( $job['wait'] );
+		if ( Sitepulse_Remote_Management::is_blocked() ) {
+			return self::stop( $job, 'blocked' );
+		}
+		if ( 'backup' === $job['phase'] ) {
+			return self::backup_step( $job );
+		}
+		if ( 'baseline' === $job['phase'] ) {
+			$job['baseline'] = Sitepulse_Remote_Health::check();
+			$error           = Sitepulse_Remote_Health::baseline_error( $job['baseline'] );
+			$job['phase']    = 'updating';
+			return null === $error ? $job : self::stop( $job, $error );
+		}
+
+		return self::update_step( $job );
+	}
+
+	/**
+	 * Start a full backup with the managed backup plugin and wait until it is done.
+	 *
+	 * @param array $job The update.
+	 * @return array
+	 */
+	private static function backup_step( array $job ) {
+		if ( null === $job['backup'] ) {
+			$requested = time();
+			$result    = Sitepulse_Remote_Backups::run_command( 'backup_now', array( 'what' => 'full' ) );
+			if ( 'done' === $result['status'] ) {
+				$job['backup'] = array(
+					'provider'     => $result['result']['provider'],
+					'job'          => $result['result']['job'],
+					'requested_at' => $requested,
+				);
+				$job['wait']   = self::POLL_SECONDS;
+				return $job;
+			}
+			// A backup that is already running is waited for, then ours starts.
+			if ( 'backup_running' === $result['error'] && time() - $job['started_at'] <= $job['backup_wait'] * MINUTE_IN_SECONDS ) {
+				$job['wait'] = self::POLL_SECONDS;
+				return $job;
+			}
+			return self::stop( $job, array( 'backup_running' => 'backup_timeout', 'no_backup_plugin' => 'no_backup_plugin' )[ $result['error'] ] ?? 'backup_failed' );
+		}
+
+		$status   = Sitepulse_Remote_Backups::status();
+		$last     = is_array( $status['last'] ?? null ) ? $status['last'] : null;
+		$finished = empty( $status['running'] ) && null !== $last && strtotime( (string) $last['time'] ) >= $job['backup']['requested_at'];
+		if ( $finished ) {
+			$job['phase'] = 'baseline';
+			return true === $last['ok'] ? $job : self::stop( $job, 'backup_failed' );
+		}
+		if ( time() - $job['backup']['requested_at'] > $job['backup_wait'] * MINUTE_IN_SECONDS ) {
+			return self::stop( $job, 'backup_timeout' );
+		}
+
+		$job['wait'] = self::POLL_SECONDS;
+		return $job;
+	}
+
+	/**
+	 * Update the next item and check the site.
+	 *
+	 * @param array $job The update.
+	 * @return array
+	 */
+	private static function update_step( array $job ) {
+		$id = $job['items'][ count( $job['results'] ) ];
+		// The request that updated this item stopped before it finished.
+		if ( null !== $job['current'] ) {
+			$job['results'][] = self::result( $id, $job['current']['from'], Sitepulse_Remote_Events::installed_version( $job['kind'], $id ), 'interrupted' );
+			$job['current']   = null;
+			return self::stop( $job, 'update_failed' );
+		}
+
+		$from           = Sitepulse_Remote_Events::installed_version( $job['kind'], $id );
+		$job['current'] = array( 'from' => $from );
+		self::save_job( $job );
+
+		$result           = self::update_item( $job, $id, $from );
+		$job['current']   = null;
+		$job['results'][] = $result;
+		if ( ! $result['ok'] && ! in_array( $result['error'], self::SKIPPABLE, true ) ) {
+			return self::stop( $job, 'update_failed' );
+		}
+		if ( count( $job['results'] ) === count( $job['items'] ) ) {
+			$failed = in_array( false, array_column( $job['results'], 'ok' ), true );
+			return self::stop( $job, $failed ? 'update_failed' : null );
+		}
+
+		return $job;
+	}
+
+	/**
+	 * Update one item with WordPress's upgrader, check the site and roll back a broken update.
+	 *
+	 * @param array  $job  The update.
+	 * @param string $id   Plugin file, theme stylesheet or WordPress version.
+	 * @param string $from Installed version.
+	 * @return array The item's result.
+	 */
+	private static function update_item( array $job, $id, $from ) {
+		$kind = $job['kind'];
+		if ( '' === $from ) {
+			return self::result( $id, null, null, 'not_installed' );
+		}
+		$offer = self::offer( $kind, $id );
+		if ( null === $offer ) {
+			return self::result( $id, $from, $from, 'up_to_date', 'core' !== $kind || version_compare( $from, $id, '>=' ) );
+		}
+		if ( ! self::meets_requirements( $offer ) ) {
+			return self::result( $id, $from, null, 'requirements' );
+		}
+		if ( empty( $offer['package'] ) ) {
+			return self::result( $id, $from, null, 'no_package' );
+		}
+
+		$upgrader = self::upgrader( $kind );
+		$since    = (int) current_time( 'timestamp' ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested -- SitePulse's error log stores this time.
+		// SitePulse reports this update itself, with its health check.
+		Sitepulse_Remote_Events::$updating = true;
+		// A background update, as WordPress calls one that has no browser to reactivate the plugin:
+		// WordPress then keeps an active plugin active while it replaces its files.
+		add_filter( 'wp_doing_cron', '__return_true' );
+		$upgrader->maintenance_mode( true );
+		// Like WordPress's bulk updates, keep the offered updates for the next items until the end.
+		$outcome = 'core' === $kind ? $upgrader->upgrade( $offer['offer'], array( 'attempt_rollback' => true ) ) : $upgrader->upgrade( $id, array( 'clear_update_cache' => false ) );
+		$upgrader->maintenance_mode( false );
+		remove_filter( 'wp_doing_cron', '__return_true' );
+		Sitepulse_Remote_Events::$updating = false;
+
+		$to = Sitepulse_Remote_Events::installed_version( $kind, $id );
+		if ( ! $outcome || is_wp_error( $outcome ) || $to === $from ) {
+			return self::result( $id, $from, $to, 'install_failed' );
+		}
+
+		sleep( (int) apply_filters( 'sitepulse_remote_health_check_delay', self::HEALTH_CHECK_DELAY ) );
+		$problems = Sitepulse_Remote_Health::problems( $job['baseline'], Sitepulse_Remote_Health::check() );
+		if ( ! $problems ) {
+			// Fatal errors in the updated code that the checked pages did not show, such as on pages visitors loaded meanwhile.
+			$problems = Sitepulse_Remote_Health::logged_fatal_errors( self::path( $kind, $id ), $since );
+		}
+		if ( ! $problems ) {
+			return self::result( $id, $from, $to, null, true );
+		}
+
+		$rolled_back = self::roll_back( $upgrader, $kind, $id );
+		$result      = self::result( $id, $from, $rolled_back ? Sitepulse_Remote_Events::installed_version( $kind, $id ) : $to, 'health_check_failed', false, $rolled_back );
+
+		$result['problems'] = array_slice( $problems, 0, 5 );
+		return $result;
+	}
+
+	/**
+	 * The update WordPress offers for an item.
+	 *
+	 * @param string $kind plugin, theme or core.
+	 * @param string $id   Plugin file, theme stylesheet or WordPress version.
+	 * @return array|null version, package, requires_wp, requires_php and the offer itself.
+	 */
+	private static function offer( $kind, $id ) {
+		if ( 'core' === $kind ) {
+			foreach ( (array) get_core_updates() as $update ) {
+				if ( is_object( $update ) && 'upgrade' === ( $update->response ?? '' ) && $id === ( $update->current ?? '' ) ) {
+					return array(
+						'version'      => $id,
+						'package'      => $update->packages->full ?? $update->download ?? '',
+						'requires_wp'  => null,
+						'requires_php' => $update->php_version ?? null,
+						'offer'        => $update,
+					);
+				}
+			}
+			return null;
+		}
+
+		$updates = get_site_transient( 'update_' . $kind . 's' );
+		$offer   = is_object( $updates ) && isset( $updates->response[ $id ] ) ? (array) $updates->response[ $id ] : null;
+		if ( null === $offer ) {
+			return null;
+		}
+
+		return array(
+			'version'      => (string) ( $offer['new_version'] ?? '' ),
+			'package'      => (string) ( $offer['package'] ?? '' ),
+			'requires_wp'  => $offer['requires'] ?? null,
+			'requires_php' => $offer['requires_php'] ?? null,
+			'offer'        => $offer,
+		);
+	}
+
+	/**
+	 * @param array $offer Update offer.
+	 * @return bool Whether this site's PHP and WordPress can run the update.
+	 */
+	private static function meets_requirements( array $offer ) {
+		return ( empty( $offer['requires_php'] ) || version_compare( PHP_VERSION, (string) $offer['requires_php'], '>=' ) )
+			&& ( empty( $offer['requires_wp'] ) || version_compare( (string) get_bloginfo( 'version' ), (string) $offer['requires_wp'], '>=' ) );
+	}
+
+	/**
+	 * @param string $kind plugin, theme or core.
+	 * @return object WordPress's upgrader, quiet as in its automatic updates.
+	 */
+	private static function upgrader( $kind ) {
+		$skin    = new Automatic_Upgrader_Skin();
+		$classes = array(
+			'plugin' => 'Plugin_Upgrader',
+			'theme'  => 'Theme_Upgrader',
+			'core'   => 'Core_Upgrader',
+		);
+
+		return new $classes[ $kind ]( $skin );
+	}
+
+	/**
+	 * Put the previous version back from the copy WordPress (6.3 and later) keeps during an update.
+	 *
+	 * @param object $upgrader The upgrader that updated the item.
+	 * @param string $kind     plugin or theme; WordPress core is not rolled back.
+	 * @param string $id       Plugin file or theme stylesheet.
+	 * @return bool Whether the previous version is back.
+	 */
+	private static function roll_back( $upgrader, $kind, $id ) {
+		if ( 'core' === $kind || ! method_exists( $upgrader, 'restore_temp_backup' ) ) {
+			return false;
+		}
+
+		$backup = array(
+			array(
+				'dir'  => $kind . 's',
+				'slug' => 'plugin' === $kind ? dirname( $id ) : $id,
+				'src'  => 'plugin' === $kind ? WP_PLUGIN_DIR : get_theme_root( $id ),
+			),
+		);
+		if ( true !== $upgrader->restore_temp_backup( $backup ) ) {
+			return false;
+		}
+
+		$upgrader->delete_temp_backup( $backup );
+		'plugin' === $kind ? wp_clean_plugins_cache() : wp_clean_themes_cache();
+		return true;
+	}
+
+	/**
+	 * @param string $kind plugin, theme or core.
+	 * @param string $id   Plugin file, theme stylesheet or WordPress version.
+	 * @return string Where the item's code is, for fatal errors in SitePulse's error log.
+	 */
+	private static function path( $kind, $id ) {
+		if ( 'plugin' === $kind ) {
+			return WP_PLUGIN_DIR . '/' . ( '.' === dirname( $id ) ? $id : dirname( $id ) . '/' );
+		}
+
+		return 'theme' === $kind ? get_theme_root( $id ) . '/' . $id . '/' : ABSPATH . WPINC . '/';
+	}
+
+	/**
+	 * Stop the update; items not tried yet are skipped.
+	 *
+	 * @param array       $job   The update.
+	 * @param string|null $error Why it stopped, or null when every item is up to date.
+	 * @return array
+	 */
+	private static function stop( array $job, $error ) {
+		foreach ( array_slice( $job['items'], count( $job['results'] ) ) as $id ) {
+			$job['results'][] = self::result( $id, null, null, 'skipped' );
+		}
+		$job['finished'] = true;
+		$job['error']    = $error;
+
+		return $job;
+	}
+
+	/**
+	 * Report the update to the dashboard and the event history.
+	 *
+	 * @param array $job The finished update.
+	 */
+	private static function finish( array $job ) {
+		delete_option( self::JOB_OPTION );
+		self::unschedule();
+		// WordPress offers updates afresh, as after its own bulk updates.
+		if ( 'plugin' === $job['kind'] ) {
+			wp_clean_plugins_cache();
+			wp_update_plugins();
+		} elseif ( 'theme' === $job['kind'] ) {
+			wp_clean_themes_cache();
+			wp_update_themes();
+		}
+
+		$attempted = array_values(
+			array_filter(
+				$job['results'],
+				static function ( $item ) {
+					return in_array( $item['error'], self::ATTEMPTED, true );
+				}
+			)
+		);
+		if ( $attempted ) {
+			Sitepulse_Remote_Management::record_event(
+				'update.completed',
+				array(
+					'kind'      => $job['kind'],
+					'initiator' => 'sitepulse',
+					'items'     => array_map(
+						static function ( $item ) {
+							return array_intersect_key( $item, array_flip( array( 'id', 'from', 'to', 'ok', 'rolled_back' ) ) );
+						},
+						$attempted
+					),
+				)
+			);
+		}
+
+		Sitepulse_Remote_Management::finish_command(
+			$job['command'],
+			$job['type'],
+			$job['args'],
+			Sitepulse_Remote_Management::command_result(
+				null === $job['error'] ? 'done' : 'failed',
+				array(
+					'backup' => null === $job['backup'] ? null : array_intersect_key( $job['backup'], array_flip( array( 'provider', 'job' ) ) ),
+					'items'  => $job['results'],
+				),
+				$job['error']
+			)
+		);
+	}
+
+	/**
+	 * Turn WordPress's own automatic updates on or off for installed plugins or themes.
+	 *
+	 * @param array $args kind, items and enabled.
+	 * @return array status, result and error for the API.
+	 */
+	private static function set_auto_updates( array $args ) {
+		$kind    = $args['kind'] ?? null;
+		$items   = self::strings( $args['items'] ?? null );
+		$enabled = $args['enabled'] ?? null;
+		if ( ! in_array( $kind, array( 'plugin', 'theme' ), true ) || ! $items || ! is_bool( $enabled ) ) {
+			return self::failed( 'invalid_arguments' );
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		$installed = array_map( 'strval', array_keys( 'plugin' === $kind ? get_plugins() : wp_get_themes() ) );
+		$option    = 'auto_update_' . $kind . 's';
+		$current   = array_map( 'strval', (array) get_site_option( $option, array() ) );
+		$items     = array_values( array_intersect( $items, $installed ) );
+		$changed   = $enabled ? array_diff( $items, $current ) : array_intersect( $items, $current );
+		$settings  = $enabled ? array_merge( $current, $changed ) : array_diff( $current, $changed );
+		update_site_option( $option, array_values( $settings ) );
+
+		return Sitepulse_Remote_Management::command_result(
+			'done',
+			array(
+				'kind'    => $kind,
+				'enabled' => $enabled,
+				'items'   => array_values( $changed ),
+			),
+			null
+		);
+	}
+
+	/**
+	 * @param string      $id          Item.
+	 * @param string|null $from        Version before.
+	 * @param string|null $to          Version after.
+	 * @param string|null $error       Item error.
+	 * @param bool        $ok          Whether the item is up to date afterwards.
+	 * @param bool        $rolled_back Whether the previous version was put back.
+	 * @return array
+	 */
+	private static function result( $id, $from, $to, $error, $ok = false, $rolled_back = false ) {
+		return array(
+			'id'          => $id,
+			'from'        => '' === $from ? null : $from,
+			'to'          => '' === $to ? null : $to,
+			'ok'          => $ok,
+			'error'       => $error,
+			'rolled_back' => $rolled_back,
+		);
+	}
+
+	/**
+	 * @param string $error Error code.
+	 * @return array A failed command.
+	 */
+	private static function failed( $error ) {
+		return Sitepulse_Remote_Management::command_result( 'failed', null, $error );
+	}
+
+	/**
+	 * @param mixed $value A list from the command.
+	 * @return array Its distinct strings; empty when it is not a list of non-empty strings.
+	 */
+	private static function strings( $value ) {
+		$value = is_array( $value ) ? array_values( $value ) : array();
+		foreach ( $value as $item ) {
+			if ( ! is_string( $item ) || '' === $item ) {
+				return array();
+			}
+		}
+
+		return array_values( array_unique( $value ) );
+	}
+
+	/**
+	 * @return array|null The update being run.
+	 */
+	private static function job() {
+		$job = get_option( self::JOB_OPTION, null );
+		return is_array( $job ) && isset( $job['command'], $job['items'], $job['results'] ) ? $job : null;
+	}
+
+	/**
+	 * @param array $job The update.
+	 */
+	private static function save_job( array $job ) {
+		update_option( self::JOB_OPTION, $job, false );
+	}
+
+	/**
+	 * @param int $seconds Seconds until the next request continues the update.
+	 */
+	private static function schedule( $seconds ) {
+		wp_clear_scheduled_hook( self::JOB_HOOK );
+		wp_schedule_single_event( time() + $seconds, self::JOB_HOOK );
+	}
+
+	/**
+	 * Cron requests do not load WordPress's admin API or its upgrader.
+	 */
+	private static function load_admin_api() {
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/misc.php';
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		require_once ABSPATH . 'wp-admin/includes/update.php';
+		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+	}
+}

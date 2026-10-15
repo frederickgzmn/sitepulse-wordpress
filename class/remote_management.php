@@ -73,6 +73,7 @@ class Sitepulse_Remote_Management {
 		'provider'           => null,
 		'preferred_provider' => null,
 		'done_commands'      => array(),
+		'pending_results'    => array(),
 	);
 
 	/**
@@ -84,6 +85,7 @@ class Sitepulse_Remote_Management {
 		add_action( 'sitepulse_settings_after_form', array( __CLASS__, 'render_settings' ) );
 		Sitepulse_Remote_Events::init();
 		Sitepulse_Remote_Backups::init();
+		Sitepulse_Remote_Updates::init();
 
 		// Keep the check-in scheduled from dashboard and cron requests; page views skip the check.
 		if ( is_admin() || wp_doing_cron() ) {
@@ -148,7 +150,8 @@ class Sitepulse_Remote_Management {
 		$state  = array_merge( self::STATE_DEFAULTS, is_array( $stored ) ? array_intersect_key( $stored, self::STATE_DEFAULTS ) : array() );
 
 		$state['active']        = (bool) $state['active'];
-		$state['done_commands'] = is_array( $state['done_commands'] ) ? $state['done_commands'] : array();
+		$state['done_commands']   = is_array( $state['done_commands'] ) ? $state['done_commands'] : array();
+		$state['pending_results'] = is_array( $state['pending_results'] ) ? array_values( array_filter( $state['pending_results'], 'is_array' ) ) : array();
 		return $state;
 	}
 
@@ -215,6 +218,7 @@ class Sitepulse_Remote_Management {
 		}
 		$state['provider'] = $provider;
 
+		self::send_pending_results( $client, $state );
 		if ( $state['active'] ) {
 			// Commands first, so the inventory shows what they changed.
 			self::run_commands( $client, $state, $response['commands'] ?? array() );
@@ -387,7 +391,7 @@ class Sitepulse_Remote_Management {
 			return array( 'off', __( 'Connecting to SitePulse…', 'sitepulse' ) );
 		}
 		if ( $state['active'] ) {
-			return array( 'active', __( 'Active: the SitePulse dashboard can see the backups and updates of this site and run and set up its backups.', 'sitepulse' ) );
+			return array( 'active', __( 'Active: the SitePulse dashboard can manage the backups and updates of this site.', 'sitepulse' ) );
 		}
 
 		return array( 'off', $state['enabled'] ? __( 'Turning on at the next check-in.', 'sitepulse' ) : __( 'Off. Turn it on for this site in your SitePulse dashboard.', 'sitepulse' ) );
@@ -458,28 +462,78 @@ class Sitepulse_Remote_Management {
 
 			$type   = is_string( $command['type'] ?? null ) ? $command['type'] : '';
 			$args   = is_array( $command['args'] ?? null ) ? $command['args'] : array();
-			$result = self::run_command( $client, $state, $type, $command, $args );
-			$client->post( 'command-result', array( 'id' => $id ) + $result );
+			$result = self::run_command( $client, $state, $id, $type, $command, $args );
+			if ( null === $result ) {
+				/* translators: %s: name of a request from the SitePulse dashboard */
+				self::log( sprintf( __( 'Dashboard request started: %s.', 'sitepulse' ), self::command_label( $type, $args ) ) );
+				continue;
+			}
 
-			self::log(
-				'done' === $result['status']
-					/* translators: %s: name of a request from the SitePulse dashboard */
-					? sprintf( __( 'Dashboard request done: %s.', 'sitepulse' ), self::command_label( $type, $args ) )
-					/* translators: 1: name of a request from the SitePulse dashboard, 2: error code */
-					: sprintf( __( 'Dashboard request failed: %1$s (%2$s).', 'sitepulse' ), self::command_label( $type, $args ), $result['error'] )
-			);
+			$client->post( 'command-result', array( 'id' => $id ) + $result );
+			self::log_outcome( $type, $args, $result );
 		}
+	}
+
+	/**
+	 * Answer a command that finished after its check-in, such as an update. A result the
+	 * API does not receive is sent again at the next check-in.
+	 *
+	 * @param string $id     Command id.
+	 * @param string $type   Command type.
+	 * @param array  $args   Command arguments.
+	 * @param array  $result status, result and error.
+	 */
+	public static function finish_command( $id, $type, array $args, array $result ) {
+		$outcome = array( 'id' => $id ) + $result;
+		if ( ! self::can_connect() || is_wp_error( ( new Sitepulse_Remote_Client( self::license() ) )->post( 'command-result', $outcome ) ) ) {
+			$state                      = self::state();
+			$state['pending_results'][] = $outcome;
+			self::save_state( $state );
+		}
+
+		self::log_outcome( $type, $args, $result );
+		self::inventory_changed();
+	}
+
+	/**
+	 * @param Sitepulse_Remote_Client $client API client.
+	 * @param array                   $state  State; keeps the results the API did not receive.
+	 */
+	private static function send_pending_results( Sitepulse_Remote_Client $client, array &$state ) {
+		$pending                  = $state['pending_results'];
+		$state['pending_results'] = array();
+		foreach ( $pending as $outcome ) {
+			if ( is_wp_error( $client->post( 'command-result', $outcome ) ) ) {
+				$state['pending_results'][] = $outcome;
+			}
+		}
+	}
+
+	/**
+	 * @param string $type   Command type.
+	 * @param array  $args   Command arguments.
+	 * @param array  $result status, result and error.
+	 */
+	private static function log_outcome( $type, array $args, array $result ) {
+		self::log(
+			'done' === $result['status']
+				/* translators: %s: name of a request from the SitePulse dashboard */
+				? sprintf( __( 'Dashboard request done: %s.', 'sitepulse' ), self::command_label( $type, $args ) )
+				/* translators: 1: name of a request from the SitePulse dashboard, 2: error code */
+				: sprintf( __( 'Dashboard request failed: %1$s (%2$s).', 'sitepulse' ), self::command_label( $type, $args ), $result['error'] )
+		);
 	}
 
 	/**
 	 * @param Sitepulse_Remote_Client $client  API client.
 	 * @param array                   $state   State.
+	 * @param string                  $id      Command id.
 	 * @param string                  $type    Command type.
 	 * @param array                   $command The command.
 	 * @param array                   $args    Its arguments.
-	 * @return array status, result and error for the API.
+	 * @return array|null status, result and error for the API; null for an update, answered when it is done.
 	 */
-	private static function run_command( Sitepulse_Remote_Client $client, array &$state, $type, array $command, array $args ) {
+	private static function run_command( Sitepulse_Remote_Client $client, array &$state, $id, $type, array $command, array $args ) {
 		$expires = strtotime( (string) ( $command['expires_at'] ?? '' ) );
 		if ( false !== $expires && $expires < time() ) {
 			return self::command_result( 'failed', null, 'expired' );
@@ -495,6 +549,13 @@ class Sitepulse_Remote_Management {
 			$result = Sitepulse_Remote_Backups::run_command( $type, $args );
 			// A started or cancelled backup, or new backup settings, change the backup status.
 			$state['inventory_due'] = $state['inventory_due'] || 'done' === $result['status'];
+			return $result;
+		}
+
+		if ( in_array( $type, Sitepulse_Remote_Updates::COMMANDS, true ) ) {
+			$result = Sitepulse_Remote_Updates::run_command( $id, $type, $args );
+			// The inventory shows a started update's progress and changed auto-update settings.
+			$state['inventory_due'] = $state['inventory_due'] || null === $result || 'done' === $result['status'];
 			return $result;
 		}
 
@@ -528,6 +589,13 @@ class Sitepulse_Remote_Management {
 			'cancel_backup'       => __( 'cancel the running backup', 'sitepulse' ),
 			/* translators: %s: name of a backup preset */
 			'apply_backup_preset' => sprintf( __( 'apply the backup preset "%s"', 'sitepulse' ), is_string( $args['name'] ?? null ) ? $args['name'] : '' ),
+			/* translators: %d: number of plugins */
+			'update_plugins'      => sprintf( _n( 'update %d plugin', 'update %d plugins', count( (array) ( $args['plugins'] ?? array() ) ), 'sitepulse' ), count( (array) ( $args['plugins'] ?? array() ) ) ),
+			/* translators: %d: number of themes */
+			'update_themes'       => sprintf( _n( 'update %d theme', 'update %d themes', count( (array) ( $args['themes'] ?? array() ) ), 'sitepulse' ), count( (array) ( $args['themes'] ?? array() ) ) ),
+			/* translators: %s: WordPress version */
+			'update_core'         => sprintf( __( 'update WordPress to %s', 'sitepulse' ), is_string( $args['version'] ?? null ) ? $args['version'] : '' ),
+			'set_auto_updates'    => empty( $args['enabled'] ) ? __( 'turn off WordPress auto-updates', 'sitepulse' ) : __( 'turn on WordPress auto-updates', 'sitepulse' ),
 		);
 
 		return $labels[ $type ] ?? $type;

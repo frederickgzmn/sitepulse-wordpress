@@ -132,7 +132,10 @@ Only while remote management is on, the site also sends:
 - Backup schedules, how many backups are kept, storage types, the result of the last backup and the dates and sizes of recent backups
 - Events when plugins, themes, translations or WordPress are updated, a plugin is activated or deactivated, the theme changes or a backup finishes
 
-While remote management is on, the dashboard can also start or cancel a backup and apply backup settings saved in your dashboard (schedules, how many backups to keep, which parts of the site to include) to UpdraftPlus or BackWPup. It never restores or deletes backups and never changes where backups are stored.
+While remote management is on, the dashboard can also:
+- Start or cancel a backup, and apply backup settings saved in your dashboard (schedules, how many backups to keep, which parts of the site to include) to UpdraftPlus or BackWPup. It never restores or deletes backups and never changes where backups are stored.
+- Update plugins, themes and WordPress, on request or automatically under the site's update policy (by default security and minor updates, three days after release, between 1 and 5 am site time). Updates run through WordPress's own updater, so they come from WordPress.org or a premium plugin's own updater, never from api.sitepulse.me. Each update is preceded by a backup and followed by a check of the home page, wp-admin and, with WooCommerce, the cart and checkout; a plugin or theme that breaks them is rolled back to its previous version.
+- Turn WordPress's own automatic updates on or off for plugins and themes.
 
 Requests are signed with the site's SitePulse license; the license key itself is never sent. Remote management never sends backup files, passwords, storage credentials or site content, and SitePulse never installs code from api.sitepulse.me. Turn on "Block remote management" in SitePulse's settings to stop it on this site at any time, whatever the dashboard says.
 
@@ -193,7 +196,7 @@ Yes, but only for optional enhanced features. SitePulse can communicate with api
 When enhanced features are enabled, SitePulse sends only performance-related data: plugin names/versions, hook execution times, memory usage, and API request metrics. NO personal information, user data, database content, or sensitive information is ever collected or transmitted.
 
 = Can I see my backups and updates in the SitePulse dashboard? =
-Yes, with UpdraftPlus 1.26 or later or BackWPup 5 active. Turn remote management on for the site in your SitePulse dashboard to see its backup schedules, recent backups, plugins, themes and available updates, start or cancel a backup, and apply backup settings you saved in the dashboard. You can block it from SitePulse's settings at any time. It is not available on multisite networks yet.
+Yes, with UpdraftPlus 1.26 or later or BackWPup 5 active. Turn remote management on for the site in your SitePulse dashboard to see its backup schedules, recent backups, plugins, themes and available updates, start or cancel a backup, apply backup settings you saved in the dashboard, and update plugins, themes and WordPress safely: after a backup, one at a time, with a rollback when an update breaks the site. You can block it from SitePulse's settings at any time. It is not available on multisite networks yet.
 
 = Can it work with WooCommerce or multisite? =
 Yes. Page Analysis works on any front-end address, including WooCommerce product, shop, cart and category pages, and SitePulse runs on multisite environments.
@@ -222,7 +225,8 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 
 == Changelog ==
 = 1.5.0 =
-* New: Remote management (optional). With UpdraftPlus 1.26+ or BackWPup 5 active, your SitePulse dashboard can show this site's backup schedules, recent backups, plugins, themes and available updates, plus a history of updates, plugin changes and backups. From the dashboard you can start or cancel a backup and apply saved backup settings (schedules, how many backups to keep, what to include); it warns about backups kept only on the server, missing or overdue backups and unusually small ones. It is off until you turn it on in the dashboard, and you can block it at any time under SitePulse Settings. It never restores or deletes backups, and it does not manage updates yet.
+* New: Remote management (optional). With UpdraftPlus 1.26+ or BackWPup 5 active, your SitePulse dashboard can show this site's backup schedules, recent backups, plugins, themes and available updates, plus a history of updates, plugin changes and backups. From the dashboard you can start or cancel a backup and apply saved backup settings (schedules, how many backups to keep, what to include); it warns about backups kept only on the server, missing or overdue backups and unusually small ones. The dashboard can also update plugins, themes and WordPress, on request or under an update policy (by default security and minor updates, after three days, at night): a backup first, then one update at a time through WordPress's own updater, each checked on the home page, wp-admin and WooCommerce's cart and checkout, and rolled back when it breaks them. It is off until you turn it on in the dashboard, and you can block it at any time under SitePulse Settings. It never restores or deletes backups.
+* Fixed: with SitePulse active, WordPress's plugin and theme editors missed most PHP fatal errors in edited code (those PHP reports as uncaught exceptions, such as a call to a missing function), because SitePulse's error log caught them first. WordPress now sees them again; SitePulse still logs each one.
 
 = 1.4.7 =
 * Fixed: after SitePulse had been running for a while, warnings kept blaming plugins that were slow in the past or that simply ran often. Warnings, rankings, scores and AI diagnostics now use the last 24 hours and the time each plugin's own code adds to a page load.

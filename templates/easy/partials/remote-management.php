@@ -46,7 +46,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<button type="submit" class="sp-btn sp-btn-outline sp-btn-sm"><?php echo esc_html__( 'Save', 'sitepulse' ); ?></button>
 			</form>
 
-			<p class="sp-text-xs sp-text-muted sp-mt-16 sp-mb-8"><?php echo esc_html__( 'While remote management is on, your SitePulse dashboard can start or cancel a backup and apply backup settings saved there. It never restores or deletes backups.', 'sitepulse' ); ?></p>
+			<p class="sp-text-xs sp-text-muted sp-mt-16 sp-mb-8"><?php echo esc_html__( 'While remote management is on, your SitePulse dashboard can start or cancel a backup, apply backup settings saved there, and update plugins, themes and WordPress, after a backup and with a check that rolls back a broken update. It never restores or deletes backups.', 'sitepulse' ); ?></p>
 			<p class="sp-text-xs sp-text-muted sp-mb-0"><?php echo esc_html__( 'While Cloud Services are on, this site checks in with api.sitepulse.me every hour, and every 5 minutes while remote management is on. It sends plugin and theme names, versions and available updates, the WordPress, PHP and database versions, and the backup schedules and recent backups (dates, sizes, storage types). It never sends backup files, passwords, storage credentials or site content.', 'sitepulse' ); ?></p>
 
 			<?php if ( $sp_remote['log'] ) : ?>

@@ -229,8 +229,16 @@ class Sitepulse_Error_Handler {
 	 * Handle uncaught exceptions
 	 *
 	 * @param Throwable $exception The exception object
+	 * @throws Throwable The same exception while WordPress checks the page for fatal errors.
 	 */
 	public static function handle_exception( $exception ) {
+		// WordPress checks a page for fatal errors (in its plugin and theme editors, and SitePulse
+		// after an update) with the error PHP reports at shutdown. A handled exception leaves none:
+		// let PHP report it, and handle_shutdown() logs it.
+		if ( defined( 'WP_SANDBOX_SCRAPING' ) && WP_SANDBOX_SCRAPING ) {
+			throw $exception;
+		}
+
 		// Capture call stack from exception trace
 		$call_stack = self::format_exception_trace( $exception->getTrace() );
 		
