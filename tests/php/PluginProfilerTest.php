@@ -1,5 +1,18 @@
 <?php
+require_once __DIR__ . '/Support/RecentActivity.php';
+
 final class PluginProfilerTest extends Sitepulse_Test_Case {
+    public function test_plugin_averages_cover_the_last_24_hours_and_list_the_slowest_first(): void {
+        update_option('active_plugins', array('fixed/main.php', 'heavy/main.php')); Sitepulse_Test_WP::$plugins = array('fixed/main.php' => array('Name' => 'Fixed'), 'heavy/main.php' => array('Name' => 'Heavy'));
+        // Fixed was slow for weeks (lifetime average 900 ms) but loads in 20 ms today; Heavy loads in 700 ms today.
+        $fixed = sitepulse_test_recent_stat(array('hook' => 'plugin_bootstrap', 'fileline' => 'wp-content/plugins/fixed/main.php', 'calls' => 5000, 'avg_ms' => 900.0), 20.0, 4);
+        $heavy = sitepulse_test_recent_stat(array('hook' => 'plugin_bootstrap', 'fileline' => 'wp-content/plugins/heavy/main.php', 'calls' => 10, 'avg_ms' => 100.0), 700.0, 2);
+        $this->setStaticProperty('Sitepulse_Profiler', 'stats', array('fixed' => $fixed, 'heavy' => $heavy)); Sitepulse_Plugin_Profiler::init();
+        $fixed['calls']++; $heavy['calls']++; $this->setStaticProperty('Sitepulse_Profiler', 'stats', array('fixed' => $fixed, 'heavy' => $heavy));
+        Sitepulse_Plugin_Profiler::enable_data_collection(); Sitepulse_Plugin_Profiler::track_plugins();
+        $this->assertSame(array('Heavy', 'Fixed'), array_column(Sitepulse_Plugin_Profiler::get_stats(), 'plugin_name'));
+        $this->assertSame(700.0, Sitepulse_Plugin_Profiler::get_plugin_stats('heavy/main.php')['avg_ms']); $this->assertSame(20.0, Sitepulse_Plugin_Profiler::get_plugin_stats('fixed/main.php')['avg_ms']);
+    }
     public function test_collection_maps_only_installed_active_plugins_and_counts_fresh_measurements(): void {
         update_option('active_plugins', array('sitepulse/loader.php', 'demo/main.php', 'standalone.php', 'missing/plugin.php'));
         Sitepulse_Test_WP::$plugins = array('sitepulse/loader.php' => array('Name' => 'SitePulse'), 'demo/main.php' => array('Name' => 'Demo', 'Version' => '2.0'), 'standalone.php' => array('Name' => 'Standalone'), 'inactive/main.php' => array('Name' => 'Inactive'));

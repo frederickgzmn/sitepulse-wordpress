@@ -9,7 +9,8 @@
     "scripts": {
         "test": "phpunit",
         "test:coverage": "@php scripts/php-coverage.php",
-        "test:coverage:branches": "@php scripts/php-coverage.php --path-coverage"
+        "test:coverage:branches": "@php scripts/php-coverage.php --path-coverage",
+        "bump-version": "@php scripts/bump-version.php"
     },
     "config": {
         "sort-packages": true,

@@ -773,7 +773,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<span class="dashicons dashicons-performance"></span>
 						<?php echo esc_html__( 'Speed Warnings', 'sitepulse' ); ?>
 					</h3>
-					<p class="sp-card-subtitle"><?php echo esc_html__( 'Plugins and connections that are slowing things down', 'sitepulse' ); ?></p>
+					<p class="sp-card-subtitle"><?php echo esc_html__( 'Plugins and themes that slowed down page loads in the last 24 hours', 'sitepulse' ); ?></p>
 				</div>
 			</div>
 			<div class="sp-card-body sp-p-0">

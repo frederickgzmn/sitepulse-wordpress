@@ -329,6 +329,7 @@ if ( ! class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
 		$mapped_stats        = [];
 		$measured_total_time = 0.0;
 		$profiler_stats      = Sitepulse_Profiler::get_stats_by_hook( 'plugin_bootstrap' );
+		$now                 = microtime( true );
 
 		foreach ( $profiler_stats as $stat ) {
 			if ( ! is_array( $stat ) || 'plugin_bootstrap' !== ( $stat['hook'] ?? '' ) ) {
@@ -382,6 +383,9 @@ if ( ! class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
 				$is_fresh       = $current_calls > $baseline_calls;
 			}
 
+			// The average covers the last 24 hours, so a plugin that has become faster stops looking slow.
+			$recent = $is_fresh ? Sitepulse_Profiler::recent_stat( $stat, $now ) : null;
+
 			$mapped_stats[ $key ] = [
 				'plugin_file'    => $plugin_file,
 				'plugin_name'    => isset( $plugin_data['Name'] ) ? $plugin_data['Name'] : $plugin_slug,
@@ -396,7 +400,7 @@ if ( ! class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
 				'calls'          => $is_fresh ? (int) ( $stat['calls'] ?? 0 ) : 0,
 				'total'             => $is_fresh ? (float) ( $stat['total'] ?? 0.0 ) : 0.0,
 				'total_ms'          => $is_fresh ? (float) ( $stat['total_ms'] ?? 0.0 ) : 0.0,
-				'avg_ms'            => $is_fresh ? (float) ( $stat['avg_ms'] ?? 0.0 ) : 0.0,
+				'avg_ms'            => $recent ? $recent['avg_ms'] : 0.0,
 				'max'               => $is_fresh ? (float) ( $stat['max'] ?? 0.0 ) : 0.0,
 				'max_ms'            => $is_fresh ? (float) ( $stat['max_ms'] ?? 0.0 ) : 0.0,
 				'current_load_time' => $is_fresh ? (float) ( $stat['current_load_time'] ?? 0.0 ) : 0.0,
@@ -406,6 +410,11 @@ if ( ! class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
 				$measured_total_time += max( 0.0, (float) ( $stat['current_load_time'] ?? 0.0 ) );
 			}
 		}
+
+		// Slowest first: the screens list the top ten as the slowest plugins.
+		uasort( $mapped_stats, static function ( $a, $b ) {
+			return $b['avg_ms'] <=> $a['avg_ms'];
+		} );
 
 		self::$stats               = $mapped_stats;
 		self::$measured_total_time = $measured_total_time;

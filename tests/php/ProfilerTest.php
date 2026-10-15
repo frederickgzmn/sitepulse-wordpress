@@ -92,6 +92,38 @@ final class ProfilerTest extends Sitepulse_Test_Case {
         $row = array_values(Sitepulse_Profiler::get_stats_by_hook('wp_head'))[0];
         $this->assertSame('hello-single', $row['source']); $this->assertSame('wp-content/plugins/hello-single.php:1', $row['fileline']);
     }
+    public function test_window_counts_each_page_load_once_alongside_lifetime_totals(): void {
+        Sitepulse_Profiler::init(); Sitepulse_Profiler::record('render', 10, 'id', 'strlen', .002, .001); Sitepulse_Profiler::record('render', 10, 'id', 'strlen', .006, .004); Sitepulse_Profiler::persist();
+        Sitepulse_Profiler::init(); Sitepulse_Profiler::record('render', 10, 'id', 'strlen', .004, .004);
+        $row = array_values(Sitepulse_Profiler::get_stats_by_hook('render'))[0];
+        $this->assertSame((int) floor(microtime(true) / Sitepulse_Profiler::RECENT_SECONDS), $row['window']); $this->assertSame(3, $row['calls']);
+        $this->assertSame(3, $row['window_calls']); $this->assertSame(2, $row['window_loads'], 'Two page loads, however often the callback ran in each.');
+        $this->assertEqualsWithDelta(12.0, $row['window_ms'], 1e-9); $this->assertEqualsWithDelta(9.0, $row['window_self_ms'], 1e-9); $this->assertEqualsWithDelta(6.0, $row['window_max_ms'], 1e-9);
+        $this->assertSame(0, $row['previous_calls']); $this->assertSame(0.0, $row['previous_ms']);
+    }
+    public function test_a_new_window_keeps_the_one_that_just_ended_and_drops_older_figures(): void {
+        Sitepulse_Profiler::record('yesterday', 10, 'id', 'strlen', .002); Sitepulse_Profiler::record('last_week', 10, 'id', 'strlen', .002);
+        $window = (int) floor(microtime(true) / Sitepulse_Profiler::RECENT_SECONDS); $stats = Sitepulse_Profiler::get_stats();
+        foreach ($stats as $key => $row) {
+            $stats[$key] = array_merge($row, array('window' => 'yesterday' === $row['hook'] ? $window - 1 : $window - 7, 'window_calls' => 7, 'window_loads' => 3, 'window_ms' => 70.0, 'window_self_ms' => 50.0, 'window_max_ms' => 30.0, 'previous_calls' => 99, 'previous_loads' => 9, 'previous_ms' => 990.0));
+        }
+        // A later request records both callbacks again.
+        $this->setStaticProperty('Sitepulse_Profiler', 'stats', $stats); $this->setStaticProperty('Sitepulse_Profiler', 'counted_loads', array());
+        Sitepulse_Profiler::record('yesterday', 10, 'id', 'strlen', .004); Sitepulse_Profiler::record('last_week', 10, 'id', 'strlen', .004);
+        $yesterday = array_values(Sitepulse_Profiler::get_stats_by_hook('yesterday'))[0]; $last_week = array_values(Sitepulse_Profiler::get_stats_by_hook('last_week'))[0];
+        $this->assertSame(array($window, 7, 3, 70.0, 50.0, 30.0), array($yesterday['window'], $yesterday['previous_calls'], $yesterday['previous_loads'], $yesterday['previous_ms'], $yesterday['previous_self_ms'], $yesterday['previous_max_ms']));
+        $this->assertSame(array(1, 1), array($yesterday['window_calls'], $yesterday['window_loads'])); $this->assertEqualsWithDelta(4.0, $yesterday['window_ms'], 1e-9);
+        $this->assertSame(array($window, 0, 0, 0.0, 0.0, 0.0), array($last_week['window'], $last_week['previous_calls'], $last_week['previous_loads'], $last_week['previous_ms'], $last_week['previous_self_ms'], $last_week['previous_max_ms']));
+        $this->assertSame(array(1, 1), array($last_week['window_calls'], $last_week['window_loads']));
+    }
+    public function test_saving_forgets_code_that_has_not_run_for_two_days(): void {
+        $this->setStaticProperty('Sitepulse_Profiler', 'stats', array(
+            'today' => array('hook' => 'init', 'last_seen_at' => microtime(true) - HOUR_IN_SECONDS), 'yesterday' => array('hook' => 'init', 'last_seen_at' => microtime(true) - 47 * HOUR_IN_SECONDS),
+            'retired' => array('hook' => 'init', 'last_seen_at' => microtime(true) - 49 * HOUR_IN_SECONDS), 'legacy' => array('hook' => 'init', 'total_ms' => 90000.0),
+        ));
+        Sitepulse_Profiler::persist();
+        $this->assertSame(array('today', 'yesterday'), array_keys(get_option('sitepulse_profiler_stats')));
+    }
     public function test_clear_events_removes_persisted_samples(): void {
         Sitepulse_Profiler::record('render', 10, 'id', 'strlen', .001); (new Sitepulse_Profiler())->clear_events(); $this->assertSame(array(), get_option('sitepulse_profiler_stats')); $this->assertSame(array(), Sitepulse_Profiler::get_formatted_stats());
     }

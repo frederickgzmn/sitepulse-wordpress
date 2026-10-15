@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/Support/RecentActivity.php';
 
 /** Additional real service behaviors, including failure and legacy-format boundaries. */
 final class ApiCoverageTest extends Sitepulse_Test_Case {
@@ -6,32 +7,27 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
         return json_decode(Sitepulse_Test_WP::$http_requests[$index]['args']['body'], true);
     }
 
-    public function test_oversized_site_report_keeps_the_fifty_most_recent_resource_entries(): void {
+    public function test_oversized_site_report_keeps_the_fifty_slowest_resource_entries(): void {
         $resources = array();
         for ($i = 0; $i < 60; $i++) {
-            $resources[] = array('ordinal' => $i, 'details' => str_repeat('x', 40000));
+            $resources['row-' . $i] = sitepulse_test_recent_stat(array('key' => 'row-' . $i, 'sig' => str_repeat('x', 40000)), 10.0 + $i);
         }
         update_option(SITEPULSE_PROFILER_KEY, $resources);
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array());
         $this->assertTrue(Sitepulse_Api_Service::send_website_data()['success']);
         $payload = $this->payload();
         $this->assertCount(50, $payload['resources']);
-        $this->assertSame(10, $payload['resources'][0]['ordinal']);
-        $this->assertSame(59, $payload['resources'][49]['ordinal']);
+        $this->assertSame('row-59', array_key_first($payload['resources']));
+        $this->assertSame('row-10', array_key_last($payload['resources']));
         $this->assertCount(0, $payload['api_requests']);
     }
 
     public function test_unencodable_resource_data_fails_without_outbound_request(): void {
-        $resource = fopen('php://memory', 'r+');
-        try {
-            update_option(SITEPULSE_PROFILER_KEY, array('invalid' => $resource));
-            $result = Sitepulse_Api_Service::send_website_data();
-            $this->assertFalse($result['success']);
-            $this->assertStringContainsString('encode', $result['message']);
-            $this->assertSame(array(), Sitepulse_Test_WP::$http_requests);
-        } finally {
-            fclose($resource);
-        }
+        update_option(SITEPULSE_PROFILER_KEY, array('invalid' => sitepulse_test_recent_stat(array('hook' => "\xB1\x31"))));
+        $result = Sitepulse_Api_Service::send_website_data();
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('encode', $result['message']);
+        $this->assertSame(array(), Sitepulse_Test_WP::$http_requests);
     }
 
     /** @dataProvider preparationFailures */

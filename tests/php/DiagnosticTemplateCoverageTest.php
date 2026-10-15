@@ -191,7 +191,7 @@ final class DiagnosticTemplateCoverageTest extends Sitepulse_Test_Case {
         ));
         for ($index = 0; $index < 12; $index++) {
             $milliseconds = array(2000, 750, 100)[$index % 3];
-            $data['stats'][] = array('total' => $milliseconds / 1000, 'calls' => 2, 'source' => 'fixture-plugin-' . $index, 'hook' => 'init', 'fileline' => 'plugin.php:' . $index);
+            $data['stats'][] = array('load_ms' => $milliseconds, 'avg_ms' => $milliseconds / 2, 'calls' => 2, 'source' => 'fixture-plugin-' . $index, 'hook' => 'init', 'fileline' => 'plugin.php:' . $index);
             $data['plugin_profiler_stats'][] = array('plugin_name' => 'Fixture Plugin ' . $index, 'plugin_slug' => 'fixture-' . $index, 'plugin_version' => '1.0', 'avg_ms' => $milliseconds, 'avg_memory' => 1024);
             $data['curl_events'][] = array('elapsed' => $milliseconds / 1000, 'origin' => 'Fixture HTTP ' . $index, 'url' => 'https://example.test/' . str_repeat('a', 90), 'file' => 'plugin.php', 'code' => $index % 2 ? 200 : 0);
             $data['all_slow_items'][] = array('name' => 'Slow Plugin ' . $index, 'severity' => $index % 2 ? 'warning' : 'critical', 'time_ms' => $index % 2 ? 750 : 2000, 'date_time' => '2026-10-04 12:00:00');

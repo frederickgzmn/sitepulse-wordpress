@@ -14,6 +14,8 @@ if (!class_exists('Sitepulse_Profiler')) {
         private static $analysis = false;
         /** Inclusive time of finished child callbacks inside the callback currently running. */
         private static $child_time = 0.0;
+        /** Keys of the stats this request has already counted a page load for. */
+        private static $counted_loads = [];
         /** Classes whose own callbacks are never wrapped (the profiler must not profile itself). */
         private const UNWRAPPED_CLASSES = [ __CLASS__, 'Sitepulse_Page_Tracker' ];
         private const SITEPULSE_OPTION_CURRENT_TIME = 'sitepulse_profiler_current_time';
@@ -23,11 +25,21 @@ if (!class_exists('Sitepulse_Profiler')) {
             'calls' => 0, 'total' => 0.0, 'total_ms' => 0.0, 'avg_ms' => 0.0, 'max' => 0.0, 'max_ms' => 0.0,
             'self_total_ms' => 0.0, 'current_load_time' => 0.0, 'source' => '(unknown)', 'date_time' => null,
             'last_seen_at' => 0.0, 'is_active' => false, 'status' => '',
+            // Figures of the 24-hour window numbered `window`, and of the window before it.
+            'window' => 0, 'window_calls' => 0, 'window_loads' => 0, 'window_ms' => 0.0, 'window_self_ms' => 0.0, 'window_max_ms' => 0.0,
+            'previous_calls' => 0, 'previous_loads' => 0, 'previous_ms' => 0.0, 'previous_self_ms' => 0.0, 'previous_max_ms' => 0.0,
         ];
+        /** Seconds of activity behind every ranking and warning: the last 24 hours. Older measurements describe code that may have changed since. */
+        public const RECENT_SECONDS = 86400;
+        /** Figures kept per window, with their empty values. */
+        private const WINDOW_FIGURES = [ 'calls' => 0, 'loads' => 0, 'ms' => 0.0, 'self_ms' => 0.0, 'max_ms' => 0.0 ];
+        /** Stats that have not run for two windows carry no recent figures and are removed when saving. */
+        private const KEEP_SECONDS = 2 * self::RECENT_SECONDS;
         private static $request_date_time = '';
 
         public static function init() {
             self::$request_date_time = current_time( 'mysql' );
+            self::$counted_loads     = [];
 
             if ( class_exists( 'Sitepulse_Page_Tracker' ) && Sitepulse_Page_Tracker::is_analysis_request() ) {
                 // A page analysis request is always profiled, in isolation from the site-wide snapshot.
@@ -74,6 +86,10 @@ if (!class_exists('Sitepulse_Profiler')) {
                 return;
             }
 
+            // Code that stopped running (deactivated, updated or removed) no longer counts; keep the option small.
+            $oldest      = microtime( true ) - self::KEEP_SECONDS;
+            self::$stats = array_filter( self::$stats, static fn( $stat ) => (float) ( $stat['last_seen_at'] ?? 0 ) >= $oldest );
+
             // Save to global option
             update_option(SITEPULSE_PROFILER_CURRENT_TIME, self::$request_date_time, false);
             update_option(SITEPULSE_PROFILER_KEY, self::$stats, false);
@@ -84,6 +100,85 @@ if (!class_exists('Sitepulse_Profiler')) {
             $stats = array_filter((array) get_option(SITEPULSE_PROFILER_KEY, []), 'is_array');
             // Missing and null fields read as their defaults.
             return array_map(static fn($stat) => array_merge(self::STAT_DEFAULTS, array_filter($stat, static fn($value) => null !== $value)), $stats);
+        }
+
+        /**
+         * Site-wide activity of the last 24 hours, slowest first.
+         *
+         * Rows have the shape of get_stored_stats(), but their calls, times and peaks
+         * cover only the last 24 hours, and code that did not run in that time is left
+         * out. Each row also gives the page loads it ran on (loads) and its own time
+         * per page load in milliseconds (load_ms), the figure rankings and warnings use.
+         */
+        public static function get_recent_stats(): array {
+            $now    = microtime( true );
+            $recent = array_filter( array_map( static fn( $stat ) => self::recent_stat( $stat, $now ), self::get_stored_stats() ) );
+            uasort( $recent, static fn( $a, $b ) => $b['load_ms'] <=> $a['load_ms'] );
+            return $recent;
+        }
+
+        /**
+         * A stored stat's figures for the 24 hours before $now, or null when it did not run in that time.
+         *
+         * The previous window counts in proportion to the part of it still within those
+         * 24 hours, so figures change smoothly when a new window starts.
+         */
+        public static function recent_stat( array $stat, float $now ): ?array {
+            $window = self::window_number( $now );
+            $stored = (int) ( $stat['window'] ?? 0 );
+            $share  = $window + 1 - $now / self::RECENT_SECONDS;
+            $read   = static function ( string $prefix ) use ( $stat ): array {
+                $figures = [];
+                foreach ( self::WINDOW_FIGURES as $figure => $empty ) {
+                    $figures[ $figure ] = (float) ( $stat[ $prefix . $figure ] ?? $empty );
+                }
+                return $figures;
+            };
+
+            if ( $stored === $window ) {
+                $current  = $read( 'window_' );
+                $previous = $read( 'previous_' );
+            } elseif ( $stored === $window - 1 ) {
+                $current  = array_map( 'floatval', self::WINDOW_FIGURES );
+                $previous = $read( 'window_' );
+            } else {
+                return null;
+            }
+
+            $sum   = static fn( string $figure ): float => $current[ $figure ] + $share * $previous[ $figure ];
+            $calls = $sum( 'calls' );
+            $loads = $sum( 'loads' );
+
+            // Its last run must fall within the 24 hours; the share only estimates when earlier runs happened.
+            if ( $loads <= 0 || $now - (float) ( $stat['last_seen_at'] ?? 0 ) > self::RECENT_SECONDS ) {
+                return null;
+            }
+
+            $recent = $stat;
+            unset( $recent['window'] );
+            foreach ( self::WINDOW_FIGURES as $figure => $empty ) {
+                unset( $recent[ 'window_' . $figure ], $recent[ 'previous_' . $figure ] );
+            }
+
+            $ms      = $sum( 'ms' );
+            $self_ms = $sum( 'self_ms' );
+            $max_ms  = max( $current['max_ms'], $previous['max_ms'] );
+            // It ran at least once in the 24 hours, so counts never show as zero.
+            $recent['calls']         = max( 1, (int) round( $calls ) );
+            $recent['loads']         = max( 1, (int) round( $loads ) );
+            $recent['total']         = $ms / 1000;
+            $recent['total_ms']      = $ms;
+            $recent['self_total_ms'] = $self_ms;
+            $recent['avg_ms']        = $calls > 0 ? $ms / $calls : 0.0;
+            $recent['max']           = $max_ms / 1000;
+            $recent['max_ms']        = $max_ms;
+            $recent['load_ms']       = $self_ms / $loads;
+            return $recent;
+        }
+
+        /** Number of the 24-hour window a moment falls in, counted from the Unix epoch. */
+        private static function window_number( float $time ): int {
+            return (int) floor( $time / self::RECENT_SECONDS );
         }
 
         /** Stats collected so far; during a page analysis request these cover only that request. */
@@ -381,9 +476,11 @@ if (!class_exists('Sitepulse_Profiler')) {
             float $elapsed,
             ?float $self_elapsed = null
         ): void {
+            $now = microtime( true );
 
             // Convert seconds to milliseconds for better readability
             $elapsed_ms = $elapsed * 1000;
+            $self_ms    = ( $self_elapsed ?? $elapsed ) * 1000;
 
             // Use a stable key per callback (hook+priority+signature+fileline)
             $key = md5(implode('|', [$hook, $priority, $sig, $fileline]));
@@ -417,7 +514,7 @@ if (!class_exists('Sitepulse_Profiler')) {
                     'current_load_time'=> 0.0, 
                     'source'   => $source,
                     'date_time' => self::$request_date_time,
-                    'last_seen_at' => microtime(true),
+                    'last_seen_at' => $now,
                     'is_active' => true,
                     'status' => 'active'
                 ];
@@ -426,17 +523,42 @@ if (!class_exists('Sitepulse_Profiler')) {
             self::$stats[$key]['calls']++;
             self::$stats[$key]['total'] += $elapsed;
             self::$stats[$key]['total_ms'] += $elapsed_ms;
-            self::$stats[$key]['self_total_ms'] = ( self::$stats[$key]['self_total_ms'] ?? 0.0 ) + ( $self_elapsed ?? $elapsed ) * 1000;
+            self::$stats[$key]['self_total_ms'] = ( self::$stats[$key]['self_total_ms'] ?? 0.0 ) + $self_ms;
             self::$stats[$key]['avg_ms'] = self::$stats[$key]['total_ms'] / self::$stats[$key]['calls'];
             self::$stats[$key]['current_load_time'] = $elapsed_ms; 
             self::$stats[$key]['date_time'] = self::$request_date_time;
-            self::$stats[$key]['last_seen_at'] = microtime( true );
+            self::$stats[$key]['last_seen_at'] = $now;
 
             // Max
             if ($elapsed > self::$stats[$key]['max']) {
                 self::$stats[$key]['max'] = $elapsed;
                 self::$stats[$key]['max_ms'] = $elapsed_ms;
             }
+
+            self::count_in_window( self::$stats[$key], $key, self::window_number( $now ), $elapsed_ms, $self_ms );
+        }
+
+        /** Add one sample to the figures of the current 24-hour window. */
+        private static function count_in_window( array &$stat, string $key, int $window, float $elapsed_ms, float $self_ms ): void {
+            if ( (int) ( $stat['window'] ?? 0 ) !== $window ) {
+                // The window that just ended becomes the previous one; anything older no longer counts.
+                $ended = (int) ( $stat['window'] ?? 0 ) === $window - 1;
+                foreach ( self::WINDOW_FIGURES as $figure => $empty ) {
+                    $stat[ 'previous_' . $figure ] = $ended ? ( $stat[ 'window_' . $figure ] ?? $empty ) : $empty;
+                    $stat[ 'window_' . $figure ]   = $empty;
+                }
+                $stat['window'] = $window;
+            }
+
+            $stat['window_calls'] = (int) ( $stat['window_calls'] ?? 0 ) + 1;
+            // A callback that runs several times while one page loads counts that page load once.
+            if ( ! isset( self::$counted_loads[ $key ] ) ) {
+                self::$counted_loads[ $key ] = true;
+                $stat['window_loads'] = (int) ( $stat['window_loads'] ?? 0 ) + 1;
+            }
+            $stat['window_ms']      = (float) ( $stat['window_ms'] ?? 0.0 ) + $elapsed_ms;
+            $stat['window_self_ms'] = (float) ( $stat['window_self_ms'] ?? 0.0 ) + $self_ms;
+            $stat['window_max_ms']  = max( (float) ( $stat['window_max_ms'] ?? 0.0 ), $elapsed_ms );
         }
 
         /**

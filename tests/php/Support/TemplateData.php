@@ -3,7 +3,10 @@
 function sitepulse_test_template_data() {
     $stats = array(); $events = array(); $plugins = array();
     foreach (array(1500, 750, 300, 150, 50) as $i => $ms) {
-        $stats[] = array('key' => 'sample-' . $i, 'source' => 'sample-' . $i, 'hook' => 'init', 'fileline' => 'sample/main.php:12', 'sig' => 'sample_callback', 'calls' => $i, 'total_ms' => $ms, 'total' => $ms / 1000, 'current_load_time' => $ms, 'date_time' => gmdate('Y-m-d H:i:s'), 'current_url' => 'https://example.test/shop', 'last_seen_at' => $i ? time() - 300 : time());
+        // Figures as Sitepulse_Profiler::get_recent_stats() gives them, with the window counters stored behind them.
+        $seen = $i ? time() - 300 : time();
+        $stats[] = array('key' => 'sample-' . $i, 'source' => 'sample-' . $i, 'hook' => 'init', 'fileline' => 'sample/main.php:12', 'sig' => 'sample_callback', 'calls' => $i + 1, 'loads' => $i + 1, 'load_ms' => $ms, 'avg_ms' => $ms, 'total_ms' => $ms * ($i + 1), 'total' => $ms * ($i + 1) / 1000, 'current_load_time' => $ms, 'date_time' => gmdate('Y-m-d H:i:s'), 'current_url' => 'https://example.test/shop', 'last_seen_at' => $seen,
+            'window' => (int) floor($seen / Sitepulse_Profiler::RECENT_SECONDS), 'window_calls' => $i + 1, 'window_loads' => $i + 1, 'window_ms' => $ms * ($i + 1), 'window_self_ms' => $ms * ($i + 1), 'window_max_ms' => $ms);
         $events[] = array('elapsed' => $ms / 1000, 'url' => $i ? 'https://api.example.test/items?token=secret' : 'https://api.sitepulse.me/api/report', 'origin' => 'sample-' . $i, 'file' => 'sample/main.php', 'line' => 12, 'method' => 'POST', 'date' => '2026-01-01', 'code' => $i ? 500 : 200);
     }
     foreach (range(1, 11) as $i) { $plugins[] = array('plugin_name' => 'Fixture Plugin ' . $i, 'plugin_slug' => 'fixture-' . $i, 'plugin_version' => '1.0', 'current_load_time' => $i * 150, 'avg_ms' => $i * 120, 'load_time_ms' => $i * 150, 'total_time' => $i * 150); }
