@@ -53,6 +53,7 @@ class Sitepulse_Settings extends Sitepulse_Setup {
             'original_cron_setting' => false,
             'recovery_mode_email_addresses' => '',
             'external_api_enabled' => true, // Default enabled for PageSpeed and AI features
+            'remote_management_blocked' => false, // The site administrator's veto over remote management
         );
         
         $settings = get_option(self::SETTINGS_OPTION_KEY, $defaults);
@@ -466,6 +467,11 @@ class Sitepulse_Settings extends Sitepulse_Setup {
         
         if (isset($new_settings['external_api_enabled'])) {
             $current_settings['external_api_enabled'] = (bool) $new_settings['external_api_enabled'];
+            $updated = true;
+        }
+        
+        if (isset($new_settings['remote_management_blocked'])) {
+            $current_settings['remote_management_blocked'] = (bool) $new_settings['remote_management_blocked'];
             $updated = true;
         }
         

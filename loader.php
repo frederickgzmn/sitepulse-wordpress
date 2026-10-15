@@ -206,6 +206,13 @@ require_once SITEPULSE_PATH . 'inc/cron_fallback.php';
 // Load AI diagnostic cron manager (works with both free and pro)
 require_once SITEPULSE_PATH . 'inc/ai_diagnostic_cron.php';
 
+// Remote management of backups and updates from the SitePulse dashboard.
+require_once SITEPULSE_CLASS_PATH . 'remote_client.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_backups.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_inventory.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_events.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_management.php';
+
 class Sitepulse_Loader {
 	/**
 	 * Version of the stored data layout; raise it when an update needs to migrate data.
@@ -255,6 +262,9 @@ class Sitepulse_Loader {
 
 		// Pause/resume monitoring from the toolbar
 		Sitepulse_Monitoring::init();
+
+		// Backups and updates managed from the SitePulse dashboard
+		Sitepulse_Remote_Management::init();
 
 		// Initialize Easy Mode (toggleable dashboard experience)
 		if ( class_exists( 'Sitepulse_Easy_Mode' ) ) {
@@ -316,6 +326,9 @@ class Sitepulse_Loader {
 		if ( class_exists( 'Sitepulse_AI_Diagnostic_Cron' ) ) {
 			Sitepulse_AI_Diagnostic_Cron::unschedule();
 		}
+
+		// Stop checking in with the SitePulse dashboard
+		Sitepulse_Remote_Management::unschedule();
 	}
 
 	/**

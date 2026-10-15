@@ -105,6 +105,7 @@ We are developing a Pro version for agencies and power users who need historical
 SitePulse communicates with **api.sitepulse.me** (operated by the plugin developer) to provide:
 - **PageSpeed Reports** – Google PageSpeed Insights analysis with performance scores, Core Web Vitals metrics, and page screenshots
 - **AI Diagnostic Reports** – AI-powered performance analysis and optimization recommendations
+- **Remote Management (optional)** – lets your SitePulse dashboard show this site's backups (UpdraftPlus or BackWPup) and its plugin, theme and WordPress updates. It stays off until you turn it on for the site in your SitePulse dashboard, and you can block it in SitePulse's settings.
 
 ### 📊 What Data is Collected?
 To provide these enhanced features, SitePulse sends **only performance-related metrics** to the external API:
@@ -121,6 +122,17 @@ SitePulse is designed with privacy in mind and **does NOT collect**:
 - ❌ Database content or sensitive information
 - ❌ Customer or visitor information
 - ❌ Any personally identifiable information (PII)
+
+### 🔁 Remote Management
+While Cloud Services (PageSpeed & AI Reports) are on, the site checks in with api.sitepulse.me every hour, and every 5 minutes while remote management is on. A check-in sends the SitePulse and WordPress versions, which backup plugin is active and whether remote management is blocked on the site.
+
+Only while remote management is on, the site also sends:
+- Plugin and theme names, versions, whether they are active, their auto-update setting and available updates
+- WordPress, PHP and database versions and the site language
+- Backup schedules, how many backups are kept, storage types, the result of the last backup and the dates and sizes of recent backups
+- Events when plugins, themes, translations or WordPress are updated, a plugin is activated or deactivated, the theme changes or a backup finishes
+
+Requests are signed with the site's SitePulse license; the license key itself is never sent. Remote management never sends backup files, passwords, storage credentials or site content, and SitePulse never installs code from api.sitepulse.me. Turn on "Block remote management" in SitePulse's settings to stop it on this site at any time, whatever the dashboard says.
 
 ### ⏰ Data Transmission Schedule
 - You can view what data will be sent in the SitePulse dashboard before transmission
@@ -178,6 +190,9 @@ Yes, but only for optional enhanced features. SitePulse can communicate with api
 = What data does SitePulse send externally? =
 When enhanced features are enabled, SitePulse sends only performance-related data: plugin names/versions, hook execution times, memory usage, and API request metrics. NO personal information, user data, database content, or sensitive information is ever collected or transmitted.
 
+= Can I see my backups and updates in the SitePulse dashboard? =
+Yes, with UpdraftPlus 1.26 or later or BackWPup 5 active. Turn remote management on for the site in your SitePulse dashboard to see its backup schedules, recent backups, plugins, themes and available updates. You can block it from SitePulse's settings at any time. It is not available on multisite networks yet.
+
 = Can it work with WooCommerce or multisite? =
 Yes. Page Analysis works on any front-end address, including WooCommerce product, shop, cart and category pages, and SitePulse runs on multisite environments.
 
@@ -204,6 +219,9 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 ---
 
 == Changelog ==
+= 1.5.0 =
+* New: Remote management (optional). With UpdraftPlus 1.26+ or BackWPup 5 active, your SitePulse dashboard can show this site's backup schedules, recent backups, plugins, themes and available updates, plus a history of updates, plugin changes and backups. It is off until you turn it on in the dashboard, and you can block it at any time under SitePulse Settings. In this release the dashboard can only look; it cannot change anything on the site.
+
 = 1.4.7 =
 * Fixed: after SitePulse had been running for a while, warnings kept blaming plugins that were slow in the past or that simply ran often. Warnings, rankings, scores and AI diagnostics now use the last 24 hours and the time each plugin's own code adds to a page load.
 * Fixed: slow external requests from earlier days no longer appear as warnings or in diagnoses; the External Requests log still lists them.
