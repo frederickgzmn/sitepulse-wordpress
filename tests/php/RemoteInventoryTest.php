@@ -19,9 +19,18 @@ final class RemoteInventoryTest extends Sitepulse_Test_Case {
         $this->assertSame(1, $inventory['schema']);
         $this->assertEqualsWithDelta(time(), strtotime($inventory['collected_at']), 2);
         $this->assertMatchesRegularExpression('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/', $inventory['collected_at']);
-        $this->assertSame(array('wp_version' => '6.8', 'php_version' => PHP_VERSION, 'db_version' => '8.0.36', 'multisite' => false, 'locale' => 'en_US'), $inventory['site']);
+        $this->assertIsInt($inventory['site']['disk_free']);
+        $this->assertGreaterThan(0, $inventory['site']['disk_free']);
+        $this->assertSame(array('wp_version' => '6.8', 'php_version' => PHP_VERSION, 'db_version' => '8.0.36', 'multisite' => false, 'locale' => 'en_US', 'timezone' => 'UTC'), array_diff_key($inventory['site'], array('disk_free' => 1)));
         $this->assertSame(array('provider' => array('id' => 'backwpup', 'version' => '4.1.7', 'supported' => false)), $inventory['backups']);
-        $this->assertSame(array('can_update', 'reason', 'core', 'plugins', 'themes', 'translations_pending'), array_keys($inventory['updates']));
+        $this->assertSame(array('can_update', 'reason', 'core', 'plugins', 'themes', 'translations_pending', 'management_tools', 'job'), array_keys($inventory['updates']));
+        $this->assertSame(array(), $inventory['updates']['management_tools']);
+        $this->assertNull($inventory['updates']['job']);
+    }
+
+    public function test_plugins_that_also_manage_the_site_are_listed_while_active(): void {
+        Sitepulse_Test_WP::$options['active_plugins'] = array('worker/init.php', 'jetpack/jetpack.php', 'seo/seo.php');
+        $this->assertSame(array(array('id' => 'managewp', 'name' => 'ManageWP Worker'), array('id' => 'jetpack', 'name' => 'Jetpack')), $this->updates()['management_tools']);
     }
 
     public function test_updates_are_possible_when_wordpress_can_write_files_directly(): void {

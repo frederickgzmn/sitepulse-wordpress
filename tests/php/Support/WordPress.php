@@ -62,6 +62,9 @@ final class Sitepulse_Test_WP {
     public static $filesystem_method = 'direct';
     public static $themes = array();
     public static $current_actions = array();
+    public static $timezone_string = 'UTC';
+    /** Answers requests before the queue; returning null falls back to the queue. */
+    public static $http_responder = null;
     public static function rememberClassDefaults($class) {
         // PHP 7.4 reflection returns the current static values, not their
         // declared defaults. Capture each class before tests can mutate it.
@@ -97,6 +100,8 @@ final class Sitepulse_Test_WP {
     }
     public static function http($url, $args) {
         self::$http_requests[] = array('url' => $url, 'args' => $args);
+        $answer = self::$http_responder ? (self::$http_responder)($url, $args) : null;
+        if (null !== $answer) { return $answer; }
         if (!self::$http_queue) { throw new RuntimeException('Unexpected HTTP request: ' . $url); }
         $response = array_shift(self::$http_queue);
         return is_callable($response) ? $response($url, $args) : $response;
@@ -203,6 +208,7 @@ function doing_action($hook = null) { return $hook === null ? (bool) Sitepulse_T
 function __return_false() { return false; }
 function __return_true() { return true; }
 function __return_empty_array() { return array(); }
+function __return_zero() { return 0; }
 function get_option($key, $default = false) { $pre = apply_filters('pre_option_' . $key, false, $key, $default); return $pre !== false ? $pre : (array_key_exists($key, Sitepulse_Test_WP::$options) ? Sitepulse_Test_WP::$options[$key] : $default); }
 function update_option($key, $value, $autoload = null) { $old = get_option($key); Sitepulse_Test_WP::$options[$key] = $value; Sitepulse_Test_WP::$option_writes[] = array('key' => $key, 'value' => $value, 'autoload' => $autoload); return $old !== $value; }
 function add_option($key, $value = '', $deprecated = '', $autoload = true) { if (array_key_exists($key, Sitepulse_Test_WP::$options)) { return false; } return update_option($key, $value, $autoload); }
@@ -222,7 +228,7 @@ function get_current_screen() { return Sitepulse_Test_WP::$screen; }
 function is_admin() { return Sitepulse_Test_WP::$is_admin; }
 function is_multisite() { return Sitepulse_Test_WP::$multisite; }
 function wp_doing_ajax() { return Sitepulse_Test_WP::$doing_ajax; }
-function wp_doing_cron() { return Sitepulse_Test_WP::$doing_cron; }
+function wp_doing_cron() { return apply_filters('wp_doing_cron', Sitepulse_Test_WP::$doing_cron); }
 function get_the_ID() { return Sitepulse_Test_WP::$post_id; }
 function get_post_status($id) { return Sitepulse_Test_WP::$posts[$id]['post_status'] ?? false; }
 if (!in_array('get_plugins', $GLOBALS['sitepulse_test_omitted_wp_functions'] ?? array(), true)) { function get_plugins() { return Sitepulse_Test_WP::$plugins; } }
@@ -303,6 +309,7 @@ function wp_localize_script($handle, $object_name, $l10n) { Sitepulse_Test_WP::$
 function add_submenu_page($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback = '', $position = null) { Sitepulse_Test_WP::$menus[$menu_slug] = compact('parent_slug', 'page_title', 'menu_title', 'capability', 'callback'); return 'admin_page_' . $menu_slug; }
 function add_menu_page($page_title, $menu_title, $capability, $menu_slug, $callback = '', $icon_url = '', $position = null) { Sitepulse_Test_WP::$menus[$menu_slug] = compact('page_title', 'menu_title', 'capability', 'callback', 'icon_url', 'position'); return 'toplevel_page_' . $menu_slug; }
 function WP_Filesystem($args = false, $context = false, $allow_relaxed_file_ownership = false) { $GLOBALS['wp_filesystem'] = Sitepulse_Test_WP::$filesystem_factory ? call_user_func(Sitepulse_Test_WP::$filesystem_factory) : new Sitepulse_Test_Filesystem(); return (bool) $GLOBALS['wp_filesystem']; }
+function maybe_unserialize($data) { return is_string($data) && preg_match('/^(a|O|s|i|d|b):|^N;/', $data) ? unserialize($data) : $data; }
 function wp_cache_delete($key, $group = '') { Sitepulse_Test_WP::$cache_deletes[] = array($key, $group); return true; }
 
 function is_email($email) { return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : false; }
@@ -375,3 +382,9 @@ function get_file_data($file, $default_headers, $context = '') {
 function update_site_option($key, $value) { Sitepulse_Test_WP::$site_options[$key] = $value; return true; }
 function trailingslashit($value) { return untrailingslashit($value) . '/'; }
 function wp_delete_file($file) { if (is_file($file)) { unlink($file); } }
+function wp_timezone_string() { return Sitepulse_Test_WP::$timezone_string; }
+function wp_rand($min = 0, $max = 0) { return random_int($min, $max ?: 2147483647); }
+function wp_clean_plugins_cache($clear_update_cache = true) { Sitepulse_Test_WP::$cache_deletes[] = array('plugins', 'plugins'); }
+function wp_clean_themes_cache($clear_update_cache = true) { Sitepulse_Test_WP::$cache_deletes[] = array('themes', 'themes'); }
+function wp_update_plugins($extra_stats = array()) { Sitepulse_Test_WP::$cache_deletes[] = array('update_plugins', 'fetched'); }
+function wp_update_themes($extra_stats = array()) { Sitepulse_Test_WP::$cache_deletes[] = array('update_themes', 'fetched'); }

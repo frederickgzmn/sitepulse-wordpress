@@ -139,3 +139,68 @@ function sitepulse_test_remote_request_body($index) { return json_decode(Sitepul
 
 /** Path of the endpoint the nth request went to. */
 function sitepulse_test_remote_endpoint($index) { return substr(parse_url(Sitepulse_Test_WP::$http_requests[$index]['url'], PHP_URL_PATH), strlen('/api/website/remote/')); }
+
+/** WordPress's upgrader as remote management uses it, and the site's own pages; Sitepulse_Test_Upgrades::reset() restores them. */
+final class Sitepulse_Test_Upgrades {
+    /** What upgrade() does per "kind:id": a callable returning the upgrader's result. */
+    public static $outcomes = array();
+    /** What restore_temp_backup() returns, and what it does when it succeeds. */
+    public static $restore = true;
+    public static $on_restore = null;
+    /** The site's pages for health checks, by URL: status (0: no answer) and fatal. */
+    public static $pages = array();
+    /** WooCommerce's cart and checkout links; empty without WooCommerce pages. */
+    public static $woocommerce = array();
+    public static $calls = array();
+    public static function reset() {
+        foreach (Sitepulse_Test_WP::rememberClassDefaults(__CLASS__) as $name => $value) { self::${$name} = $value; }
+        Sitepulse_Test_WP::$http_responder = 'sitepulse_test_site_pages';
+    }
+}
+Sitepulse_Test_WP::rememberClassDefaults(Sitepulse_Test_Upgrades::class);
+
+class Automatic_Upgrader_Skin {}
+abstract class Sitepulse_Test_Upgrader {
+    public $skin;
+    public function __construct($skin = null) { $this->skin = $skin; }
+    public function maintenance_mode($enable = false) { Sitepulse_Test_Upgrades::$calls[] = array('maintenance', $enable); }
+    public function restore_temp_backup(array $temp_backups = array()) {
+        Sitepulse_Test_Upgrades::$calls[] = array('restore', $temp_backups);
+        if (true === Sitepulse_Test_Upgrades::$restore && Sitepulse_Test_Upgrades::$on_restore) { (Sitepulse_Test_Upgrades::$on_restore)(); }
+        return Sitepulse_Test_Upgrades::$restore;
+    }
+    public function delete_temp_backup(array $temp_backups = array()) { Sitepulse_Test_Upgrades::$calls[] = array('delete_temp_backup', $temp_backups); return true; }
+    protected function run($kind, $id, array $args = array()) {
+        Sitepulse_Test_Upgrades::$calls[] = array('upgrade', $kind, $id);
+        $outcome = Sitepulse_Test_Upgrades::$outcomes[$kind . ':' . $id] ?? null;
+        $result = $outcome ? $outcome() : false;
+        // Like WordPress, an update clears the offered updates unless asked not to.
+        if (false !== ($args['clear_update_cache'] ?? true)) { unset(Sitepulse_Test_WP::$site_transients['update_' . $kind . 's']); }
+        return $result;
+    }
+}
+class Plugin_Upgrader extends Sitepulse_Test_Upgrader { public function upgrade($plugin, $args = array()) { return $this->run('plugin', $plugin, $args); } }
+class Theme_Upgrader extends Sitepulse_Test_Upgrader { public function upgrade($theme, $args = array()) { return $this->run('theme', $theme, $args); } }
+class Core_Upgrader extends Sitepulse_Test_Upgrader { public function upgrade($current, $args = array()) { Sitepulse_Test_Upgrades::$calls[] = array('core_args', $args); return $this->run('core', $current->current); } }
+function wc_get_page_permalink($page) { return Sitepulse_Test_Upgrades::$woocommerce[$page] ?? ''; }
+
+/**
+ * The site's own pages answer WordPress's fatal-error check: healthy unless Sitepulse_Test_Upgrades::$pages
+ * says otherwise. Other requests (the SitePulse API) use the queue.
+ */
+function sitepulse_test_site_pages($url, $args) {
+    if (0 !== strpos($url, home_url('/'))) { return null; }
+    $page = strtok($url, '?');
+    parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+    $state = Sitepulse_Test_Upgrades::$pages[$page] ?? array();
+    if (0 === ($state['status'] ?? 200)) { return new WP_Error('http_request_failed', 'Connection refused'); }
+    // A request that dies without running shutdown functions answers nothing at all.
+    if (!empty($state['silent'])) { return Sitepulse_Test_WP::response('', 200); }
+    $key = $query['wp_scrape_key'] ?? '';
+    // Like WordPress, a request whose key and nonce do not match the transient is refused.
+    $result = get_transient('scrape_key_' . $key) !== ($query['wp_scrape_nonce'] ?? null)
+        ? array('code' => 'scrape_nonce_failure', 'message' => 'Scrape key check failed. Please try again.')
+        : (isset($state['fatal']) ? array('type' => 1, 'message' => $state['fatal'], 'file' => 'wp-content/plugins/x.php', 'line' => 3) : true);
+    $body = "<html>page</html>\n###### wp_scraping_result_start:$key ######\n" . json_encode($result) . "\n###### wp_scraping_result_end:$key ######\n";
+    return Sitepulse_Test_WP::response($body, $state['status'] ?? 200);
+}

@@ -7,7 +7,7 @@ foreach (array('/wp-admin/includes', '/wp-content/plugins', '/wp-content/themes'
         mkdir(SITEPULSE_TEST_WP_ROOT . $directory, 0777, true);
     }
 }
-foreach (array('file', 'plugin', 'update') as $fixture) {
+foreach (array('file', 'plugin', 'update', 'misc', 'class-wp-upgrader') as $fixture) {
     file_put_contents(SITEPULSE_TEST_WP_ROOT . '/wp-admin/includes/' . $fixture . '.php', "<?php // Intentionally empty WordPress boundary fixture.\n");
 }
 $constants = array(

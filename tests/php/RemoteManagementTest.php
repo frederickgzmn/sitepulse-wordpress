@@ -428,7 +428,7 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
             'BackWPup 4' => array(static function () use ($licensed) { $licensed(); Sitepulse_Test_Backups::$backwpup_version = '4.1.7'; }, 'off', 'neutral', 'Remote management works with BackWPup 5.'),
             'failed check-in' => array(static function () use ($ready) { $ready(array('last_error' => 'http_500', 'last_check_in' => 5, 'active' => true)); }, 'error', 'danger', 'The last check-in with SitePulse failed. See the activity below.'),
             'never checked in' => array(static function () use ($ready) { $ready(); }, 'off', 'neutral', 'Connecting to SitePulse…'),
-            'active' => array(static function () use ($ready) { $ready(array('last_check_in' => 5, 'active' => true)); }, 'active', 'success', 'Active: the SitePulse dashboard can see the backups and updates of this site and run and set up its backups.'),
+            'active' => array(static function () use ($ready) { $ready(array('last_check_in' => 5, 'active' => true)); }, 'active', 'success', 'Active: the SitePulse dashboard can manage the backups and updates of this site.'),
             'switched on, waiting' => array(static function () use ($ready) { $ready(array('last_check_in' => 5, 'enabled' => true)); }, 'off', 'neutral', 'Turning on at the next check-in.'),
             'switched off' => array(static function () use ($ready) { $ready(array('last_check_in' => 5)); }, 'off', 'neutral', 'Off. Turn it on for this site in your SitePulse dashboard.'),
         );

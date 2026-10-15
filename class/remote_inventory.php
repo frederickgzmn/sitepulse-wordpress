@@ -20,6 +20,29 @@ class Sitepulse_Remote_Inventory {
 	/** Core auto-update settings that also allow major releases. */
 	const CORE_AUTO_UPDATE_ALL = array( true, 'beta', 'rc', 'development', 'branch-development' );
 
+	/** Plugins that also update or manage the site: plugin file => id and name. */
+	const MANAGEMENT_PLUGINS = array(
+		'worker/init.php'                                => array( 'managewp', 'ManageWP Worker' ),
+		'mainwp-child/mainwp-child.php'                  => array( 'mainwp', 'MainWP Child' ),
+		'iwp-client/init.php'                            => array( 'infinitewp', 'InfiniteWP Client' ),
+		'jetpack/jetpack.php'                            => array( 'jetpack', 'Jetpack' ),
+		'stops-core-theme-and-plugin-updates/main.php'   => array( 'easy-updates-manager', 'Easy Updates Manager' ),
+		'wp-umbrella/wp-umbrella.php'                    => array( 'wp-umbrella', 'WP Umbrella' ),
+		'blogvault-real-time-backup/blogvault.php'       => array( 'blogvault', 'BlogVault' ),
+		'wpremote/plugin.php'                            => array( 'wp-remote', 'WP Remote' ),
+		'companion-auto-update/companion-auto-update.php' => array( 'companion-auto-update', 'Companion Auto Update' ),
+	);
+
+	/** Hosts that manage updates themselves, recognized by a constant they define: constant => id and name. */
+	const MANAGED_HOSTS = array(
+		'WPE_APIKEY'           => array( 'wpengine', 'WP Engine' ),
+		'KINSTAMU_VERSION'     => array( 'kinsta', 'Kinsta' ),
+		'PANTHEON_ENVIRONMENT' => array( 'pantheon', 'Pantheon' ),
+		'IS_ATOMIC'            => array( 'wordpress-com', 'WordPress.com' ),
+		'GD_SYSTEM_PLUGIN_DIR' => array( 'godaddy', 'GoDaddy Managed WordPress' ),
+		'FLYWHEEL_CONFIG_DIR'  => array( 'flywheel', 'Flywheel' ),
+	);
+
 	/**
 	 * Collect the inventory sent to the API.
 	 *
@@ -52,7 +75,42 @@ class Sitepulse_Remote_Inventory {
 			'db_version'  => (string) $wpdb->db_version(),
 			'multisite'   => is_multisite(),
 			'locale'      => get_locale(),
+			'timezone'    => wp_timezone_string(),
+			'disk_free'   => self::disk_free(),
 		);
+	}
+
+	/**
+	 * @return int|null Free bytes where WordPress writes updates, or null when the server does not tell.
+	 */
+	private static function disk_free() {
+		$free = function_exists( 'disk_free_space' ) ? @disk_free_space( WP_CONTENT_DIR ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- WordPress core reads it the same way before updates.
+		return false === $free ? null : (int) $free;
+	}
+
+	/**
+	 * @return array Other tools that also update or manage the site: id and name.
+	 */
+	private static function management_tools() {
+		$tools = array();
+		foreach ( self::MANAGEMENT_PLUGINS as $file => $tool ) {
+			if ( is_plugin_active( $file ) ) {
+				$tools[] = array(
+					'id'   => $tool[0],
+					'name' => $tool[1],
+				);
+			}
+		}
+		foreach ( self::MANAGED_HOSTS as $constant => $tool ) {
+			if ( defined( $constant ) ) {
+				$tools[] = array(
+					'id'   => $tool[0],
+					'name' => $tool[1],
+				);
+			}
+		}
+
+		return $tools;
 	}
 
 	/**
@@ -68,6 +126,8 @@ class Sitepulse_Remote_Inventory {
 			'plugins'              => self::plugins(),
 			'themes'               => self::themes(),
 			'translations_pending' => count( (array) wp_get_translation_updates() ),
+			'management_tools'     => self::management_tools(),
+			'job'                  => Sitepulse_Remote_Updates::job_status(),
 		);
 	}
 

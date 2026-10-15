@@ -111,7 +111,7 @@ Sent when remote management becomes active, every `inventory_seconds`, after any
 {
   "schema": 1,
   "collected_at": "2026-10-15T18:00:00Z",
-  "site": { "wp_version": "7.1.2", "php_version": "8.2.27", "db_version": "8.0.35", "multisite": false, "locale": "en_US" },
+  "site": { "wp_version": "7.1.2", "php_version": "8.2.27", "db_version": "8.0.35", "multisite": false, "locale": "en_US", "timezone": "Europe/Madrid", "disk_free": 52428800000 },
   "updates": {
     "can_update": true,
     "reason": null,
@@ -123,7 +123,9 @@ Sent when remote management becomes active, every `inventory_seconds`, after any
     "themes": [
       { "stylesheet": "astra", "name": "Astra", "version": "4.11.0", "active": true, "auto_update": false, "update": null }
     ],
-    "translations_pending": 3
+    "translations_pending": 3,
+    "management_tools": [{ "id": "managewp", "name": "ManageWP Worker" }],
+    "job": { "command": "01JABCDEF0123456789ABCDEFG", "kind": "plugin", "phase": "updating", "done": 1, "total": 3, "started_at": "2026-10-16T01:00:05Z" }
   },
   "backups": {
     "provider": { "id": "updraftplus", "version": "1.26.5", "supported": true },
@@ -140,6 +142,8 @@ Sent when remote management becomes active, every `inventory_seconds`, after any
   }
 }
 ```
+
+`site.timezone` is the site's time zone (a name such as `Europe/Madrid`, or an offset such as `+02:00`); `site.disk_free` is the free space in bytes where WordPress writes updates, or `null` when the server does not tell. `updates.management_tools` lists other tools that also update or manage the site: active ManageWP Worker, MainWP Child, InfiniteWP Client, Jetpack, Easy Updates Manager, WP Umbrella, BlogVault, WP Remote or Companion Auto Update, and hosts that manage updates themselves (WP Engine, Kinsta, Pantheon, WordPress.com, GoDaddy Managed WordPress, Flywheel). `updates.job` is the update SitePulse is running (see "Update commands"), or `null`.
 
 `reason` explains `can_update: false`: `file_mods_disabled` (`DISALLOW_FILE_MODS`) or `filesystem_credentials` (WordPress needs FTP credentials to write files). `core.auto_update` is `major`, `minor` or `disabled`, as WordPress decides it from its constants, options and filters. `update.download` is `false` when a premium plugin's license provides no download package. Response: `{ "success": true }`.
 
@@ -196,10 +200,10 @@ Response: `{ "success": true, "accepted": 1 }`.
 | `backup_now` | `what`: `full` (default), `database` or `files` | 2 |
 | `cancel_backup` | none | 2 |
 | `apply_backup_preset` | `preset_id`, `name`, `preset` (the API fills these from a saved preset) | 2 |
-| `update_plugins` | `plugins` (plugin files), `backup_first` | 3 |
-| `update_themes` | `themes` (stylesheets), `backup_first` | 3 |
-| `update_core` | `version`, `backup_first` | 3 |
-| `set_auto_updates` | `kind` (`plugin` or `theme`), `items`, `enabled` | 3 |
+| `update_plugins` | `plugins` (1–50 plugin files), `backup_first` (default `true`), `backup_wait` (minutes, 5–240, default 60) | 3 |
+| `update_themes` | `themes` (1–50 stylesheets), `backup_first`, `backup_wait` | 3 |
+| `update_core` | `version`, `backup_first`, `backup_wait` | 3 |
+| `set_auto_updates` | `kind` (`plugin` or `theme`), `items` (1–200), `enabled` | 3 |
 
 ### Backup commands
 
@@ -228,6 +232,19 @@ All three answer `no_backup_plugin` when no supported backup plugin is active an
 - **UpdraftPlus:** sets the files and database schedules through UpdraftPlus's own schedulers, the retention (`updraft_retain`, `updraft_retain_db`) and the included parts.
 - **BackWPup:** jobs that save files get the files settings, jobs that save the database get the database settings, and a job that saves both gets the more frequent schedule and the larger retention. Retention applies to every storage of the job. When no job saves files (or the database) and its frequency is not `manual`, SitePulse creates one with the storage of the site's existing jobs (this server when there are none); with no jobs at all and the same frequency for both, it creates one job for both, as BackWPup's own setup does. Jobs run at midnight site time when their frequency changes.
 
+### Update commands
+
+Updates always run through WordPress's own upgrader, so packages come from WordPress.org or a premium plugin's own updater, exactly as in wp-admin; api.sitepulse.me never sends code. An update command is answered when the whole update is done or has failed, usually within minutes; the API waits up to 6 hours for the result of an update command (1 hour for other commands), and the inventory's `updates.job` shows its progress meanwhile. The plugin runs one update at a time, in WordPress cron requests:
+
+1. **Checks.** WordPress may change files without FTP credentials (`cannot_update`), `wp-content` has at least 100 MB free (`not_enough_disk`), no other SitePulse update is running (`update_running`), and the arguments are valid (`invalid_arguments`).
+2. **Backup first** (when `backup_first`): a full backup with the managed backup plugin, as `backup_now` makes it. Nothing is updated when no supported backup plugin is active (`no_backup_plugin`), the backup fails (`backup_failed`) or takes longer than `backup_wait` minutes (`backup_timeout`).
+3. **Health baseline.** The plugin loads the home page, wp-admin and, with WooCommerce, the cart and checkout pages, using WordPress's own fatal-error check (the "scrape" request the plugin editor uses). A site that already fails is not updated (`site_unhealthy`), nor a site that cannot load its own home page, because its updates could not be checked (`health_check_unavailable`, typically a host that blocks such "loopback" requests).
+4. **One item at a time.** WordPress's upgrader installs the update offered for the item, with maintenance mode only while files are replaced. Then the same pages are loaded again. The update fails its health check when a page shows a PHP fatal error (in any code, such as another plugin that relied on the updated one), answers with a 5xx status it did not have before, stops answering, ends before WordPress's error check can report (where it reported before; a PHP fatal error can end a page that way), or SitePulse's error log records a fatal error in the updated plugin's, theme's or WordPress's files. A plugin or theme that fails is rolled back to its previous version (WordPress 6.3 and later keep a copy during the update) and the remaining items are skipped. WordPress core cannot be rolled back automatically. When the site administrator blocks remote management while an update runs, the items not updated yet are skipped (`blocked`).
+
+Result: `done` when every item is up to date afterwards, otherwise `failed` with the error of the first problem (`update_failed` when an item failed). `result` is `{ "backup": { "provider", "job" } | null, "items": [ { "id", "from", "to", "ok", "error", "rolled_back" } ] }`; an item that failed its health check also has `problems`, up to five short descriptions such as `https://example.com/: HTTP 500`. Item errors: `up_to_date` (no update offered; `ok` stays `true`), `not_installed`, `requirements` (the update needs a newer PHP or WordPress), `no_package` (a premium plugin without a valid license), `install_failed` (WordPress could not install it and kept the old version), `health_check_failed`, `interrupted` (the request updating it stopped, for example at a PHP time limit) and `skipped` (not tried after a failure). Items with `up_to_date`, `not_installed`, `requirements` or `no_package` do not stop the others. The plugin reports the update as an `update.completed` event with `initiator` `sitepulse` and `rolled_back` on each item.
+
+`set_auto_updates` turns WordPress's own automatic updates on or off for installed plugins or themes (the "Enable auto-updates" links in wp-admin) and answers at once: `result` is `{ "kind", "enabled", "items" }` with the items whose setting changed.
+
 A command expires 15 minutes after it is created unless it was delivered. The plugin runs up to 20 commands per check-in, in WordPress's background (cron) request. It remembers the ids of the last 50 commands so it never runs one twice, answers `expired` for a command whose `expires_at` has passed, and answers `unsupported_command` for types it does not know.
 
 ## Dashboard (portal) endpoints
@@ -240,6 +257,8 @@ The SitePulse dashboard calls these from trusted IPs with the existing portal au
 | `POST /api/portal/remote-management/update` | `enabled`, `requested_by` | Turn remote management on or off |
 | `POST /api/portal/remote-management/inventory` | — | Latest software and backup inventory, backup warnings |
 | `POST /api/portal/remote-management/backup-provider` | `backup_provider` (`updraftplus`, `backwpup` or `null`) | Pick the backup plugin to manage when both are active |
+| `POST /api/portal/remote-management/update-policy` | — | The site's update policy (defaults until it is changed) |
+| `POST /api/portal/remote-management/update-policy/save` | `policy` (the update policy format) | Change the site's update policy |
 | `POST /api/portal/remote-management/events` | `limit` (≤ 100), `before` (event time) | Event history, newest first |
 | `POST /api/portal/remote-management/commands` | `limit` (≤ 100) | Recent commands and their results |
 | `POST /api/portal/remote-management/commands/create` | `type`, `args`, `requested_by` | Queue a command (requires `active`); `apply_backup_preset` takes `args.preset_id`, a preset owned by `requested_by` |
@@ -264,6 +283,48 @@ The API checks the latest inventory whenever the dashboard reads the status or t
 | `overdue` | The last successful backup is older than twice the most frequent schedule. |
 | `small_backup` | The newest backup is less than half the size of the previous backup with the same contents. |
 
+### Update policy
+
+Each site has an update policy; until the dashboard changes it, it is this default:
+
+```json
+{
+  "automatic": true,
+  "plugins": "minor",
+  "themes": "minor",
+  "core": "minor",
+  "exclude": [],
+  "wait_days": 3,
+  "window": { "start": 1, "end": 5 },
+  "backup_first": true,
+  "backup_wait": 60
+}
+```
+
+`plugins` and `themes` are `none`, `security`, `minor` or `all`; `core` is `none`, `minor` or `all`:
+
+- `security`: only updates that fix a vulnerability of the installed version, as SitePulse's Wordfence scan of the site lists it (`patched_versions`).
+- `minor`: security updates and updates within the same major version (the first number for plugins and themes, such as 3.30.1 → 3.31.0; the same branch for WordPress, such as 7.1.2 → 7.1.3).
+- `all`: every update.
+
+`exclude` lists plugin files and theme stylesheets that are never updated automatically, such as `woocommerce/woocommerce.php`. `wait_days` (0–30) holds an update until that many days after SitePulse first saw it offered on any site, so quick fix releases arrive first; security updates do not wait. `window` is the hours of the day, in the site's time zone, in which automatic updates may start (`start` 0–23, `end` 1–24; a window such as 22–4 wraps past midnight). `backup_first` and `backup_wait` apply to automatic updates. `automatic: false` turns automatic updates off; the dashboard can still queue updates.
+
+**Automatic updates.** While remote management is active, at each check-in in the site's window the API queues at most one automatic update command (`requested_by` is `automatic`): plugins first, then themes, then WordPress, each with the security updates first. It skips items that are excluded, have no download package, need a newer PHP or WordPress than the site has, or failed in an update command during the last 24 hours. It queues nothing while another update command is queued or running, before the inventory has been refreshed after the last update, or after an automatic update failed in the last 24 hours. WordPress minor releases are left to WordPress when its own automatic updates install them (`core.auto_update` `minor` or `major`).
+
+**Visual check.** After an update command succeeds, the API starts a visual scan of the site (trigger `update`) when visual monitoring is on for it, and records the scan's id as `visual_scan` in the command's result.
+
+### Update warnings
+
+The status and inventory responses also return `update_warnings` and `security_updates`:
+
+| Code | When |
+|---|---|
+| `cannot_update` | WordPress cannot update files on its own (`updates.reason`). |
+| `other_manager` | Other tools also update or manage the site (`updates.management_tools`), so updates may be done twice or undone. |
+| `security_updates` | Updates fix known vulnerabilities of installed plugins, themes or WordPress. |
+
+`security_updates` lists those updates: `{ "kind", "id", "version" }`.
+
 ## Retention
 
 The API keeps events and finished commands for 90 days, and only the latest inventory per site. The plugin keeps up to 200 undelivered events (the oldest are dropped first) and the last 100 remote-management activity entries; it sends events only while remote management is active, up to 50 per request. Uninstalling the plugin deletes both.
@@ -272,5 +333,5 @@ The API keeps events and finished commands for 90 days, and only the latest inve
 
 1. **Read-only and switches:** signed endpoints, dashboard switch, backup provider detection, local block switch, activity log, inventory, events, `refresh_inventory`.
 2. **Backups:** `backup_now`, `cancel_backup`, backup presets, warnings for backups kept only on the same server, unusually small backups and overdue backups.
-3. **Updates:** update policies (security and minor updates automatic, major updates manual, 3-day wait, 1–5 am window), pre-checks, one update at a time with health checks, rollback for WordPress.org plugins and themes, warnings about other management tools.
+3. **Updates:** `update_plugins`, `update_themes`, `update_core` and `set_auto_updates`; update policies (security and minor updates automatic, major updates manual, 3-day wait, 1–5 am window) with automatic updates; pre-checks, a backup first, one update at a time with health checks and rollback; a visual check after updates; warnings about security updates and other management tools.
 4. **Extras:** performance impact of each update, site activity timeline, client reports, failure notifications.

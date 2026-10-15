@@ -32,6 +32,13 @@ class Sitepulse_Remote_Events {
 	private static $core_version = '';
 
 	/**
+	 * Set while SitePulse runs an update; it reports the update itself, after its health check.
+	 *
+	 * @var bool
+	 */
+	public static $updating = false;
+
+	/**
 	 * Listen for software changes.
 	 */
 	public static function init() {
@@ -71,6 +78,10 @@ class Sitepulse_Remote_Events {
 	 * @param mixed  $hook_extra What was installed or updated.
 	 */
 	public static function update_completed( $upgrader, $hook_extra ) {
+		if ( self::$updating ) {
+			return;
+		}
+
 		$hook_extra = (array) $hook_extra;
 		$kind       = (string) ( $hook_extra['type'] ?? '' );
 		if ( 'update' !== ( $hook_extra['action'] ?? '' ) ) {
@@ -115,6 +126,10 @@ class Sitepulse_Remote_Events {
 	 * @param string $version The new WordPress version.
 	 */
 	public static function core_updated( $version ) {
+		if ( self::$updating ) {
+			return;
+		}
+
 		Sitepulse_Remote_Management::record_event(
 			'update.completed',
 			array(
@@ -154,6 +169,27 @@ class Sitepulse_Remote_Events {
 				'previous'   => (string) $old_theme->get_stylesheet(),
 			)
 		);
+	}
+
+	/**
+	 * The installed version, read from disk.
+	 *
+	 * @param string $kind plugin, theme or core.
+	 * @param string $id   Plugin file or theme stylesheet; ignored for core.
+	 * @return string Empty when it is not installed.
+	 */
+	public static function installed_version( $kind, $id ) {
+		if ( 'plugin' === $kind ) {
+			return self::plugin_data( $id )['version'];
+		}
+		if ( 'theme' === $kind ) {
+			return self::theme_version( $id );
+		}
+
+		// A core update replaces version.php while $wp_version keeps the old version.
+		$file = ABSPATH . WPINC . '/version.php';
+		$code = is_readable( $file ) ? (string) file_get_contents( $file ) : ''; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A local file.
+		return preg_match( '/\$wp_version\s*=\s*\'([^\']+)\'/', $code, $match ) ? $match[1] : (string) get_bloginfo( 'version' );
 	}
 
 	/**
