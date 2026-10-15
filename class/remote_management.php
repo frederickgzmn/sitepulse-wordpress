@@ -211,6 +211,9 @@ class Sitepulse_Remote_Management {
 		if ( $state['active'] !== $was_active ) {
 			self::log( $state['active'] ? __( 'Remote management turned on from the SitePulse dashboard.', 'sitepulse' ) : __( 'Remote management turned off.', 'sitepulse' ) );
 			$state['inventory_due'] = $state['inventory_due'] || $state['active'];
+			if ( ! $state['active'] ) {
+				Sitepulse_Remote_Activity::reset();
+			}
 		}
 		if ( $was_active && $state['active'] && $provider !== $state['provider'] ) {
 			self::queue_event( 'backup_provider.changed', array( 'provider' => $provider ) );
@@ -224,6 +227,9 @@ class Sitepulse_Remote_Management {
 			self::run_commands( $client, $state, $response['commands'] ?? array() );
 			if ( $state['inventory_due'] || time() - (int) $state['inventory_sent_at'] >= $state['inventory_seconds'] ) {
 				self::send_inventory( $client, $state );
+			}
+			foreach ( Sitepulse_Remote_Activity::collect() as $event ) {
+				self::queue_event( $event[0], $event[1] );
 			}
 			self::send_events( $client );
 		}

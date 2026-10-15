@@ -181,8 +181,17 @@ Up to 50 events per request, oldest first. Event `id`s are UUIDs; the API ignore
 | `theme.switched` | `stylesheet`, `name`, `version`, `previous` |
 | `backup.completed` | `provider`, `ok`, `errors`, `warnings`, `size`, `time` |
 | `backup_provider.changed` | `provider` (object or `null`) |
+| `update.impact` | `kind`, `id`, `name`, `from`, `to`, `updated_at`, `before` and `after` (`{ "day", "ms", "loads" }`, `after` `null` when `reason` is `missed`), `measured`, `reason` |
+| `performance.daily` | `day`, `ms`, `loads`, `top` (up to 5 `{ "kind", "id", "ms" }`) |
+| `error.fatal` | `message`, `file`, `line`, `source` (`{ "kind", "id" }`), `count`, `first_at`, `last_at` |
 
 Response: `{ "success": true, "accepted": 1 }`.
+
+**Performance figures.** SitePulse's profiler keeps each callback's time in fixed UTC days. A figure for a day (`ms`) is the sum, over the code it covers, of each callback's own time per page load it ran on, in milliseconds; `loads` is the most page loads any of those callbacks ran on that day. Code is attributed by file: a plugin's folder (or its file, for a single-file plugin), a theme's folder, or `wp-includes` and `wp-admin` for WordPress core. SitePulse's own code never counts.
+
+- `update.impact`: when a plugin, theme or core update finishes while remote management is active (SitePulse's own, WordPress's automatic updates, or one made in wp-admin), the plugin keeps the item's figures for the full UTC day before the update (`before`). At its first check-in on the second UTC day after the update, it sends the figures for the full day after it (`after`). `measured` is `true` when both days have at least 20 page loads; otherwise `reason` is `not_enough_traffic`. `reason` is `missed` when the site did not check in during that second day, which is the only day those figures can be read. A later update of the same item replaces a pending measurement. SitePulse's own updates and translations are not measured. `day` is a date (`2026-10-14`), `updated_at` a UTC time.
+- `performance.daily`: once per UTC day, for the previous full day: the figures for all code (`ms`, `loads`) and the five sources taking the most time (`kind` `plugin`, `theme` or `core`; `id` the plugin folder, theme stylesheet or `core`). Not sent for a day without page loads, for example while monitoring was paused.
+- `error.fatal`: PHP fatal errors SitePulse's error log recorded since the last check-in, grouped by message, file and line. `message` is the first line, at most 300 characters; `file` is relative to the WordPress folder; `source.kind` is `plugin`, `theme`, `core` or `other` and `source.id` the plugin folder or theme stylesheet (`null` otherwise). At most 10 per check-in. Errors from before remote management was active are not sent.
 
 ### `POST /api/website/remote/command-result`
 
@@ -263,6 +272,14 @@ The SitePulse dashboard calls these from trusted IPs with the existing portal au
 | `POST /api/portal/remote-management/commands` | `limit` (≤ 100) | Recent commands and their results |
 | `POST /api/portal/remote-management/commands/create` | `type`, `args`, `requested_by` | Queue a command (requires `active`); `apply_backup_preset` takes `args.preset_id`, a preset owned by `requested_by` |
 | `POST /api/portal/remote-management/commands/cancel` | `id` | Cancel a command that was not delivered yet |
+| `POST /api/portal/remote-management/timeline` | `limit` (≤ 100, default 50), `before` (time), `categories` (optional list) | The site's activity timeline, newest first |
+| `POST /api/portal/remote-management/reports` | — | The site's stored monthly reports |
+| `POST /api/portal/remote-management/reports/generate` | `month` (`YYYY-MM`) | Build (or rebuild) a month's report and return it |
+| `POST /api/portal/remote-management/reports/download` | `month` | A link to the report as a PDF, valid for 24 hours |
+| `POST /api/portal/remote-management/reports/send` | `month` | Email the report to the site's report recipients now |
+| `POST /api/portal/remote-management/notifications` | — | Notification settings and the 20 latest notifications |
+| `POST /api/portal/remote-management/notifications/save` | `notifications` (the settings format), `rotate_webhook_secret` (optional) | Change the notification settings |
+| `POST /api/portal/remote-management/notifications/test` | — | Send a test message to every configured channel |
 
 Backup presets belong to a dashboard user (their email) instead of a site, so these endpoints take `email` instead of `domain` and `license_key`:
 
@@ -325,13 +342,112 @@ The status and inventory responses also return `update_warnings` and `security_u
 
 `security_updates` lists those updates: `{ "kind", "id", "version" }`.
 
+### Slowdowns and security fixes
+
+The API marks:
+
+- **Update slowdowns:** a measured `update.impact` whose `after.ms` is at least 50 ms and 20% above `before.ms`.
+- **Site slowdowns:** a `performance.daily` with at least 50 page loads whose `ms` is at least 50 ms and 25% above the median of the site's previous 7 daily figures (it needs 3 earlier days).
+- **Security fixes:** an `update.completed` item that fixes a vulnerability of the version it replaced, as the site's Wordfence scan lists it when the event arrives.
+
+### Timeline
+
+`POST /api/portal/remote-management/timeline` answers `{ "success": true, "timeline": [ { "time", "category", "type", "summary", "data" } ] }`, newest first. `summary` is one English sentence such as "Elementor 3.31.0 made pages 120 ms slower (182 → 302 ms per page load)."; `data` holds the details. For the next page, pass the oldest `time` as `before`; entries at exactly that time are not repeated.
+
+| Category | Types | Comes from |
+|---|---|---|
+| `update` | `update.completed` (items carry `security`) | events |
+| `performance` | `update.impact` (carries `slowdown`), `performance.daily` (carries `slowdown` and `median_ms`) | events |
+| `backup` | `backup.completed`, `backup_provider.changed` | events |
+| `plugin` | `plugin.activated`, `plugin.deactivated` | events |
+| `theme` | `theme.switched` | events |
+| `error` | `error.fatal` | events |
+| `command` | `command.queued` (with `requested_by`), `command.finished` (with `status`, `error`, and `visual_scan`: `{ "status", "pages_total", "pages_changed" }` when one ran) | commands |
+| `notification` | `notification.sent` (with `trigger`, `status`, `channels`) | notifications |
+
+### Monthly reports
+
+A report summarizes one month of a site for its client, in the site's time zone (UTC when it is not known):
+
+```json
+{
+  "month": "2026-10",
+  "timezone": "Europe/Madrid",
+  "generated_at": "2026-11-01T12:00:04Z",
+  "site": { "domain": "example.com", "name": "Example" },
+  "updates": {
+    "applied": [{ "kind": "plugin", "id": "elementor/elementor.php", "name": "Elementor", "from": "3.30.1", "to": "3.31.0", "time": "2026-10-16T01:10:00Z", "initiator": "sitepulse", "security": true }],
+    "failed": [{ "kind": "plugin", "id": "forms/forms.php", "name": "Forms", "from": "2.0", "to": "2.0", "time": "2026-10-16T01:12:00Z", "rolled_back": true }],
+    "security_fixes": 1
+  },
+  "backups": { "succeeded": 30, "failed": 1, "last_success": "2026-10-31T02:00:00Z", "largest": 55000000 },
+  "performance": {
+    "impacts": [{ "kind": "plugin", "id": "elementor/elementor.php", "name": "Elementor", "to": "3.31.0", "before_ms": 182.4, "after_ms": 302.9, "slowdown": true }],
+    "average_ms": 410.2, "days": 31, "slowdowns": 1
+  },
+  "errors": { "count": 4, "top": [{ "message": "Uncaught Error: …", "source": { "kind": "plugin", "id": "forms" }, "count": 3 }] },
+  "visual_checks": { "count": 3, "with_changes": 1 },
+  "pending": { "updates": 2, "security_updates": 0 }
+}
+```
+
+- `pending` is read from the latest inventory when the report is built.
+- Uptime is not part of the report until SitePulse measures it.
+- On the first of each month at 12:00 UTC, when the previous month is over in every time zone, the API builds that month's report for every site with remote management switched on. When the site has report recipients, it emails them the PDF.
+- `updates.failed` lists items that did not update or were rolled back (`rolled_back`); the commands' results hold the reasons.
+- `reports` answers `{ "reports": [ { "month", "generated_at", "sent_at" } ], "buildable_months": [...] }`; `reports/send` answers `{ "sent_to": 2 }`, or 422 when the site has no report recipients.
+- `reports/generate` accepts the current month and the two previous ones (events are kept 90 days) and replaces the stored copy.
+- `reports/download` and `reports/send` use the stored copy, building it first when there is none.
+- Stored reports are kept 13 months.
+- The PDF link expires after 24 hours, like the performance report's.
+
+### Notifications
+
+Each site has its notification settings; until the dashboard saves them, there are no channels and nothing is sent:
+
+```json
+{
+  "emails": ["ops@agency.example"],
+  "slack_webhook_url": "https://hooks.slack.com/services/T000/B000/XXXX",
+  "webhook_url": "https://hooks.agency.example/sitepulse",
+  "triggers": ["update_failed", "backup_failed", "backup_overdue", "check_ins_stopped", "fatal_error", "update_slowdown", "site_slowdown"],
+  "report_emails": ["client@example.com"]
+}
+```
+
+- **Fields:** `emails` and `report_emails` hold up to 10 addresses each. `slack_webhook_url` must be a Slack incoming webhook (`https://hooks.slack.com/…`). `webhook_url` must be HTTPS on a public host, with no user name or password; the API checks the host's addresses when the settings are saved and again before each delivery.
+- **Webhook secret:** the settings response includes `webhook_secret`. It is created when a webhook URL is first saved, and `rotate_webhook_secret: true` replaces it.
+- **`triggers`:** by default, every trigger is on.
+
+| Trigger | When | Sent |
+|---|---|---|
+| `update_failed` | An update command (`update_plugins`, `update_themes`, `update_core`) finishes `failed`, including rolled-back updates | Once per command |
+| `backup_failed` | A `backup.completed` event with `ok: false`, or a `backup_now` command that failed | Once per event or command |
+| `backup_overdue` | The `overdue` or `no_backup` backup warning appears | Once until the warning clears |
+| `check_ins_stopped` | An active site has not checked in for 2 hours: the site may be down, or WP-Cron is not running | Once, plus a second message when check-ins resume |
+| `fatal_error` | `error.fatal` events arrive | At most once an hour per site, summarizing them |
+| `update_slowdown` | An update slowdown | Once per measurement |
+| `site_slowdown` | A site slowdown | Once per day |
+
+The API checks `backup_overdue` and `check_ins_stopped` every 15 minutes, only for sites with remote management switched on. Deliveries are queued and tried up to 3 times per channel.
+
+- **Email:** plain text, from the API's mail sender.
+- **Slack:** a message with the subject and text.
+- **Webhook:** `POST` JSON `{ "id", "trigger", "site": { "domain", "name" }, "subject", "message", "data", "occurred_at" }` with these headers:
+  - `X-SitePulse-Event` (the trigger) and `X-SitePulse-Timestamp` (Unix seconds);
+  - `X-SitePulse-Signature`: `sha256=` followed by the hexadecimal HMAC-SHA256 of `<timestamp>.<body>`, keyed with `webhook_secret`.
+
+  Redirects are not followed, the timeout is 10 seconds, and any 2xx status counts as delivered.
+
+The notifications log keeps `id`, `trigger`, `subject`, `message`, `status` (`pending`, `sent`, `partial`, `failed`), `channels` (each channel's `pending`, `sent` or `failed`), `created_at` and `sent_at`. `notifications`, and `notifications/save`, answer `{ "settings", "triggers", "recent" }`, where `recent` holds the 20 latest log entries. `notifications/test` sends a `test` notification right away and returns its log entry, or 422 when the site has no channel.
+
 ## Retention
 
-The API keeps events and finished commands for 90 days, and only the latest inventory per site. The plugin keeps up to 200 undelivered events (the oldest are dropped first) and the last 100 remote-management activity entries; it sends events only while remote management is active, up to 50 per request. Uninstalling the plugin deletes both.
+The API keeps events, finished commands and notifications for 90 days, monthly reports for 13 months (their PDF links expire after 24 hours), and only the latest inventory per site. The plugin keeps up to 200 undelivered events (the oldest are dropped first), the last 100 remote-management activity entries and up to 50 pending update measurements; it sends events only while remote management is active, up to 50 per request. Uninstalling the plugin deletes all of them.
 
 ## Phases
 
 1. **Read-only and switches:** signed endpoints, dashboard switch, backup provider detection, local block switch, activity log, inventory, events, `refresh_inventory`.
 2. **Backups:** `backup_now`, `cancel_backup`, backup presets, warnings for backups kept only on the same server, unusually small backups and overdue backups.
 3. **Updates:** `update_plugins`, `update_themes`, `update_core` and `set_auto_updates`; update policies (security and minor updates automatic, major updates manual, 3-day wait, 1–5 am window) with automatic updates; pre-checks, a backup first, one update at a time with health checks and rollback; a visual check after updates; warnings about security updates and other management tools.
-4. **Extras:** performance impact of each update, site activity timeline, client reports, failure notifications.
+4. **Extras:** performance impact of each update, daily performance and fatal errors, site activity timeline, monthly client reports, failure notifications by email, Slack and webhook.

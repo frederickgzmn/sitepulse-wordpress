@@ -187,6 +187,7 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         $this->assertFalse(wp_doing_cron());
         $this->assertSame(array('Dashboard request done: update 3 plugins.'), array_column(Sitepulse_Remote_Management::log_entries(), 'message'));
         $this->assertTrue(Sitepulse_Remote_Management::state()['inventory_due']);
+        $this->assertSame(array('plugin:seo/seo.php', 'plugin:maps/maps.php'), array_keys(get_option(Sitepulse_Remote_Activity::OPTION)['watches']), 'Each updated plugin\'s effect on page speed is measured.');
     }
 
     public function test_an_update_that_breaks_a_page_is_rolled_back_and_stops_the_rest(): void {
@@ -222,6 +223,7 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         $this->assertCount(1, $this->upgrades());
         $this->assertContains(array('plugins', 'plugins'), Sitepulse_Test_WP::$cache_deletes);
         $this->assertSame(array('id' => 'seo/seo.php', 'from' => '1.0', 'to' => '1.0', 'ok' => false, 'rolled_back' => true), $this->events()[0]['data']['items'][0]);
+        $this->assertFalse(get_option(Sitepulse_Remote_Activity::OPTION), 'A rolled-back update is not measured.');
         $this->assertSame(array('Dashboard request failed: update 2 plugins (update_failed).'), array_column(Sitepulse_Remote_Management::log_entries(), 'message'));
     }
 

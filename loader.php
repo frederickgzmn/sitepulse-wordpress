@@ -212,6 +212,7 @@ require_once SITEPULSE_CLASS_PATH . 'remote_backups.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_inventory.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_events.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_health.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_activity.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_updates.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_management.php';
 

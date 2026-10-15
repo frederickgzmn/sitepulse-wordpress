@@ -60,6 +60,7 @@ final class RemoteEventsTest extends Sitepulse_Test_Case {
         $this->assertMatchesRegularExpression('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $events[0]['id']);
         $this->assertEqualsWithDelta(time(), strtotime($events[0]['occurred_at']), 2);
         $this->assertTrue(Sitepulse_Remote_Management::state()['inventory_due']);
+        $this->assertSame(array('plugin:seo/seo.php'), array_keys(get_option(Sitepulse_Remote_Activity::OPTION)['watches']), 'Only the plugin that changed version is measured.');
     }
 
     public function test_automatic_theme_updates_read_the_new_version_from_disk(): void {
@@ -85,6 +86,7 @@ final class RemoteEventsTest extends Sitepulse_Test_Case {
             array('id' => 'plugin:akismet:de_DE', 'from' => null, 'to' => '5.3', 'ok' => true),
             array('id' => 'core:default:es_ES', 'from' => null, 'to' => null, 'ok' => false),
         ), $this->events()[0]['data']['items']);
+        $this->assertFalse(get_option(Sitepulse_Remote_Activity::OPTION), 'Translations do not change page speed.');
     }
 
     public function test_core_updates_report_the_version_the_request_started_with(): void {
@@ -95,6 +97,12 @@ final class RemoteEventsTest extends Sitepulse_Test_Case {
         do_action('_core_updated_successfully', '6.8.3');
 
         $this->assertSame(array('kind' => 'core', 'initiator' => 'user', 'items' => array(array('id' => 'wordpress', 'from' => '6.8', 'to' => '6.8.3', 'ok' => true))), $this->events()[0]['data']);
+        $watch = get_option(Sitepulse_Remote_Activity::OPTION)['watches']['core:wordpress'];
+        $this->assertSame(array('6.8', '6.8.3', 'WordPress'), array($watch['from'], $watch['to'], $watch['name']));
+
+        delete_option(Sitepulse_Remote_Activity::OPTION);
+        do_action('_core_updated_successfully', '6.8');
+        $this->assertFalse(get_option(Sitepulse_Remote_Activity::OPTION), 'A core update that did not change the version is not measured.');
     }
 
     public function test_new_plugins_and_themes_refresh_the_inventory_without_an_event(): void {

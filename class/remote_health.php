@@ -87,14 +87,10 @@ class Sitepulse_Remote_Health {
 	 * @return array Messages of those errors.
 	 */
 	public static function logged_fatal_errors( $path, $since ) {
-		global $wpdb;
-		// Other requests logged these errors, after this request may have cached the log: read it from the database.
-		$log    = maybe_unserialize( (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", 'sitepulse_error_log' ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The cached copy is what must be skipped.
-		$errors = is_array( $log ) && is_array( $log['errors'] ?? null ) ? $log['errors'] : array();
-		$path   = wp_normalize_path( $path );
-		$found  = array();
-		foreach ( $errors as $error ) {
-			if ( is_array( $error ) && ! empty( $error['is_fatal'] ) && (int) ( $error['timestamp'] ?? 0 ) >= $since && 0 === strpos( wp_normalize_path( (string) ( $error['file'] ?? '' ) ), $path ) ) {
+		$path  = wp_normalize_path( $path );
+		$found = array();
+		foreach ( self::error_log_entries() as $error ) {
+			if ( ! empty( $error['is_fatal'] ) && (int) ( $error['timestamp'] ?? 0 ) >= $since && 0 === strpos( wp_normalize_path( (string) ( $error['file'] ?? '' ) ), $path ) ) {
 				$found[] = self::first_line( (string) ( $error['message'] ?? '' ) );
 			}
 		}
@@ -103,12 +99,26 @@ class Sitepulse_Remote_Health {
 	}
 
 	/**
-	 * @param string $message A PHP error message.
-	 * @return string Its first line: an uncaught exception's message goes on with its stack trace.
+	 * The entries of SitePulse's error log, oldest first.
+	 *
+	 * @return array Entries that are arrays; their timestamp is local time.
 	 */
-	private static function first_line( $message ) {
+	public static function error_log_entries() {
+		global $wpdb;
+		// Other requests logged these errors, after this request may have cached the log: read it from the database.
+		$log = maybe_unserialize( (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", 'sitepulse_error_log' ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The cached copy is what must be skipped.
+
+		return is_array( $log ) && is_array( $log['errors'] ?? null ) ? array_values( array_filter( $log['errors'], 'is_array' ) ) : array();
+	}
+
+	/**
+	 * @param string $message A PHP error message.
+	 * @return string Its first line (an uncaught exception's message goes on with its stack trace),
+	 *                with files named from the WordPress folder, as WordPress's own error check names them.
+	 */
+	public static function first_line( $message ) {
 		$line = strstr( $message, "\n", true );
-		return false === $line ? $message : $line;
+		return str_replace( array_unique( array( ABSPATH, wp_normalize_path( ABSPATH ) ) ), '', false === $line ? $message : $line );
 	}
 
 	/**
