@@ -30,6 +30,9 @@ class Sitepulse_Remote_Management {
 	/** What the site knows about remote management. */
 	const STATE_OPTION = 'sitepulse_remote_state';
 
+	/** The key that signs remote management requests once the dashboard rotated it; the license until then. */
+	const KEY_OPTION = 'sitepulse_remote_key';
+
 	/** Events not delivered yet. */
 	const EVENTS_OPTION = 'sitepulse_remote_events';
 
@@ -166,7 +169,7 @@ class Sitepulse_Remote_Management {
 		}
 
 		$state    = self::state();
-		$client   = new Sitepulse_Remote_Client( self::license() );
+		$client   = new Sitepulse_Remote_Client( self::signing_key() );
 		$blocked  = self::is_blocked();
 		$provider = Sitepulse_Remote_Backups::provider();
 		$response = $client->post(
@@ -206,6 +209,7 @@ class Sitepulse_Remote_Management {
 		$preferred                   = $remote['backup_provider'] ?? null;
 		$state['preferred_provider'] = in_array( $preferred, array( 'updraftplus', 'backwpup' ), true ) ? $preferred : null;
 		self::save_state( $state );
+		$client = self::rotate_key( $client, $remote['new_key'] ?? null );
 		$provider = Sitepulse_Remote_Backups::provider();
 
 		if ( $state['active'] !== $was_active ) {
@@ -470,6 +474,16 @@ class Sitepulse_Remote_Management {
 			$args   = is_array( $command['args'] ?? null ) ? $command['args'] : array();
 			$result = self::run_command( $client, $state, $id, $type, $command, $args );
 			if ( null === $result ) {
+				// It answers when it finishes; the dashboard sees it running meanwhile.
+				$client->post(
+					'command-result',
+					array(
+						'id'     => $id,
+						'status' => 'running',
+						'result' => null,
+						'error'  => null,
+					)
+				);
 				/* translators: %s: name of a request from the SitePulse dashboard */
 				self::log( sprintf( __( 'Dashboard request started: %s.', 'sitepulse' ), self::command_label( $type, $args ) ) );
 				continue;
@@ -478,6 +492,37 @@ class Sitepulse_Remote_Management {
 			$client->post( 'command-result', array( 'id' => $id ) + $result );
 			self::log_outcome( $type, $args, $result );
 		}
+	}
+
+	/**
+	 * Switch to a signing key the dashboard rotated, once the API has confirmed it: until
+	 * then the old key keeps working, so the site and the API never disagree.
+	 *
+	 * @param Sitepulse_Remote_Client $client  Client signing with the current key.
+	 * @param mixed                   $new_key The key the API offered at check-in, if any.
+	 * @return Sitepulse_Remote_Client The client for the rest of the check-in.
+	 */
+	private static function rotate_key( Sitepulse_Remote_Client $client, $new_key ) {
+		if ( ! is_string( $new_key ) || 1 !== preg_match( '/^[A-Za-z0-9._-]{32,128}$/', $new_key ) || self::signing_key() === $new_key ) {
+			return $client;
+		}
+
+		$rotated = new Sitepulse_Remote_Client( $new_key );
+		if ( is_wp_error( $rotated->post( 'key', array( 'schema' => self::SCHEMA ) ) ) ) {
+			return $client;
+		}
+
+		update_option( self::KEY_OPTION, $new_key, false );
+		self::log( __( 'Remote management key replaced from the SitePulse dashboard.', 'sitepulse' ) );
+		return $rotated;
+	}
+
+	/**
+	 * @return string The key remote management requests are signed with: the rotated one, or the license.
+	 */
+	private static function signing_key() {
+		$key = get_option( self::KEY_OPTION, '' );
+		return is_string( $key ) && '' !== $key ? $key : self::license();
 	}
 
 	/**
@@ -491,7 +536,7 @@ class Sitepulse_Remote_Management {
 	 */
 	public static function finish_command( $id, $type, array $args, array $result ) {
 		$outcome = array( 'id' => $id ) + $result;
-		if ( ! self::can_connect() || is_wp_error( ( new Sitepulse_Remote_Client( self::license() ) )->post( 'command-result', $outcome ) ) ) {
+		if ( ! self::can_connect() || is_wp_error( ( new Sitepulse_Remote_Client( self::signing_key() ) )->post( 'command-result', $outcome ) ) ) {
 			$state                      = self::state();
 			$state['pending_results'][] = $outcome;
 			self::save_state( $state );

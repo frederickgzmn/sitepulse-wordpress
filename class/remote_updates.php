@@ -265,7 +265,15 @@ class Sitepulse_Remote_Updates {
 		$id = $job['items'][ count( $job['results'] ) ];
 		// The request that updated this item stopped before it finished.
 		if ( null !== $job['current'] ) {
-			$job['results'][] = self::result( $id, $job['current']['from'], Sitepulse_Remote_Events::installed_version( $job['kind'], $id ), 'interrupted' );
+			$rolled_back = $job['current']['rolled_back'] ?? null;
+			if ( null === $rolled_back ) {
+				// The request did not even end normally (it was killed): its maintenance file is
+				// still there, and WordPress still has the item's previous files; put them back.
+				wp_delete_file( ABSPATH . '.maintenance' );
+				WP_Filesystem();
+				$rolled_back = self::roll_back( self::upgrader( $job['kind'] ), $job['kind'], $id );
+			}
+			$job['results'][] = self::result( $id, $job['current']['from'], Sitepulse_Remote_Events::installed_version( $job['kind'], $id ), 'interrupted', false, $rolled_back );
 			$job['current']   = null;
 			return self::stop( $job, 'update_failed' );
 		}
@@ -313,7 +321,39 @@ class Sitepulse_Remote_Updates {
 		}
 
 		$upgrader = self::upgrader( $kind );
-		$since    = (int) current_time( 'timestamp' ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested -- SitePulse's error log stores this time.
+		// A PHP time limit or crash can end this request in the middle of the update. WordPress
+		// still runs its shutdown actions then: leave maintenance mode, put the previous version
+		// back before WordPress deletes its copy (at priority 100), and free the job for its next step.
+		$recover = static function () use ( $upgrader, $kind, $id ) {
+			$upgrader->maintenance_mode( false );
+			$job = self::job();
+			if ( null !== $job && null !== $job['current'] ) {
+				$job['current']['rolled_back'] = self::roll_back( $upgrader, $kind, $id );
+				self::save_job( $job );
+			}
+			delete_transient( self::LOCK );
+		};
+		add_action( 'shutdown', $recover, 1 );
+		try {
+			return self::install_and_check( $job, $upgrader, $offer, $id, $from );
+		} finally {
+			remove_action( 'shutdown', $recover, 1 );
+		}
+	}
+
+	/**
+	 * Install an item's update, check the site and roll back a broken update.
+	 *
+	 * @param array  $job      The update.
+	 * @param object $upgrader WordPress's upgrader for the item.
+	 * @param array  $offer    The update WordPress offers.
+	 * @param string $id       Plugin file, theme stylesheet or WordPress version.
+	 * @param string $from     Installed version.
+	 * @return array The item's result.
+	 */
+	private static function install_and_check( array $job, $upgrader, array $offer, $id, $from ) {
+		$kind  = $job['kind'];
+		$since = (int) current_time( 'timestamp' ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested -- SitePulse's error log stores this time.
 		// SitePulse reports this update itself, with its health check.
 		Sitepulse_Remote_Events::$updating = true;
 		// A background update, as WordPress calls one that has no browser to reactivate the plugin:
