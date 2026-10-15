@@ -372,3 +372,6 @@ function get_file_data($file, $default_headers, $context = '') {
     }
     return $headers;
 }
+function update_site_option($key, $value) { Sitepulse_Test_WP::$site_options[$key] = $value; return true; }
+function trailingslashit($value) { return untrailingslashit($value) . '/'; }
+function wp_delete_file($file) { if (is_file($file)) { unlink($file); } }

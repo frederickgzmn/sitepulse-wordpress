@@ -81,23 +81,27 @@ Called every `check_in_seconds` (5 minutes while active, hourly otherwise). The 
   "plugin_version": "1.5.0",
   "wp_version": "7.1.2",
   "blocked": false,
-  "backup_provider": { "id": "updraftplus", "version": "1.26.5", "supported": true }
+  "backup_provider": { "id": "updraftplus", "version": "1.26.5", "supported": true },
+  "backup_providers": [
+    { "id": "updraftplus", "version": "1.26.5", "supported": true },
+    { "id": "backwpup", "version": "5.7.8", "supported": true }
+  ]
 }
 ```
 
-`backup_provider` is `null` when neither UpdraftPlus nor BackWPup is active. Response:
+`backup_providers` lists every active backup plugin; `backup_provider` is the one SitePulse manages, or `null` when neither UpdraftPlus nor BackWPup is active. With both active, SitePulse manages the one picked in the dashboard (`remote_management.backup_provider` below) while it is active and supported; otherwise the supported one with the most recent successful backup, and UpdraftPlus when neither has one. Response:
 
 ```json
 {
   "success": true,
-  "remote_management": { "enabled": true, "active": true, "check_in_seconds": 300, "inventory_seconds": 21600 },
+  "remote_management": { "enabled": true, "active": true, "check_in_seconds": 300, "inventory_seconds": 21600, "backup_provider": null },
   "commands": [
     { "id": "01JABCDEF0123456789ABCDEFG", "type": "refresh_inventory", "args": {}, "expires_at": "2026-10-15T18:15:00Z" }
   ]
 }
 ```
 
-`enabled` is the dashboard switch; `active` also requires a supported backup provider and no local block. Commands are only returned while `active` is true. A delivered command moves from `queued` to `sent`.
+`enabled` is the dashboard switch; `active` also requires a supported backup provider and no local block. `backup_provider` is the backup plugin picked in the dashboard (`updraftplus`, `backwpup`) or `null`. Commands are only returned while `active` is true. A delivered command moves from `queued` to `sent`.
 
 ### `POST /api/website/remote/inventory`
 
@@ -189,13 +193,40 @@ Response: `{ "success": true, "accepted": 1 }`.
 | Type | `args` | Phase |
 |---|---|---|
 | `refresh_inventory` | none | 1 |
-| `backup_now` | `what`: `full`, `database` or `files` | 2 |
+| `backup_now` | `what`: `full` (default), `database` or `files` | 2 |
 | `cancel_backup` | none | 2 |
-| `apply_backup_preset` | `preset` (see the backup preset format) | 2 |
+| `apply_backup_preset` | `preset_id`, `name`, `preset` (the API fills these from a saved preset) | 2 |
 | `update_plugins` | `plugins` (plugin files), `backup_first` | 3 |
 | `update_themes` | `themes` (stylesheets), `backup_first` | 3 |
 | `update_core` | `version`, `backup_first` | 3 |
 | `set_auto_updates` | `kind` (`plugin` or `theme`), `items`, `enabled` | 3 |
+
+### Backup commands
+
+All three answer `no_backup_plugin` when no supported backup plugin is active and `backup_plugin_error` when the backup plugin fails while running the command. After a successful one, the plugin sends a fresh inventory in the same check-in. Results always carry `provider`.
+
+| Command | Result when `done` | Errors |
+|---|---|---|
+| `backup_now` | `what`, `job`: UpdraftPlus's backup nonce, or the BackWPup job id | `backup_running` (a backup is running or already queued), `invalid_arguments`, `start_failed` (BackWPup did not start its job) |
+| `cancel_backup` | `cancelled`: how many running or queued backups were stopped (0 when none) | |
+| `apply_backup_preset` | `preset`: its name, `schedules`: the backup schedules afterwards (as in the inventory), `created`: BackWPup jobs created | `invalid_preset` |
+
+- **UpdraftPlus** `backup_now` queues UpdraftPlus's own "Backup Now" (labelled "SitePulse") as a one-off WordPress cron event, so it starts at the next cron run and uses the storage set up in UpdraftPlus. `cancel_backup` stops running jobs the way UpdraftPlus's "Delete" link does and removes backups SitePulse queued that have not started.
+- **BackWPup** `backup_now` runs BackWPup's own "Backup Now" job, which, like its button, keeps the archive on this server. `cancel_backup` aborts the running job.
+
+### Backup preset format
+
+```json
+{
+  "files": { "frequency": "weekly", "keep": 4, "include": ["plugins", "themes", "uploads", "other"] },
+  "database": { "frequency": "daily", "keep": 14 }
+}
+```
+
+`files` and `database` are optional, but a preset has at least one of them. `frequency` is `manual`, `daily`, `weekly` or `monthly` (`manual` turns the schedule off); `keep` (1–100) is how many backups the plugin keeps; `include` (files only, optional) lists the parts of the site saved: `plugins`, `themes`, `uploads` and `other` (the rest of `wp-content`). Presets never change where backups are stored or any storage credentials.
+
+- **UpdraftPlus:** sets the files and database schedules through UpdraftPlus's own schedulers, the retention (`updraft_retain`, `updraft_retain_db`) and the included parts.
+- **BackWPup:** jobs that save files get the files settings, jobs that save the database get the database settings, and a job that saves both gets the more frequent schedule and the larger retention. Retention applies to every storage of the job. When no job saves files (or the database) and its frequency is not `manual`, SitePulse creates one with the storage of the site's existing jobs (this server when there are none); with no jobs at all and the same frequency for both, it creates one job for both, as BackWPup's own setup does. Jobs run at midnight site time when their frequency changes.
 
 A command expires 15 minutes after it is created unless it was delivered. The plugin runs up to 20 commands per check-in, in WordPress's background (cron) request. It remembers the ids of the last 50 commands so it never runs one twice, answers `expired` for a command whose `expires_at` has passed, and answers `unsupported_command` for types it does not know.
 
@@ -205,13 +236,33 @@ The SitePulse dashboard calls these from trusted IPs with the existing portal au
 
 | Endpoint | Body | Purpose |
 |---|---|---|
-| `POST /api/portal/remote-management` | — | Status: switch, `active`, last check-in, what the site reported |
+| `POST /api/portal/remote-management` | — | Status: switch, `active`, last check-in, what the site reported, backup warnings |
 | `POST /api/portal/remote-management/update` | `enabled`, `requested_by` | Turn remote management on or off |
-| `POST /api/portal/remote-management/inventory` | — | Latest software and backup inventory |
+| `POST /api/portal/remote-management/inventory` | — | Latest software and backup inventory, backup warnings |
+| `POST /api/portal/remote-management/backup-provider` | `backup_provider` (`updraftplus`, `backwpup` or `null`) | Pick the backup plugin to manage when both are active |
 | `POST /api/portal/remote-management/events` | `limit` (≤ 100), `before` (event time) | Event history, newest first |
 | `POST /api/portal/remote-management/commands` | `limit` (≤ 100) | Recent commands and their results |
-| `POST /api/portal/remote-management/commands/create` | `type`, `args`, `requested_by` | Queue a command (requires `active`) |
+| `POST /api/portal/remote-management/commands/create` | `type`, `args`, `requested_by` | Queue a command (requires `active`); `apply_backup_preset` takes `args.preset_id`, a preset owned by `requested_by` |
 | `POST /api/portal/remote-management/commands/cancel` | `id` | Cancel a command that was not delivered yet |
+
+Backup presets belong to a dashboard user (their email) instead of a site, so these endpoints take `email` instead of `domain` and `license_key`:
+
+| Endpoint | Body | Purpose |
+|---|---|---|
+| `POST /api/portal/remote-management/presets` | `email` | The user's presets, by name |
+| `POST /api/portal/remote-management/presets/save` | `email`, `id` (to change one), `name` (unique per user), `settings` (the preset format) | Create or change a preset |
+| `POST /api/portal/remote-management/presets/delete` | `email`, `id` | Delete a preset; commands already queued keep their copy |
+
+### Backup warnings
+
+The API checks the latest inventory whenever the dashboard reads the status or the inventory, and returns `backup_warnings`, a list of `{ "code", "message" }`:
+
+| Code | When |
+|---|---|
+| `local_only` | Every scheduled backup (or, with none scheduled, every schedule) stores its archives only on this server (no storage for UpdraftPlus, only `folder` for BackWPup). |
+| `no_backup` | A backup is scheduled but there is no successful backup yet. |
+| `overdue` | The last successful backup is older than twice the most frequent schedule. |
+| `small_backup` | The newest backup is less than half the size of the previous backup with the same contents. |
 
 ## Retention
 

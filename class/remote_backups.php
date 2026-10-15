@@ -3,7 +3,8 @@
  * SitePulse remote management backups
  *
  * Detects UpdraftPlus and BackWPup, reads their schedules, running job and recent
- * backups for the SitePulse dashboard, and reports each finished backup.
+ * backups for the SitePulse dashboard, reports each finished backup, and runs the
+ * dashboard's backup commands through each plugin's own code.
  *
  * @package SitePulse
  */
@@ -38,6 +39,45 @@ class Sitepulse_Remote_Backups {
 		'DBCHECK'  => 'database_check',
 	);
 
+	/** Dashboard commands this class runs. */
+	const COMMANDS = array( 'backup_now', 'cancel_backup', 'apply_backup_preset' );
+
+	/** UpdraftPlus's "Backup Now" hooks, by what the backup saves. */
+	const UPDRAFTPLUS_BACKUP_NOW = array(
+		'full'     => 'updraft_backupnow_backup_all',
+		'files'    => 'updraft_backupnow_backup',
+		'database' => 'updraft_backupnow_backup_database',
+	);
+
+	/** UpdraftPlus settings of the parts a files backup includes. */
+	const UPDRAFTPLUS_PARTS = array(
+		'plugins' => 'updraft_include_plugins',
+		'themes'  => 'updraft_include_themes',
+		'uploads' => 'updraft_include_uploads',
+		'other'   => 'updraft_include_others',
+	);
+
+	/** BackWPup job settings of the same parts. */
+	const BACKWPUP_PARTS = array(
+		'plugins' => 'backupplugins',
+		'themes'  => 'backupthemes',
+		'uploads' => 'backupuploads',
+		'other'   => 'backupcontent',
+	);
+
+	/** Preset frequencies from least to most frequent; manual turns a schedule off. */
+	const PRESET_FREQUENCIES = array( 'manual', 'monthly', 'weekly', 'daily' );
+
+	/** Most backups a preset may keep. */
+	const PRESET_MAX_KEEP = 100;
+
+	/** Names of the BackWPup jobs SitePulse creates, by what they save. */
+	const BACKWPUP_JOB_NAMES = array(
+		'files'          => 'Files (SitePulse)',
+		'database'       => 'Database (SitePulse)',
+		'files,database' => 'Files and database (SitePulse)',
+	);
+
 	/**
 	 * Report finished backups.
 	 */
@@ -47,19 +87,84 @@ class Sitepulse_Remote_Backups {
 	}
 
 	/**
-	 * The active backup plugin: a supported one first, UpdraftPlus before BackWPup.
+	 * The backup plugin SitePulse manages: the one picked in the dashboard while it is
+	 * active and supported; otherwise the supported one with the most recent successful
+	 * backup, UpdraftPlus on a tie; an unsupported one only when no other is active.
 	 *
 	 * @return array|null id, version and supported; null when neither plugin is active.
 	 */
 	public static function provider() {
-		$found = array_filter( array( self::updraftplus(), self::backwpup() ) );
-		foreach ( $found as $provider ) {
-			if ( $provider['supported'] ) {
+		$providers = self::providers();
+		$supported = array_values(
+			array_filter(
+				$providers,
+				static function ( $provider ) {
+					return $provider['supported'];
+				}
+			)
+		);
+		if ( ! $supported ) {
+			return $providers ? $providers[0] : null;
+		}
+
+		$preferred = Sitepulse_Remote_Management::state()['preferred_provider'];
+		foreach ( $supported as $provider ) {
+			if ( $provider['id'] === $preferred ) {
 				return $provider;
 			}
 		}
 
-		return $found ? reset( $found ) : null;
+		return isset( $supported[1] ) && self::last_success( 'backwpup' ) > self::last_success( 'updraftplus' ) ? $supported[1] : $supported[0];
+	}
+
+	/**
+	 * @return array Every active backup plugin, UpdraftPlus first.
+	 */
+	public static function providers() {
+		return array_values( array_filter( array( self::updraftplus(), self::backwpup() ) ) );
+	}
+
+	/**
+	 * Run a backup command from the dashboard with the managed backup plugin.
+	 *
+	 * @param string $type backup_now, cancel_backup or apply_backup_preset.
+	 * @param array  $args Command arguments.
+	 * @return array status, result and error for the API.
+	 */
+	public static function run_command( $type, array $args ) {
+		$provider = self::provider();
+		if ( null === $provider || ! $provider['supported'] ) {
+			return Sitepulse_Remote_Management::command_result( 'failed', null, 'no_backup_plugin' );
+		}
+
+		$updraftplus = 'updraftplus' === $provider['id'];
+		try {
+			if ( 'backup_now' === $type ) {
+				$what    = $args['what'] ?? 'full';
+				$outcome = is_string( $what ) && isset( self::UPDRAFTPLUS_BACKUP_NOW[ $what ] )
+					? ( $updraftplus ? self::updraftplus_backup_now( $what ) : self::backwpup_backup_now( $what ) )
+					: 'invalid_arguments';
+			} elseif ( 'cancel_backup' === $type ) {
+				$outcome = array( 'cancelled' => $updraftplus ? self::updraftplus_cancel() : self::backwpup_cancel() );
+			} else {
+				$preset  = self::preset( $args['preset'] ?? null );
+				$outcome = null === $preset ? 'invalid_preset' : array(
+					'preset'  => is_string( $args['name'] ?? null ) ? $args['name'] : '',
+					'created' => $updraftplus ? self::updraftplus_apply( $preset ) : self::backwpup_apply( $preset ),
+				);
+			}
+		} catch ( Throwable $e ) {
+			$outcome = 'backup_plugin_error';
+		}
+
+		if ( is_string( $outcome ) ) {
+			return Sitepulse_Remote_Management::command_result( 'failed', null, $outcome );
+		}
+		if ( 'apply_backup_preset' === $type ) {
+			$outcome['schedules'] = self::status()['schedules'] ?? array();
+		}
+
+		return Sitepulse_Remote_Management::command_result( 'done', array( 'provider' => $provider['id'] ) + $outcome, null );
 	}
 
 	/**
@@ -202,25 +307,137 @@ class Sitepulse_Remote_Backups {
 	}
 
 	/**
-	 * A running UpdraftPlus job keeps its next resumption scheduled.
-	 *
-	 * @return array|null
+	 * @return array|null The UpdraftPlus job that is running.
 	 */
 	private static function updraftplus_running() {
+		$jobs = self::updraftplus_jobs();
+		$job  = current( $jobs );
+		if ( false === $job ) {
+			return null;
+		}
+
+		return array(
+			'name'     => (string) ( $job['label'] ?? '' ),
+			'progress' => null,
+			'stage'    => (string) ( $job['jobstatus'] ?? '' ),
+		);
+	}
+
+	/**
+	 * A running UpdraftPlus job keeps its next resumption scheduled.
+	 *
+	 * @return array Job data of the running jobs, keyed by their nonce.
+	 */
+	private static function updraftplus_jobs() {
+		$jobs = array();
 		foreach ( (array) _get_cron_array() as $hooks ) {
 			foreach ( (array) ( $hooks['updraft_backup_resume'] ?? array() ) as $event ) {
-				$job = get_site_option( 'updraft_jobdata_' . ( $event['args'][1] ?? '' ), array() );
+				$nonce = (string) ( $event['args'][1] ?? '' );
+				$job   = get_site_option( 'updraft_jobdata_' . $nonce, array() );
 				if ( is_array( $job ) && $job && 'finished' !== ( $job['jobstatus'] ?? '' ) ) {
-					return array(
-						'name'     => (string) ( $job['label'] ?? '' ),
-						'progress' => null,
-						'stage'    => (string) ( $job['jobstatus'] ?? '' ),
-					);
+					$jobs[ $nonce ] = $job;
 				}
 			}
 		}
 
-		return null;
+		return $jobs;
+	}
+
+	/**
+	 * @return array "Backup Now" events SitePulse queued that have not started: timestamp, hook and args.
+	 */
+	private static function updraftplus_queued() {
+		$queued = array();
+		foreach ( (array) _get_cron_array() as $timestamp => $hooks ) {
+			foreach ( self::UPDRAFTPLUS_BACKUP_NOW as $hook ) {
+				foreach ( (array) ( $hooks[ $hook ] ?? array() ) as $event ) {
+					$queued[] = array( $timestamp, $hook, $event['args'] ?? array() );
+				}
+			}
+		}
+
+		return $queued;
+	}
+
+	/**
+	 * Queue UpdraftPlus's own "Backup Now" in WordPress cron, so the check-in is not held up
+	 * while the backup runs. It uses the storage set up in UpdraftPlus.
+	 *
+	 * @param string $what full, files or database.
+	 * @return array|string Result, or an error code.
+	 */
+	private static function updraftplus_backup_now( $what ) {
+		if ( self::updraftplus_jobs() || self::updraftplus_queued() ) {
+			return 'backup_running';
+		}
+
+		$nonce = $GLOBALS['updraftplus']->backup_time_nonce();
+		wp_schedule_single_event(
+			time(),
+			self::UPDRAFTPLUS_BACKUP_NOW[ $what ],
+			array(
+				array(
+					'nocloud'     => false,
+					'use_nonce'   => $nonce,
+					'label'       => 'SitePulse',
+					'always_keep' => false,
+				),
+			)
+		);
+
+		return array(
+			'what' => $what,
+			'job'  => $nonce,
+		);
+	}
+
+	/**
+	 * Remove queued backups and stop running ones, as UpdraftPlus's own "Delete" link does.
+	 *
+	 * @return int Backups stopped.
+	 */
+	private static function updraftplus_cancel() {
+		$cancelled = 0;
+		foreach ( self::updraftplus_queued() as $event ) {
+			wp_unschedule_event( $event[0], $event[1], $event[2] );
+			++$cancelled;
+		}
+
+		$jobs = self::updraftplus_jobs();
+		if ( $jobs ) {
+			// UpdraftPlus keeps this in its admin code, which it loads the same way for its own remote commands.
+			updraft_try_include_file( 'admin.php', 'include_once' );
+			foreach ( array_keys( $jobs ) as $nonce ) {
+				$result     = $GLOBALS['updraftplus_admin']->activejobs_delete( (string) $nonce );
+				$cancelled += 'deleted' === ( $result['c'] ?? '' ) ? 1 : 0;
+			}
+		}
+
+		return $cancelled;
+	}
+
+	/**
+	 * Apply a preset. UpdraftPlus reschedules backups when its settings screen saves, so
+	 * its schedulers are called directly before the settings change.
+	 *
+	 * @param array $preset Validated preset.
+	 * @return array Jobs created: none for UpdraftPlus.
+	 */
+	private static function updraftplus_apply( array $preset ) {
+		$updraftplus = $GLOBALS['updraftplus'];
+		if ( isset( $preset['files'] ) ) {
+			UpdraftPlus_Options::update_updraft_option( 'updraft_interval', $updraftplus->schedule_backup( $preset['files']['frequency'] ) );
+			UpdraftPlus_Options::update_updraft_option( 'updraft_retain', $preset['files']['keep'] );
+			foreach ( isset( $preset['files']['include'] ) ? self::UPDRAFTPLUS_PARTS : array() as $part => $option ) {
+				UpdraftPlus_Options::update_updraft_option( $option, in_array( $part, $preset['files']['include'], true ) ? 1 : 0 );
+			}
+		}
+		if ( isset( $preset['database'] ) ) {
+			UpdraftPlus_Options::update_updraft_option( 'updraft_interval_database', $updraftplus->schedule_backup_database( $preset['database']['frequency'] ) );
+			UpdraftPlus_Options::update_updraft_option( 'updraft_retain_db', $preset['database']['keep'] );
+		}
+
+		return array();
 	}
 
 	/**
@@ -331,42 +548,29 @@ class Sitepulse_Remote_Backups {
 	 * @return array
 	 */
 	private static function backwpup_status() {
-		// BackWPup stores job run times in the site's local time.
-		$offset    = (int) ( (float) get_option( 'gmt_offset', 0 ) * HOUR_IN_SECONDS );
+		$jobs      = self::backwpup_jobs();
 		$schedules = array();
 		$recent    = array();
 		$next      = array();
-		$last      = null;
 
-		foreach ( (array) BackWPup_Option::get_job_ids() as $job_id ) {
-			$job = BackWPup_Option::get_job( $job_id );
-			// "Backup now" runs a temporary job.
-			if ( ! is_array( $job ) || ! empty( $job['tempjob'] ) ) {
-				continue;
-			}
-
+		foreach ( $jobs as $job_id => $job ) {
 			$contents     = self::backwpup_contents( $job['type'] ?? array() );
-			$destinations = array_map( 'strtoupper', array_filter( (array) ( $job['destinations'] ?? array() ), 'is_string' ) );
+			$destinations = self::backwpup_job_destinations( $job );
 			$scheduled    = in_array( $job['activetype'] ?? '', array( 'wpcron', 'easycron' ), true );
 			$job_next     = $scheduled ? wp_next_scheduled( 'backwpup_cron', array( 'arg' => $job_id ) ) : false;
-			$schedules[]  = array(
-				'name'         => (string) ( $job['name'] ?? '' ),
-				'contents'     => $contents,
-				'frequency'    => $scheduled ? (string) ( $job['frequency'] ?? 'custom' ) : 'manual',
-				'next'         => self::time( $job_next ),
-				'keep'         => isset( $job['maxbackups'] ) ? (int) $job['maxbackups'] : null,
-				'destinations' => array_map( 'strtolower', array_values( $destinations ) ),
-			);
+			// BackWPup's "Backup Now" job is not a schedule, but its archives are backups.
+			if ( empty( $job['backup_now'] ) ) {
+				$schedules[] = array(
+					'name'         => (string) ( $job['name'] ?? '' ),
+					'contents'     => $contents,
+					'frequency'    => $scheduled ? (string) ( $job['frequency'] ?? 'custom' ) : 'manual',
+					'next'         => self::time( $job_next ),
+					'keep'         => isset( $job['maxbackups'] ) ? (int) $job['maxbackups'] : null,
+					'destinations' => array_map( 'strtolower', $destinations ),
+				);
+			}
 			if ( $job_next ) {
 				$next[] = $job_next;
-			}
-
-			$ran = (int) ( $job['lastrun'] ?? 0 ) - $offset;
-			if ( ! empty( $job['lastrun'] ) && ( null === $last || $ran > $last['ran'] ) ) {
-				$last = array(
-					'ran'     => $ran,
-					'logfile' => (string) ( $job['logfile'] ?? '' ),
-				);
 			}
 
 			foreach ( $destinations as $destination ) {
@@ -386,7 +590,7 @@ class Sitepulse_Remote_Backups {
 		return array(
 			'schedules' => $schedules,
 			'running'   => self::backwpup_running(),
-			'last'      => self::backwpup_last( $last ),
+			'last'      => self::backwpup_last( self::backwpup_last_run( $jobs ) ),
 			'next'      => $next ? self::time( min( $next ) ) : null,
 			'recent'    => array_map(
 				static function ( $backup ) {
@@ -464,6 +668,313 @@ class Sitepulse_Remote_Backups {
 			'errors'   => $known ? (int) $header['errors'] : null,
 			'warnings' => $known ? (int) ( $header['warnings'] ?? 0 ) : null,
 		);
+	}
+
+	/**
+	 * @return array BackWPup jobs by id, without the temporary jobs it runs once.
+	 */
+	private static function backwpup_jobs() {
+		$jobs = array();
+		foreach ( (array) BackWPup_Option::get_job_ids() as $job_id ) {
+			$job = BackWPup_Option::get_job( $job_id );
+			if ( is_array( $job ) && empty( $job['tempjob'] ) ) {
+				$jobs[ $job_id ] = $job;
+			}
+		}
+
+		return $jobs;
+	}
+
+	/**
+	 * @param array $job Job settings.
+	 * @return array The job's storage keys, uppercase like BackWPup's.
+	 */
+	private static function backwpup_job_destinations( array $job ) {
+		return array_values( array_map( 'strtoupper', array_filter( (array) ( $job['destinations'] ?? array() ), 'is_string' ) ) );
+	}
+
+	/**
+	 * @param array $jobs BackWPup jobs by id.
+	 * @return array|null Time (UTC) and log file of the job that ran last.
+	 */
+	private static function backwpup_last_run( array $jobs ) {
+		// BackWPup stores job run times in the site's local time.
+		$offset = (int) ( (float) get_option( 'gmt_offset', 0 ) * HOUR_IN_SECONDS );
+		$last   = null;
+		foreach ( $jobs as $job ) {
+			$ran = (int) ( $job['lastrun'] ?? 0 ) - $offset;
+			if ( ! empty( $job['lastrun'] ) && ( null === $last || $ran > $last['ran'] ) ) {
+				$last = array(
+					'ran'     => $ran,
+					'logfile' => (string) ( $job['logfile'] ?? '' ),
+				);
+			}
+		}
+
+		return $last;
+	}
+
+	/**
+	 * Run BackWPup's own "Backup Now" job, which keeps the archive on this server like its button.
+	 *
+	 * @param string $what full, files or database.
+	 * @return array|string Result, or an error code.
+	 */
+	private static function backwpup_backup_now( $what ) {
+		if ( is_object( BackWPup_Job::get_working_data() ) ) {
+			return 'backup_running';
+		}
+
+		// The job writes this file once it runs; BackWPup checks it the same way after its own "Backup Now".
+		$started = trailingslashit( BackWPup::get_plugin_data( 'TEMP' ) ) . '.backwpup_job_started';
+		if ( file_exists( $started ) ) {
+			wp_delete_file( $started );
+		}
+
+		$job_id = self::backwpup_backup_now_job( $what );
+		BackWPup_Job::get_jobrun_url( 'runnow', $job_id );
+		for ( $wait = 0; $wait < 10 && ! file_exists( $started ); $wait++ ) {
+			usleep( 100000 );
+		}
+		if ( ! file_exists( $started ) ) {
+			return 'start_failed';
+		}
+		wp_delete_file( $started );
+
+		return array(
+			'what' => $what,
+			'job'  => $job_id,
+		);
+	}
+
+	/**
+	 * Prepare BackWPup's "Backup Now" job with the settings its own button uses.
+	 *
+	 * @param string $what full, files or database.
+	 * @return int Job id.
+	 */
+	private static function backwpup_backup_now_job( $what ) {
+		$job_id = (int) get_site_option( 'backwpup_backup_now_job_id', 0 );
+		if ( $job_id < 1 ) {
+			$job_id = (int) BackWPup_Option::next_job_id();
+			update_site_option( 'backwpup_backup_now_job_id', $job_id );
+		}
+
+		$types    = array(
+			'full'     => BackWPup_JobTypes::$type_job_both,
+			'files'    => BackWPup_JobTypes::$type_job_files,
+			'database' => BackWPup_JobTypes::$type_job_database,
+		);
+		$settings = array_merge(
+			BackWPup_Option::defaults_job(),
+			BackWPup::get_destination( 'FOLDER' )->option_defaults(),
+			array(
+				'jobid'              => $job_id,
+				'name'               => 'Backup Now',
+				'type'               => $types[ $what ],
+				'destinations'       => array( 'FOLDER' ),
+				'activetype'         => '',
+				'backupsyncnodelete' => false,
+				'tempjob'            => false,
+				'backup_now'         => true,
+			)
+		);
+		foreach ( $settings as $key => $value ) {
+			BackWPup_Option::update( $job_id, $key, $value );
+		}
+
+		return $job_id;
+	}
+
+	/**
+	 * @return int 1 when the running job was aborted, 0 when none was running.
+	 */
+	private static function backwpup_cancel() {
+		if ( ! is_object( BackWPup_Job::get_working_data() ) ) {
+			return 0;
+		}
+
+		BackWPup_Job::user_abort();
+		return 1;
+	}
+
+	/**
+	 * Apply a preset to the jobs that save files or the database, and create a job for
+	 * what no job saves yet, with the storage of the existing jobs.
+	 *
+	 * @param array $preset Validated preset.
+	 * @return array Names of the jobs created.
+	 */
+	private static function backwpup_apply( array $preset ) {
+		$jobs  = array_filter(
+			self::backwpup_jobs(),
+			static function ( $job ) {
+				return empty( $job['backup_now'] );
+			}
+		);
+		$saved = array();
+		foreach ( $jobs as $job_id => $job ) {
+			$kinds = self::backwpup_kinds( $job );
+			$saved = array_merge( $saved, $kinds );
+			if ( array_intersect_key( $preset, array_flip( $kinds ) ) ) {
+				self::backwpup_configure( $job_id, $job, $preset, $kinds );
+			}
+		}
+
+		$missing = array();
+		foreach ( $preset as $kind => $settings ) {
+			if ( ! in_array( $kind, $saved, true ) && 'manual' !== $settings['frequency'] ) {
+				$missing[] = $kind;
+			}
+		}
+		// One job for both, as BackWPup's own setup does, when they share a schedule.
+		$groups = 2 === count( $missing ) && $preset['files']['frequency'] === $preset['database']['frequency']
+			? array( $missing )
+			: array_chunk( $missing, 1 );
+
+		$created = array();
+		foreach ( $groups as $kinds ) {
+			$name  = self::BACKWPUP_JOB_NAMES[ implode( ',', $kinds ) ];
+			$types = 2 === count( $kinds ) ? BackWPup_JobTypes::$type_job_both : ( 'files' === $kinds[0] ? BackWPup_JobTypes::$type_job_files : BackWPup_JobTypes::$type_job_database );
+			$id    = BackWPup_Option::create_default_jobs( $name, $types );
+			BackWPup_Option::update( $id, 'destinations', self::backwpup_storage( $jobs ) );
+			self::backwpup_configure( $id, (array) BackWPup_Option::get_job( $id ), $preset, $kinds );
+			$created[] = $name;
+		}
+
+		return $created;
+	}
+
+	/**
+	 * Schedule a job, set how many backups each of its storages keeps and what it includes.
+	 * A job that saves both files and the database gets the more frequent schedule and the
+	 * larger retention.
+	 *
+	 * @param int   $job_id Job id.
+	 * @param array $job    Job settings.
+	 * @param array $preset Validated preset.
+	 * @param array $kinds  files and/or database: what the job saves.
+	 */
+	private static function backwpup_configure( $job_id, array $job, array $preset, array $kinds ) {
+		$settings  = array_intersect_key( $preset, array_flip( $kinds ) );
+		$frequency = 'manual';
+		foreach ( $settings as $part ) {
+			if ( array_search( $part['frequency'], self::PRESET_FREQUENCIES, true ) > array_search( $frequency, self::PRESET_FREQUENCIES, true ) ) {
+				$frequency = $part['frequency'];
+			}
+		}
+		$keep = max( array_column( $settings, 'keep' ) );
+		$arg  = array( 'arg' => (int) $job_id );
+
+		wp_clear_scheduled_hook( 'backwpup_cron', $arg );
+		if ( 'manual' === $frequency ) {
+			BackWPup_Option::update( $job_id, 'activetype', '' );
+		} else {
+			// Keep the job's time of day when its frequency does not change.
+			$cron = ( $job['frequency'] ?? '' ) === $frequency && ! empty( $job['cron'] ) ? (string) $job['cron'] : BackWPup_Cron::get_basic_cron_expression( $frequency );
+			foreach ( array( 'frequency' => $frequency, 'cronselect' => 'basic', 'cron' => $cron, 'activetype' => 'wpcron' ) as $key => $value ) {
+				BackWPup_Option::update( $job_id, $key, $value );
+			}
+			wp_schedule_single_event( BackWPup_Cron::cron_next( $cron ), 'backwpup_cron', $arg );
+		}
+
+		foreach ( self::backwpup_job_destinations( (array) BackWPup_Option::get_job( $job_id ) ) as $destination ) {
+			$handler = BackWPup::get_destination( $destination );
+			foreach ( is_object( $handler ) ? array_keys( $handler->option_defaults() ) : array() as $option ) {
+				if ( 'maxbackups' === substr( $option, -10 ) ) {
+					BackWPup_Option::update( $job_id, $option, $keep );
+				}
+			}
+		}
+
+		foreach ( isset( $settings['files']['include'] ) ? self::BACKWPUP_PARTS : array() as $part => $option ) {
+			BackWPup_Option::update( $job_id, $option, in_array( $part, $settings['files']['include'], true ) );
+		}
+	}
+
+	/**
+	 * @param array $job Job settings.
+	 * @return array files and/or database: what the job saves.
+	 */
+	private static function backwpup_kinds( array $job ) {
+		$types = (array) ( $job['type'] ?? array() );
+		return array_keys(
+			array_filter(
+				array(
+					'files'    => in_array( 'FILE', $types, true ),
+					'database' => in_array( 'DBDUMP', $types, true ),
+				)
+			)
+		);
+	}
+
+	/**
+	 * @param array $jobs BackWPup jobs by id.
+	 * @return array Storage for a new job: that of the existing jobs, or this server.
+	 */
+	private static function backwpup_storage( array $jobs ) {
+		$storage = array();
+		foreach ( $jobs as $job ) {
+			$storage = array_merge( $storage, self::backwpup_job_destinations( $job ) );
+		}
+
+		return $storage ? array_values( array_unique( $storage ) ) : array( 'FOLDER' );
+	}
+
+	/**
+	 * When the last successful backup of a backup plugin happened.
+	 *
+	 * @param string $id updraftplus or backwpup.
+	 * @return int Unix time, 0 when unknown.
+	 */
+	private static function last_success( $id ) {
+		try {
+			$last = 'updraftplus' === $id
+				? self::updraftplus_last( UpdraftPlus_Options::get_updraft_option( 'updraft_last_backup', array() ) )
+				: self::backwpup_last( self::backwpup_last_run( self::backwpup_jobs() ) );
+		} catch ( Throwable $e ) {
+			return 0;
+		}
+
+		return null !== $last && true === $last['ok'] ? (int) strtotime( $last['time'] ) : 0;
+	}
+
+	/**
+	 * Validate a preset from the dashboard and keep only the preset format.
+	 *
+	 * @param mixed $preset Preset from the command.
+	 * @return array|null Null when it is not a valid preset.
+	 */
+	private static function preset( $preset ) {
+		if ( ! is_array( $preset ) ) {
+			return null;
+		}
+
+		$valid = array();
+		foreach ( array( 'files', 'database' ) as $kind ) {
+			if ( ! isset( $preset[ $kind ] ) ) {
+				continue;
+			}
+			$settings = $preset[ $kind ];
+			$keep     = is_array( $settings ) ? ( $settings['keep'] ?? null ) : null;
+			if ( ! in_array( $settings['frequency'] ?? null, self::PRESET_FREQUENCIES, true ) || ! is_int( $keep ) || $keep < 1 || $keep > self::PRESET_MAX_KEEP ) {
+				return null;
+			}
+			$valid[ $kind ] = array(
+				'frequency' => $settings['frequency'],
+				'keep'      => $keep,
+			);
+		}
+
+		if ( isset( $preset['files']['include'] ) ) {
+			$include = $preset['files']['include'];
+			if ( ! is_array( $include ) || array_diff( $include, array_keys( self::UPDRAFTPLUS_PARTS ) ) ) {
+				return null;
+			}
+			$valid['files']['include'] = array_values( array_unique( $include ) );
+		}
+
+		return $valid ? $valid : null;
 	}
 
 	/**

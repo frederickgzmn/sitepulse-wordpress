@@ -39,7 +39,7 @@ $sp_remote_badges = array(
 	</form>
 	<div class="sp-setting-help-box">
 		<div class="alert alert-info" style="margin-top: 10px;">
-			<p class="mb-2"><?php echo esc_html__( 'Your SitePulse dashboard can show the backups and updates of this site when you turn remote management on there and UpdraftPlus or BackWPup is active. Blocking it here always wins.', 'sitepulse' ); ?></p>
+			<p class="mb-2"><?php echo esc_html__( 'When you turn remote management on in your SitePulse dashboard and UpdraftPlus or BackWPup is active, the dashboard can show the backups and updates of this site, start or cancel a backup and apply backup settings saved there. It never restores or deletes backups. Blocking it here always wins.', 'sitepulse' ); ?></p>
 			<p class="mb-0"><small><?php echo esc_html__( 'While PageSpeed & AI Reports is on, this site checks in with api.sitepulse.me every hour, and every 5 minutes while remote management is on. It sends plugin and theme names, versions and available updates, the WordPress, PHP and database versions, and the backup schedules and recent backups (dates, sizes, storage types). It never sends backup files, passwords, storage credentials or site content.', 'sitepulse' ); ?></small></p>
 		</div>
 	</div>

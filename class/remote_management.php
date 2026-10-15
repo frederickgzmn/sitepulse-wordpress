@@ -62,16 +62,17 @@ class Sitepulse_Remote_Management {
 
 	/** Stored state; the API sets the switch and the intervals at every check-in. */
 	const STATE_DEFAULTS = array(
-		'enabled'           => false,
-		'active'            => false,
-		'check_in_seconds'  => 3600,
-		'inventory_seconds' => 21600,
-		'last_check_in'     => 0,
-		'last_error'        => '',
-		'inventory_sent_at' => 0,
-		'inventory_due'     => false,
-		'provider'          => null,
-		'done_commands'     => array(),
+		'enabled'            => false,
+		'active'             => false,
+		'check_in_seconds'   => 3600,
+		'inventory_seconds'  => 21600,
+		'last_check_in'      => 0,
+		'last_error'         => '',
+		'inventory_sent_at'  => 0,
+		'inventory_due'      => false,
+		'provider'           => null,
+		'preferred_provider' => null,
+		'done_commands'      => array(),
 	);
 
 	/**
@@ -153,7 +154,7 @@ class Sitepulse_Remote_Management {
 
 	/**
 	 * Check in with the API: report the site, then, while the dashboard manages the
-	 * site, send the inventory when it is due, run the commands and deliver events.
+	 * site, run the commands, send the inventory when it is due and deliver events.
 	 */
 	public static function check_in() {
 		if ( ! self::can_connect() ) {
@@ -171,8 +172,9 @@ class Sitepulse_Remote_Management {
 				'schema'          => self::SCHEMA,
 				'plugin_version'  => SITEPULSE_VERSION,
 				'wp_version'      => (string) get_bloginfo( 'version' ),
-				'blocked'         => $blocked,
-				'backup_provider' => $provider,
+				'blocked'          => $blocked,
+				'backup_provider'  => $provider,
+				'backup_providers' => Sitepulse_Remote_Backups::providers(),
 			)
 		);
 
@@ -197,8 +199,15 @@ class Sitepulse_Remote_Management {
 		$state['last_check_in']     = time();
 		$state['last_error']        = '';
 
+		// The backup plugin picked in the dashboard applies from this check-in on.
+		$preferred                   = $remote['backup_provider'] ?? null;
+		$state['preferred_provider'] = in_array( $preferred, array( 'updraftplus', 'backwpup' ), true ) ? $preferred : null;
+		self::save_state( $state );
+		$provider = Sitepulse_Remote_Backups::provider();
+
 		if ( $state['active'] !== $was_active ) {
 			self::log( $state['active'] ? __( 'Remote management turned on from the SitePulse dashboard.', 'sitepulse' ) : __( 'Remote management turned off.', 'sitepulse' ) );
+			$state['inventory_due'] = $state['inventory_due'] || $state['active'];
 		}
 		if ( $was_active && $state['active'] && $provider !== $state['provider'] ) {
 			self::queue_event( 'backup_provider.changed', array( 'provider' => $provider ) );
@@ -207,10 +216,11 @@ class Sitepulse_Remote_Management {
 		$state['provider'] = $provider;
 
 		if ( $state['active'] ) {
-			if ( ! $was_active || $state['inventory_due'] || time() - (int) $state['inventory_sent_at'] >= $state['inventory_seconds'] ) {
+			// Commands first, so the inventory shows what they changed.
+			self::run_commands( $client, $state, $response['commands'] ?? array() );
+			if ( $state['inventory_due'] || time() - (int) $state['inventory_sent_at'] >= $state['inventory_seconds'] ) {
 				self::send_inventory( $client, $state );
 			}
-			self::run_commands( $client, $state, $response['commands'] ?? array() );
 			self::send_events( $client );
 		}
 
@@ -377,7 +387,7 @@ class Sitepulse_Remote_Management {
 			return array( 'off', __( 'Connecting to SitePulse…', 'sitepulse' ) );
 		}
 		if ( $state['active'] ) {
-			return array( 'active', __( 'Active: the SitePulse dashboard can see the backups and updates of this site.', 'sitepulse' ) );
+			return array( 'active', __( 'Active: the SitePulse dashboard can see the backups and updates of this site and run and set up its backups.', 'sitepulse' ) );
 		}
 
 		return array( 'off', $state['enabled'] ? __( 'Turning on at the next check-in.', 'sitepulse' ) : __( 'Off. Turn it on for this site in your SitePulse dashboard.', 'sitepulse' ) );
@@ -447,15 +457,16 @@ class Sitepulse_Remote_Management {
 			self::save_state( $state );
 
 			$type   = is_string( $command['type'] ?? null ) ? $command['type'] : '';
-			$result = self::run_command( $client, $state, $type, $command );
+			$args   = is_array( $command['args'] ?? null ) ? $command['args'] : array();
+			$result = self::run_command( $client, $state, $type, $command, $args );
 			$client->post( 'command-result', array( 'id' => $id ) + $result );
 
 			self::log(
 				'done' === $result['status']
 					/* translators: %s: name of a request from the SitePulse dashboard */
-					? sprintf( __( 'Dashboard request done: %s.', 'sitepulse' ), self::command_label( $type ) )
+					? sprintf( __( 'Dashboard request done: %s.', 'sitepulse' ), self::command_label( $type, $args ) )
 					/* translators: 1: name of a request from the SitePulse dashboard, 2: error code */
-					: sprintf( __( 'Dashboard request failed: %1$s (%2$s).', 'sitepulse' ), self::command_label( $type ), $result['error'] )
+					: sprintf( __( 'Dashboard request failed: %1$s (%2$s).', 'sitepulse' ), self::command_label( $type, $args ), $result['error'] )
 			);
 		}
 	}
@@ -465,9 +476,10 @@ class Sitepulse_Remote_Management {
 	 * @param array                   $state   State.
 	 * @param string                  $type    Command type.
 	 * @param array                   $command The command.
+	 * @param array                   $args    Its arguments.
 	 * @return array status, result and error for the API.
 	 */
-	private static function run_command( Sitepulse_Remote_Client $client, array &$state, $type, array $command ) {
+	private static function run_command( Sitepulse_Remote_Client $client, array &$state, $type, array $command, array $args ) {
 		$expires = strtotime( (string) ( $command['expires_at'] ?? '' ) );
 		if ( false !== $expires && $expires < time() ) {
 			return self::command_result( 'failed', null, 'expired' );
@@ -479,6 +491,13 @@ class Sitepulse_Remote_Management {
 				: self::command_result( 'failed', null, 'inventory_failed' );
 		}
 
+		if ( in_array( $type, Sitepulse_Remote_Backups::COMMANDS, true ) ) {
+			$result = Sitepulse_Remote_Backups::run_command( $type, $args );
+			// A started or cancelled backup, or new backup settings, change the backup status.
+			$state['inventory_due'] = $state['inventory_due'] || 'done' === $result['status'];
+			return $result;
+		}
+
 		return self::command_result( 'failed', null, 'unsupported_command' );
 	}
 
@@ -486,9 +505,9 @@ class Sitepulse_Remote_Management {
 	 * @param string      $status done or failed.
 	 * @param array|null  $result Details for the dashboard.
 	 * @param string|null $error  Short error code.
-	 * @return array
+	 * @return array A command's outcome for the API.
 	 */
-	private static function command_result( $status, $result, $error ) {
+	public static function command_result( $status, $result, $error ) {
 		return array(
 			'status' => $status,
 			'result' => $result,
@@ -498,11 +517,17 @@ class Sitepulse_Remote_Management {
 
 	/**
 	 * @param string $type Command type.
+	 * @param array  $args Command arguments.
 	 * @return string Name for the activity log.
 	 */
-	private static function command_label( $type ) {
+	private static function command_label( $type, array $args ) {
 		$labels = array(
-			'refresh_inventory' => __( 'refresh the site inventory', 'sitepulse' ),
+			'refresh_inventory'   => __( 'refresh the site inventory', 'sitepulse' ),
+			/* translators: %s: what the backup saves: full, files or database */
+			'backup_now'          => sprintf( __( 'back up now (%s)', 'sitepulse' ), is_string( $args['what'] ?? null ) ? $args['what'] : 'full' ),
+			'cancel_backup'       => __( 'cancel the running backup', 'sitepulse' ),
+			/* translators: %s: name of a backup preset */
+			'apply_backup_preset' => sprintf( __( 'apply the backup preset "%s"', 'sitepulse' ), is_string( $args['name'] ?? null ) ? $args['name'] : '' ),
 		);
 
 		return $labels[ $type ] ?? $type;
