@@ -153,7 +153,8 @@ class Sitepulse_Remote_Inventory {
 		$offers  = array();
 
 		foreach ( is_array( $updates ) ? $updates : array() as $update ) {
-			if ( ! is_object( $update ) || 'upgrade' !== ( $update->response ?? '' ) || empty( $update->current ) ) {
+			// Until its next version check, WordPress still offers the release it just installed.
+			if ( ! is_object( $update ) || 'upgrade' !== ( $update->response ?? '' ) || empty( $update->current ) || version_compare( (string) $update->current, $current, '<=' ) ) {
 				continue;
 			}
 			// WordPress offers the same release once per language.

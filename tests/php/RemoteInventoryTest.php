@@ -55,6 +55,9 @@ final class RemoteInventoryTest extends Sitepulse_Test_Case {
             (object) array('response' => 'upgrade', 'current' => '6.8.3', 'locale' => 'de_DE'),
             (object) array('response' => 'upgrade', 'current' => '6.9', 'locale' => 'en_US'),
             (object) array('response' => 'latest', 'current' => '6.8', 'locale' => 'en_US'),
+            // Left from before an update to 6.8, until WordPress checks again.
+            (object) array('response' => 'upgrade', 'current' => '6.8', 'locale' => 'en_US'),
+            (object) array('response' => 'upgrade', 'current' => '6.7.2', 'locale' => 'en_US'),
             (object) array('response' => 'upgrade'),
             'not an offer',
         );

@@ -273,6 +273,7 @@ Result: `done` when every item is up to date afterwards, otherwise `failed` with
 - **Redelivery:** a command that was never delivered is queued again for another 15 minutes, up to 3 attempts (`attempts`), within 45 minutes of its creation. After that, it expires, so an old request never comes back to life.
 - **No answer:** a delivered command without a result expires with `no_result` after 1 hour, or 6 hours for update commands. Such a command is never resent automatically, because the site may have run it.
 - **Retry:** `commands/retry` queues a copy of a `failed`, `expired` or `cancelled` command as a new command with `retry_of` set to the original.
+- **One update at a time:** a site runs one update command at a time (the plugin answers `update_running` to another), so a check-in delivers at most one update command, and none while another is `sent` or `running`. Update commands waiting their turn stay `queued`, oldest first, and their 15 minutes start again at each check-in, so they wait as long as the update before them takes; they expire only when the site stops checking in. Other commands are delivered as usual.
 
 A command expires 15 minutes after it is created unless it was delivered. The plugin runs up to 20 commands per check-in, in WordPress's background (cron) request. It remembers the ids of the last 50 commands so it never runs one twice, answers `expired` for a command whose `expires_at` has passed, and answers `unsupported_command` for types it does not know.
 
@@ -301,6 +302,8 @@ The SitePulse dashboard calls these from trusted IPs with the existing portal au
 | `POST /api/portal/remote-management/notifications` | — | Notification settings and the 20 latest notifications |
 | `POST /api/portal/remote-management/notifications/save` | `notifications` (the settings format), `rotate_webhook_secret` (optional), `requested_by` | Change the notification settings |
 | `POST /api/portal/remote-management/notifications/test` | `requested_by` | Send a test message to every configured channel |
+| `POST /api/portal/remote-management/updates/overview` | `sites` (1–100 `{ "domain", "license_key" }`) | The updates each site offers, see "Updates across sites" |
+| `POST /api/portal/remote-management/updates/queue` | `sites`, `requested_by`, `plugins` (files), `themes` (stylesheets), `core` (boolean) | Queue the chosen updates on every site that offers them, see "Updates across sites" |
 | `POST /api/portal/remote-management/alerts` | `sites` (1–100 `{ "domain", "license_key" }`, instead of `domain` and `license_key`), `after` (the id of the last alert read), `limit` (≤ 200, default 100) | Alerts of those sites after `after`, oldest first: `{ "alerts": [ { "id", "domain", "trigger", "subject", "message", "data", "created_at" } ], "unknown_sites": [...] }` |
 | `POST /api/portal/remote-management/roles` | — | Who may view or manage the site |
 | `POST /api/portal/remote-management/roles/save` | `roles`, `requested_by` | Change the site's roles |
@@ -360,6 +363,26 @@ A rollout queues the same command on several sites, a few at a time:
 - **Commands:** `type` and `args` are those of `commands/create`, except `cancel_backup` and `apply_backup_preset`.
 - **Progress:** the API advances a rollout when a command result arrives and every 15 minutes.
 - **Retention:** finished rollouts are kept 90 days.
+
+### Updates across sites
+
+The dashboard shows what all of a user's sites can update, and updates chosen items on all of them at once. Both endpoints take `sites` like `alerts`: up to 100 `{ "domain", "license_key" }`, each answered once, with the ones that do not match listed in `unknown_sites`.
+
+`updates/overview` answers `{ "sites": [...], "unknown_sites": [...] }`. Each site:
+
+```json
+{
+  "domain": "shop.example", "active": true, "can_update": true, "reason": null, "collected_at": "2026-10-16T02:56:19+00:00",
+  "plugins": [ { "id": "elementor/elementor.php", "name": "Elementor", "from": "3.30.1", "to": "3.31.0", "installable": true, "security": false } ],
+  "themes": [ { "id": "astra", "name": "Astra", "from": "4.11.0", "to": "4.11.1", "installable": true, "security": false } ],
+  "core": { "id": "wordpress", "name": "WordPress", "from": "7.1.2", "to": "7.1.3", "installable": true, "security": false },
+  "pending": { "plugins": [ "woocommerce/woocommerce.php" ], "themes": [], "core": false }
+}
+```
+
+It lists every update in the site's last inventory, whatever its update policy. `installable` is `false` for an update without a download package or that needs a newer PHP or WordPress than the site has; `security` says it fixes a vulnerability SitePulse found in the installed version. `core` is the newest WordPress release offered, or `null`. `pending` holds what update commands that are `queued`, `sent` or `running` already install.
+
+`updates/queue` queues, on each site, the chosen items it offers and can install, leaving out the ones already `pending`, and answers `{ "sites": [ { "domain", "status", "reason", "commands", "items" } ], "unknown_sites": [...] }`. `status` is `queued` (with the new command ids and the number of items) or `skipped` with `reason`: `not_active`, `not_allowed` (the user's role on the site is below manager), `no_inventory`, `cannot_update` (`can_update` is `false`), `already_updating` (everything chosen is already `pending`) or `nothing_to_update`. A site gets one `update_plugins` command per 50 plugins, one `update_themes` command and one `update_core` command for the newest release, with the site's `backup_wait`; only its first command backs up first (when its policy says so), since the commands run one after the other (see "One update at a time"). At least one item or `core` must be chosen.
 
 ### Backup warnings
 
