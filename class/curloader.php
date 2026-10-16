@@ -168,6 +168,11 @@ class Sitepulse_CurLoader {
         $host = strtolower( $host );
         $path = strtolower( wp_parse_url( $url, PHP_URL_PATH ) ?: '' );
 
+        // The SitePulse API, wherever SITEPULSE_API_BASE points it.
+        if ( class_exists( 'Sitepulse_Api_Service' ) && strtolower( Sitepulse_Api_Service::api_host() ) === $host ) {
+            return 'SitePulse (API)';
+        }
+
         // Map of host patterns to service/plugin names
         $host_map = array(
             // WordPress Core
