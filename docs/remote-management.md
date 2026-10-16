@@ -20,6 +20,8 @@ Out of scope for remote actions, by design: restoring or deleting backups, insta
 
 The license key is the shared secret, until the dashboard rotates the site's key (see "Key rotation"); from then on that key signs remote-management requests and responses instead of the license. The license never travels in remote-management requests; a rotated key travels once, in the check-in response that offers it.
 
+The site endpoints accept 30 requests a minute per site (by its `X-SitePulse-Domain` and address) and 1,200 a minute per address, which many sites share on shared hosting; more get `429`.
+
 ### Site → API
 
 Every request is a JSON `POST` with these headers:
@@ -85,11 +87,12 @@ Called every `check_in_seconds` (5 minutes while active, hourly otherwise). The 
   "backup_providers": [
     { "id": "updraftplus", "version": "1.26.5", "supported": true },
     { "id": "backwpup", "version": "5.7.8", "supported": true }
-  ]
+  ],
+  "cron": { "url": "https://shop.example/wp-cron.php", "disabled": false, "late": 40 }
 }
 ```
 
-`backup_providers` lists every active backup plugin; `backup_provider` is the one SitePulse manages, or `null` when neither UpdraftPlus nor BackWPup is active. With both active, SitePulse manages the one picked in the dashboard (`remote_management.backup_provider` below) while it is active and supported; otherwise the supported one with the most recent successful backup, and UpdraftPlus when neither has one. Response:
+`cron` (plugin 1.5 and later; see "WP-Cron") is the site's `wp-cron.php`, whether `DISABLE_WP_CRON` is set, and `late`, the seconds the most overdue scheduled task had waited at the check-in. `backup_providers` lists every active backup plugin; `backup_provider` is the one SitePulse manages, or `null` when neither UpdraftPlus nor BackWPup is active. With both active, SitePulse manages the one picked in the dashboard (`remote_management.backup_provider` below) while it is active and supported; otherwise the supported one with the most recent successful backup, and UpdraftPlus when neither has one. Response:
 
 ```json
 {
@@ -279,11 +282,11 @@ A command expires 15 minutes after it is created unless it was delivered. The pl
 
 ## Dashboard (portal) endpoints
 
-The SitePulse dashboard calls these from trusted IPs with the existing portal authentication (`X-API-Key` and the HMAC `X-Portal-Auth` header), plus the site's `domain` and `license_key` in the body. Only dashboard users who own the license can reach a site; the license alone never creates commands. Every endpoint that changes something takes `requested_by`, the email of the dashboard user acting, which the site's roles must allow (see "Roles").
+The SitePulse dashboard calls these from trusted IPs with the existing portal authentication (`X-API-Key` and the HMAC `X-Portal-Auth` header), plus the site's `domain` and `license_key` in the body. Only dashboard users who own the license can reach a site; the license alone never creates commands. Every endpoint that changes something takes `requested_by`, the email of the dashboard user acting, which the site's roles must allow (see "Roles"). A signed request that changes something is accepted once: the same `X-Portal-Auth` again (a replay within its five minutes) gets `409` with "This request was already received.".
 
 | Endpoint | Body | Purpose |
 |---|---|---|
-| `POST /api/portal/remote-management` | — | Status: switch, `active`, last check-in, what the site reported, backup warnings |
+| `POST /api/portal/remote-management` | — | Status: switch, `active`, last check-in, what the site reported, backup warnings, `cron` (see "WP-Cron") |
 | `POST /api/portal/remote-management/update` | `enabled`, `requested_by` | Turn remote management on or off |
 | `POST /api/portal/remote-management/inventory` | — | Latest software and backup inventory, backup warnings |
 | `POST /api/portal/remote-management/backup-provider` | `backup_provider` (`updraftplus`, `backwpup` or `null`), `requested_by` | Pick the backup plugin to manage when both are active |
@@ -304,6 +307,7 @@ The SitePulse dashboard calls these from trusted IPs with the existing portal au
 | `POST /api/portal/remote-management/notifications/test` | `requested_by` | Send a test message to every configured channel |
 | `POST /api/portal/remote-management/updates/overview` | `sites` (1–100 `{ "domain", "license_key" }`) | The updates each site offers, see "Updates across sites" |
 | `POST /api/portal/remote-management/updates/queue` | `sites`, `requested_by`, `plugins` (files), `themes` (stylesheets), `core` (boolean) | Queue the chosen updates on every site that offers them, see "Updates across sites" |
+| `POST /api/portal/remote-management/activity` | `sites`, `limit` (≤ 100, default 50), `before` (time), `categories` (optional list) | The activity of all these sites in one list, newest first, see "Updates across sites" |
 | `POST /api/portal/remote-management/alerts` | `sites` (1–100 `{ "domain", "license_key" }`, instead of `domain` and `license_key`), `after` (the id of the last alert read), `limit` (≤ 200, default 100) | Alerts of those sites after `after`, oldest first: `{ "alerts": [ { "id", "domain", "trigger", "subject", "message", "data", "created_at" } ], "unknown_sites": [...] }` |
 | `POST /api/portal/remote-management/roles` | — | Who may view or manage the site |
 | `POST /api/portal/remote-management/roles/save` | `roles`, `requested_by` | Change the site's roles |
@@ -366,13 +370,19 @@ A rollout queues the same command on several sites, a few at a time:
 
 ### Updates across sites
 
-The dashboard shows what all of a user's sites can update, and updates chosen items on all of them at once. Both endpoints take `sites` like `alerts`: up to 100 `{ "domain", "license_key" }`, each answered once, with the ones that do not match listed in `unknown_sites`.
+The dashboard shows what all of a user's sites can update, and updates chosen items on all of them at once. These endpoints take `sites` like `alerts`: up to 100 `{ "domain", "license_key" }`, each answered once, with the ones that do not match listed in `unknown_sites`.
 
 `updates/overview` answers `{ "sites": [...], "unknown_sites": [...] }`. Each site:
 
 ```json
 {
-  "domain": "shop.example", "active": true, "can_update": true, "reason": null, "collected_at": "2026-10-16T02:56:19+00:00",
+  "domain": "shop.example", "active": true, "enabled": true, "blocked": false, "last_check_in_at": "2026-10-16T14:43:03+00:00",
+  "backup": {
+    "provider": "updraftplus", "last": { "time": "2026-10-16T02:00:00Z", "ok": true }, "next": "2026-10-17T02:00:00Z", "running": null,
+    "schedules": [ { "name": "Files", "contents": ["files"], "frequency": "weekly", "keep": 4, "destinations": ["googledrive"] } ],
+    "warnings": [ { "code": "overdue", "message": "…" } ]
+  },
+  "can_update": true, "reason": null, "collected_at": "2026-10-16T02:56:19+00:00",
   "plugins": [ { "id": "elementor/elementor.php", "name": "Elementor", "from": "3.30.1", "to": "3.31.0", "installable": true, "security": false, "excluded": false } ],
   "themes": [ { "id": "astra", "name": "Astra", "from": "4.11.0", "to": "4.11.1", "installable": true, "security": false, "excluded": false } ],
   "core": { "id": "wordpress", "name": "WordPress", "from": "7.1.2", "to": "7.1.3", "installable": true, "security": false, "excluded": false },
@@ -380,9 +390,30 @@ The dashboard shows what all of a user's sites can update, and updates chosen it
 }
 ```
 
-It lists every update in the site's last inventory, whatever its update policy. `installable` is `false` for an update without a download package or that needs a newer PHP or WordPress than the site has; `security` says it fixes a vulnerability SitePulse found in the installed version; `excluded` that the site's update policy excludes it (see "Update policy"). `core` is the newest WordPress release offered and newer than the installed one, or `null`. `pending` holds what update commands that are `queued`, `sent` or `running` already install.
+`enabled` is whether the dashboard turned remote management on, `blocked` whether the site's administrator blocked it, and `active` whether it works now (also needing a supported backup plugin). `backup` is the managed backup plugin and what the inventory says about backups: the `last` one (`null` until one is reported), the `next` scheduled one, the one `running` now (`{ "name", "stage" }` or `null`) and the `schedules`, with the site's `warnings` (see "Backup warnings"). It lists every update in the site's last inventory, whatever its update policy. `installable` is `false` for an update without a download package or that needs a newer PHP or WordPress than the site has; `security` says it fixes a vulnerability SitePulse found in the installed version; `excluded` that the site's update policy excludes it (see "Update policy"). `core` is the newest WordPress release offered and newer than the installed one, or `null`. `pending` holds what update commands that are `queued`, `sent` or `running` already install.
 
 `updates/queue` queues, on each site, the chosen items it offers and can install, leaving out the ones already `pending` and the ones its update policy excludes, and answers `{ "sites": [ { "domain", "status", "reason", "commands", "items" } ], "unknown_sites": [...] }`. `status` is `queued` (with the new command ids and the number of items) or `skipped` with `reason`: `not_active`, `not_allowed` (the user's role on the site is below manager), `no_inventory`, `cannot_update` (`can_update` is `false`), `already_updating` (what it offers of the choice is already `pending`), `excluded` (its update policy excludes the rest) or `nothing_to_update`. A site gets one `update_plugins` command per 50 plugins, one `update_themes` command and one `update_core` command for the newest release, with the site's `backup_wait`; only its first command backs up first (when its policy says so), since the commands run one after the other (see "One update at a time"). At least one item or `core` must be chosen.
+
+`updates/overview` also gives each site's `cron` (see "WP-Cron").
+
+`activity` answers `{ "activity": [ { "domain", "time", "category", "type", "summary", "data" } ], "unknown_sites": [...] }`: the entries of each site's timeline (see "Timeline", same `limit`, `before` and `categories`) merged, newest first, each with its site's `domain`.
+
+### WP-Cron
+
+The plugin checks in, runs commands, takes each update step and resumes backups in WP-Cron, which WordPress runs only when the site gets visitors, unless a server cron job runs it (often with `DISABLE_WP_CRON`). A quiet site would therefore pick up commands late and stop between update steps. Requesting a site's `wp-cron.php` runs its due tasks even with `DISABLE_WP_CRON`, so every minute the API wakes:
+
+- sites with a command `queued`, `sent` or `running`, so a command starts within about a minute and every update step and backup resumption follows;
+- sites whose last check-in is older than twice their check-in interval (10 minutes while active, 2 hours otherwise).
+
+Only sites with remote management on, not blocked on the site and that checked in at least once are woken, each at most once a minute, 50 at a time, with an 8-second timeout and no redirects. The request carries no `doing_wp_cron` (WordPress runs nothing when that value does not match the lock it set itself). For a site with a command still `queued` it adds `sitepulse_check_in=1`: the plugin then moves its next check-in to that cron run, so the command is delivered at once, unless the site checked in less than a minute ago (anyone can request that address, so the flag does nothing else). The API requests the `cron.url` the site reported when its host is the site's domain (with or without `www.`) and its path ends in `/wp-cron.php` with no query, and `https://<domain>/wp-cron.php` otherwise, so a site cannot point the API at another server or page. It resolves the host itself, refuses ports other than 80 and 443 (`blocked_port`), hosts that do not resolve (`unresolved`) and any address that is not public, such as private, loopback, link-local or reserved ones (`blocked_host`), then connects to the address it checked, so a changed DNS answer cannot send the request elsewhere; it reads at most 64 KB of the answer. A development API (`REMOTE_MANAGEMENT_WAKE_PRIVATE_HOSTS=true`) may wake private addresses and other ports. The wake runs on the queue, so slow sites do not hold up other scheduled tasks, and wakes at most 2,000 sites a minute, the longest silent first.
+
+The status and `updates/overview` give each site's `cron`:
+
+```json
+{ "disabled": false, "late": 40, "wake": { "at": "2026-10-16T17:02:00Z", "ok": true, "status": 200, "error": null }, "warning": null }
+```
+
+`disabled` and `late` are from the last check-in (`null` before plugin 1.5); `wake` is the last wake (`error`: `unreachable`, `http_<status>`, `blocked_port`, `unresolved` or `blocked_host`). `warning` is `unreachable` when the last wake failed and the site has not checked in since (the site cannot be woken, so it waits for visitors), `not_running` when a task had waited an hour or more at the last check-in (WP-Cron does not run by itself, so scheduled backups run late), or `null`. Both are fixed with a server cron job that requests `wp-cron.php` every 5 minutes.
 
 ### Backup warnings
 

@@ -107,7 +107,7 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         Sitepulse_Remote_Management::check_in();
 
         $this->assertSame(array('check-in'), $this->endpoints());
-        $this->assertSame(array('schema' => 1, 'plugin_version' => SITEPULSE_VERSION, 'wp_version' => '6.8', 'blocked' => false, 'backup_provider' => null, 'backup_providers' => array()), sitepulse_test_remote_request_body(0));
+        $this->assertSame(array('schema' => 1, 'plugin_version' => SITEPULSE_VERSION, 'wp_version' => '6.8', 'blocked' => false, 'backup_provider' => null, 'backup_providers' => array(), 'cron' => array('url' => site_url('wp-cron.php'), 'disabled' => false, 'late' => 0)), sitepulse_test_remote_request_body(0));
         $state = Sitepulse_Remote_Management::state();
         $this->assertFalse($state['enabled']);
         $this->assertFalse($state['active']);
@@ -115,6 +115,71 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         $this->assertSame(array(), $state['done_commands'], 'Commands run only while the dashboard manages the site.');
         $this->assertEqualsWithDelta(time() + 3600, $this->nextCheckIn(), 2);
         $this->assertSame(array(), $this->messages());
+    }
+
+    public function test_check_in_says_how_late_scheduled_tasks_run(): void {
+        $this->connect();
+        Sitepulse_Test_WP::$cron = array(time() + 600 => array(), time() - 7200 => array(), time() - 90 => array());
+        $this->queue($this->answer(self::IDLE));
+
+        Sitepulse_Remote_Management::check_in();
+
+        $cron = sitepulse_test_remote_request_body(0)['cron'];
+        $this->assertFalse($cron['disabled']);
+        $this->assertEqualsWithDelta(7200, $cron['late'], 2, 'The most overdue task counts; tasks still to come do not.');
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function test_check_in_says_when_wp_cron_is_turned_off(): void {
+        define('DISABLE_WP_CRON', true);
+        $this->connect();
+        $this->queue($this->answer(self::IDLE));
+
+        Sitepulse_Remote_Management::check_in();
+
+        $this->assertTrue(sitepulse_test_remote_request_body(0)['cron']['disabled']);
+    }
+
+    public function test_a_wake_from_the_api_checks_in_during_that_cron_run(): void {
+        $this->connect();
+        update_option('sitepulse_remote_state', array('last_check_in' => time() - 120));
+        wp_schedule_single_event(time() + 240, Sitepulse_Remote_Management::CHECK_IN_HOOK);
+        Sitepulse_Test_WP::$doing_cron = true;
+        $_GET['sitepulse_check_in'] = '1';
+        try {
+            Sitepulse_Remote_Management::init();
+            $this->assertEqualsWithDelta(time(), $this->nextCheckIn(), 1, 'The check-in is due in this cron run.');
+
+            // Already due: left as it is.
+            Sitepulse_Remote_Management::init();
+            $this->assertEqualsWithDelta(time(), $this->nextCheckIn(), 1);
+
+            // Checked in less than a minute ago: the scheduled check-in stays.
+            wp_clear_scheduled_hook(Sitepulse_Remote_Management::CHECK_IN_HOOK);
+            wp_schedule_single_event(time() + 240, Sitepulse_Remote_Management::CHECK_IN_HOOK);
+            update_option('sitepulse_remote_state', array('last_check_in' => time() - 30));
+            Sitepulse_Remote_Management::init();
+            $this->assertEqualsWithDelta(time() + 240, $this->nextCheckIn(), 1);
+
+            // Only cron requests that carry the flag, on a site that can connect.
+            update_option('sitepulse_remote_state', array('last_check_in' => time() - 120));
+            unset($_GET['sitepulse_check_in']);
+            Sitepulse_Remote_Management::init();
+            $this->assertEqualsWithDelta(time() + 240, $this->nextCheckIn(), 1);
+            $_GET['sitepulse_check_in'] = '1';
+            Sitepulse_Test_WP::$doing_cron = false;
+            Sitepulse_Remote_Management::init();
+            $this->assertEqualsWithDelta(time() + 240, $this->nextCheckIn(), 1);
+            Sitepulse_Test_WP::$doing_cron = true;
+            delete_option('sitepulse_license_key');
+            Sitepulse_Remote_Management::init();
+            $this->assertFalse($this->nextCheckIn(), 'A site that cannot connect does not check in.');
+        } finally {
+            unset($_GET['sitepulse_check_in']);
+        }
     }
 
     public function test_turning_on_sends_the_inventory_and_checks_in_every_five_minutes(): void {

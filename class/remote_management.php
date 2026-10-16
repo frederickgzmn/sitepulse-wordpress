@@ -24,6 +24,9 @@ class Sitepulse_Remote_Management {
 	/** Cron hook of the check-in. */
 	const CHECK_IN_HOOK = 'sitepulse_remote_check_in';
 
+	/** Seconds since the last check-in before a wake from the API checks in again. */
+	const WOKEN_CHECK_IN_GAP = 60;
+
 	/** admin-post action and nonce of the block switch. */
 	const BLOCK_ACTION = 'sitepulse_remote_management';
 
@@ -94,6 +97,29 @@ class Sitepulse_Remote_Management {
 		if ( is_admin() || wp_doing_cron() ) {
 			self::ensure_schedule();
 		}
+		if ( wp_doing_cron() ) {
+			self::check_in_when_woken();
+		}
+	}
+
+	/**
+	 * The API requests wp-cron.php?sitepulse_check_in=1 when the dashboard queued work for this
+	 * site: check in during that cron run rather than at the next scheduled check-in. Anyone can
+	 * request that address, so it only moves the scheduled check-in forward, at most once a minute.
+	 */
+	private static function check_in_when_woken() {
+		// A flag that only moves a check-in forward; there is nothing to verify.
+		if ( ! isset( $_GET['sitepulse_check_in'] ) || ! self::can_connect() ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return;
+		}
+		$next = wp_next_scheduled( self::CHECK_IN_HOOK );
+		if ( false !== $next && $next <= time() ) {
+			return;
+		}
+		if ( time() - (int) self::state()['last_check_in'] < self::WOKEN_CHECK_IN_GAP ) {
+			return;
+		}
+		self::schedule_next( 0 );
 	}
 
 	/**
@@ -159,6 +185,27 @@ class Sitepulse_Remote_Management {
 	}
 
 	/**
+	 * How WP-Cron runs here: the API requests this wp-cron.php to wake a site whose cron does not
+	 * run by itself (no visitors, or DISABLE_WP_CRON without a server cron job), and the dashboard
+	 * says when it does not run.
+	 *
+	 * @return array{url: string, disabled: bool, late: int} late: seconds the most overdue task has waited.
+	 */
+	private static function cron_health() {
+		$now  = time();
+		$late = 0;
+		foreach ( array_keys( (array) _get_cron_array() ) as $timestamp ) {
+			$late = max( $late, $now - (int) $timestamp );
+		}
+
+		return array(
+			'url'      => site_url( 'wp-cron.php' ),
+			'disabled' => defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON,
+			'late'     => $late,
+		);
+	}
+
+	/**
 	 * Check in with the API: report the site, then, while the dashboard manages the
 	 * site, run the commands, send the inventory when it is due and deliver events.
 	 */
@@ -181,6 +228,7 @@ class Sitepulse_Remote_Management {
 				'blocked'          => $blocked,
 				'backup_provider'  => $provider,
 				'backup_providers' => Sitepulse_Remote_Backups::providers(),
+				'cron'             => self::cron_health(),
 			)
 		);
 
