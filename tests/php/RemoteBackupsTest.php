@@ -238,6 +238,31 @@ final class RemoteBackupsTest extends Sitepulse_Test_Case {
         $this->assertTrue(Sitepulse_Remote_Management::state()['inventory_due'], 'A new backup refreshes the inventory.');
     }
 
+    public function test_an_updraftplus_run_that_will_resume_is_not_reported_as_a_failed_backup(): void {
+        Sitepulse_Remote_Backups::init();
+        $this->activateRemoteManagement();
+        Sitepulse_Test_Backups::updraftplus();
+        $updraftplus = $GLOBALS['updraftplus'];
+        $failed = array('backup_time' => 1760493600, 'success' => 0, 'errors' => array('Infinite recursion'), 'backup_array' => array('db-size' => 10));
+
+        // The first run hit an error and UpdraftPlus resumes the backup later.
+        $updraftplus->newresumption_scheduled = 1760493900;
+        $this->assertSame($failed, apply_filters('updraftplus_save_last_backup', $failed), 'UpdraftPlus saves the record unchanged.');
+        $this->assertSame(array(), $this->events(), 'The backup has not finished.');
+
+        // The resumption succeeds: a resumption may still be scheduled, but a successful backup is finished.
+        $updraftplus->current_resumption = 1;
+        apply_filters('updraftplus_save_last_backup', array('success' => 1, 'errors' => array()) + $failed);
+        // Another backup fails on its last run (no resumption), and a third schedules a resumption only to report its failure.
+        $updraftplus->newresumption_scheduled = false;
+        apply_filters('updraftplus_save_last_backup', $failed);
+        $updraftplus->newresumption_scheduled = 1760494200;
+        $updraftplus->jobdata = array('fail_on_resume' => 2);
+        apply_filters('updraftplus_save_last_backup', $failed);
+
+        $this->assertSame(array(true, false, false), array_column(array_column($this->events(), 'data'), 'ok'));
+    }
+
     public function test_backups_are_not_reported_while_remote_management_is_off(): void {
         Sitepulse_Remote_Backups::init();
         $job = new BackWPup_Job(); $job->errors = 1;
