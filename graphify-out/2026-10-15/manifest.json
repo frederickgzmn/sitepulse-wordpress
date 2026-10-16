@@ -318,9 +318,9 @@
     "semantic_hash": "9177b57d700fc636dad4a7c04e1dc3f1"
   },
   "uninstall.php": {
-    "mtime": 1792091916.8004377,
-    "seen": 1792103396.5479085,
-    "ast_hash": "f6ca1759bfad29032dfed828c82cb8c4",
+    "mtime": 1792106182.092167,
+    "seen": 1792108155.272434,
+    "ast_hash": "f85ffc9a984f044da584fbeb5be808c1",
     "semantic_hash": ""
   },
   ".commandcode/taste/taste.md": {
@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "readme.txt": {
-    "mtime": 1792092144.4338863,
-    "seen": 1792103396.5479186,
-    "ast_hash": "7cd2b128febe7cd48c3540231562b0d7",
+    "mtime": 1792108150.3982825,
+    "seen": 1792108155.2724423,
+    "ast_hash": "fa6e1b4d7e52414feb7c76d1b80a0377",
     "semantic_hash": ""
   },
   "assets/img/only-logo.png": {
@@ -492,9 +492,9 @@
     "semantic_hash": ""
   },
   "tests/php/LifecycleTest.php": {
-    "mtime": 1792091920.6461341,
-    "seen": 1792103396.5478418,
-    "ast_hash": "01bbcb4fa92d5bd9d5cb2d514c00491d",
+    "mtime": 1792106214.8633897,
+    "seen": 1792108155.272376,
+    "ast_hash": "8b5fa0550c4fdc833ccdaa35f6b438b1",
     "semantic_hash": ""
   },
   "tests/php/PageTrackerTest.php": {
@@ -978,9 +978,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1792092273.5333536,
-    "seen": 1792103396.547913,
-    "ast_hash": "39b3cea55f9519a1925978a468497450",
+    "mtime": 1792108150.398562,
+    "seen": 1792108155.2724378,
+    "ast_hash": "eebd139b9db41627fdb3b85ff8dfa165",
     "semantic_hash": ""
   },
   "scripts/bump-version.php": {
@@ -1026,9 +1026,9 @@
     "semantic_hash": ""
   },
   "class/remote_management.php": {
-    "mtime": 1792091910.523944,
-    "seen": 1792103396.547738,
-    "ast_hash": "ee1d37c073fde161d3d086e17866b4f8",
+    "mtime": 1792106182.0877779,
+    "seen": 1792108155.2722898,
+    "ast_hash": "ab1e588309f66345fffb44c08194b7a4",
     "semantic_hash": ""
   },
   "templates/backend/remote_management.php": {
@@ -1068,9 +1068,9 @@
     "semantic_hash": ""
   },
   "tests/php/RemoteManagementTest.php": {
-    "mtime": 1792092118.1373434,
-    "seen": 1792103396.54787,
-    "ast_hash": "32b3ad30bd81047ff6f158bf589b313b",
+    "mtime": 1792106223.9954274,
+    "seen": 1792108155.2724001,
+    "ast_hash": "6a81c7d9caebf956031b01489c1a25cb",
     "semantic_hash": ""
   },
   "tests/php/RemoteVariantsTest.php": {
@@ -1092,9 +1092,9 @@
     "semantic_hash": ""
   },
   "docs/remote-management.md": {
-    "mtime": 1792101714.2236493,
-    "seen": 1792103396.5479176,
-    "ast_hash": "bb6ee0f2ddf2f79a9ee9104336f824cc",
+    "mtime": 1792107880.2814975,
+    "seen": 1792108155.2724414,
+    "ast_hash": "bde1c2f235de6e819aefcf70cafca0fd",
     "semantic_hash": ""
   },
   "tests/php/RemoteBackupCommandsTest.php": {
@@ -1110,15 +1110,15 @@
     "semantic_hash": ""
   },
   "class/remote_updates.php": {
-    "mtime": 1792091910.523285,
-    "seen": 1792103396.5477395,
-    "ast_hash": "ca519cfac4124357231daf183a6c10ba",
+    "mtime": 1792107862.7396832,
+    "seen": 1792108155.2722914,
+    "ast_hash": "2d830b1f4bcf837288cd493f6735ca8f",
     "semantic_hash": ""
   },
   "tests/php/RemoteUpdatesTest.php": {
-    "mtime": 1792092103.42498,
-    "seen": 1792103396.5478709,
-    "ast_hash": "fd9c5beef713759753c1db81220c9233",
+    "mtime": 1792107862.7402859,
+    "seen": 1792108155.2724009,
+    "ast_hash": "cd89d2bd7957f7a26eeb0d488a0a48d3",
     "semantic_hash": ""
   },
   "class/remote_activity.php": {
@@ -1131,6 +1131,18 @@
     "mtime": 1792103110.728467,
     "seen": 1792103396.5478616,
     "ast_hash": "9bbdcc16c0c29f05a6b3f788a2905138",
+    "semantic_hash": ""
+  },
+  "scripts/remote-api-mock.php": {
+    "mtime": 1792106214.8636503,
+    "seen": 1792108155.2723107,
+    "ast_hash": "db64eb911734c50c8db2a45d1959aea4",
+    "semantic_hash": ""
+  },
+  "tests/php/RemoteApiMockTest.php": {
+    "mtime": 1792106214.8638465,
+    "seen": 1792108155.2723932,
+    "ast_hash": "4db476b38a29a2f6621b04bf9e43cb1a",
     "semantic_hash": ""
   }
 }
