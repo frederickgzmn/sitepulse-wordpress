@@ -44,7 +44,12 @@ Sitepulse_Test_WP::rememberClassDefaults(Sitepulse_Test_Backups::class);
 /** UpdraftPlus's schedulers return the interval they scheduled, 'daily' for one WordPress does not know. */
 class UpdraftPlus {
     public $version;
+    /** The run's state when it saves its record: a later resumption, and the one that only reports failure. */
+    public $newresumption_scheduled = false;
+    public $current_resumption = 0;
+    public $jobdata = array();
     public function __construct($version) { $this->version = $version; }
+    public function jobdata_get($key, $default = null) { return $this->jobdata[$key] ?? $default; }
     public function backup_time_nonce() { Sitepulse_Test_Backups::$calls[] = array('backup_time_nonce'); return Sitepulse_Test_Backups::$nonce; }
     public function schedule_backup($interval) { Sitepulse_Test_Backups::$calls[] = array('schedule_backup', $interval, get_option('updraft_interval')); return $interval; }
     public function schedule_backup_database($interval) { Sitepulse_Test_Backups::$calls[] = array('schedule_backup_database', $interval, get_option('updraft_interval_database')); return $interval; }

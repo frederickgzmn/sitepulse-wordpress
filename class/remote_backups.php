@@ -195,7 +195,7 @@ class Sitepulse_Remote_Backups {
 	 * @return mixed The record, unchanged.
 	 */
 	public static function updraftplus_finished( $last_backup ) {
-		if ( is_array( $last_backup ) ) {
+		if ( is_array( $last_backup ) && ! self::updraftplus_resuming( $last_backup ) ) {
 			$problems = self::updraftplus_problems( $last_backup['errors'] ?? array() );
 			Sitepulse_Remote_Management::record_event(
 				'backup.completed',
@@ -211,6 +211,23 @@ class Sitepulse_Remote_Backups {
 		}
 
 		return $last_backup;
+	}
+
+	/**
+	 * Whether UpdraftPlus saved the record of a run that had errors but will try again: it saves
+	 * one at the end of every run, and only the last run of a backup finishes it.
+	 *
+	 * @param array $last_backup UpdraftPlus's record of the run.
+	 * @return bool
+	 */
+	private static function updraftplus_resuming( array $last_backup ) {
+		$updraftplus = $GLOBALS['updraftplus'] ?? null;
+		if ( ! empty( $last_backup['success'] ) || ! is_object( $updraftplus ) || empty( $updraftplus->newresumption_scheduled ) ) {
+			return false;
+		}
+
+		// UpdraftPlus also schedules a resumption that only reports the failure ("fail_on_resume").
+		return (int) $updraftplus->current_resumption + 1 !== (int) $updraftplus->jobdata_get( 'fail_on_resume' );
 	}
 
 	/**

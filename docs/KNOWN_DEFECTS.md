@@ -27,6 +27,7 @@ The defects below were reproduced with expected-correct tests, then repaired. Th
 | Reports and AI diagnoses describe the last 24 hours, and an oversized report keeps the slowest entries. | [ApiServiceTest](php/ApiServiceTest.php), [ApiCoverageTest](php/ApiCoverageTest.php) |
 | Plugin averages cover the last 24 hours and the slowest plugins are listed first. | [PluginProfilerTest](php/PluginProfilerTest.php) |
 | The dashboard assistant shows the slowest item's time and takes the heaviest plugin from its recent average. | [PetAssistantTemplateTest](php/PetAssistantTemplateTest.php) |
+| An UpdraftPlus run that hit an error but will resume is not reported as a failed backup (which sent a "Backup failed" alert); only the backup's last run is. | [RemoteBackupsTest](php/RemoteBackupsTest.php) |
 
 ## JavaScript
 
