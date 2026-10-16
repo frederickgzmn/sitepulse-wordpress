@@ -19,6 +19,7 @@ $empty      = array(
 	'key'             => (string) getenv( 'SITEPULSE_MOCK_LICENSE' ),
 	'pending_key'     => null,
 	'queue'           => array(),
+	'updating'        => null,
 	'check_ins'       => array(),
 	'inventory'       => null,
 	'events'          => array(),
@@ -119,11 +120,24 @@ if ( 'check-in' === $endpoint ) {
 	if ( $state['pending_key'] ) {
 		$remote['new_key'] = $state['pending_key'];
 	}
-	$answer         += array(
+	// One update at a time, as the API delivers them: the others wait until it has a result.
+	$deliver = array();
+	$waiting = array();
+	foreach ( $state['queue'] as $command ) {
+		if ( in_array( $command['type'], array( 'update_plugins', 'update_themes', 'update_core' ), true ) ) {
+			if ( null !== $state['updating'] ) {
+				$waiting[] = $command;
+				continue;
+			}
+			$state['updating'] = $command['id'];
+		}
+		$deliver[] = $command;
+	}
+	$answer        += array(
 		'remote_management' => $remote,
-		'commands'          => $state['queue'],
+		'commands'          => $deliver,
 	);
-	$state['queue'] = array();
+	$state['queue'] = $waiting;
 } elseif ( 'inventory' === $endpoint ) {
 	$state['inventory'] = $request;
 } elseif ( 'events' === $endpoint ) {
@@ -138,6 +152,9 @@ if ( 'check-in' === $endpoint ) {
 	$answer['accepted'] = $accepted;
 } elseif ( 'command-result' === $endpoint ) {
 	$state['results'][] = $request;
+	if ( ( $request['id'] ?? null ) === $state['updating'] && in_array( $request['status'] ?? null, array( 'done', 'failed' ), true ) ) {
+		$state['updating'] = null;
+	}
 } elseif ( 'key' === $endpoint && $key === $state['pending_key'] ) {
 	$state['key']         = $key;
 	$state['pending_key'] = null;

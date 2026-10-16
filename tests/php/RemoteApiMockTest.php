@@ -74,6 +74,23 @@ final class RemoteApiMockTest extends Sitepulse_Test_Case {
         $this->assertSame(array(), $state['queue'], 'A command is delivered once.');
     }
 
+    public function test_the_mock_delivers_one_update_at_a_time(): void {
+        $plugins = $this->mock('/mock/queue?type=update_plugins&args=' . rawurlencode('{"plugins":["seo/seo.php"]}'));
+        $themes = $this->mock('/mock/queue?type=update_themes&args=' . rawurlencode('{"themes":["astra"]}'));
+        $refresh = $this->mock('/mock/queue?type=refresh_inventory&args=' . rawurlencode('{}'));
+        $client = new Sitepulse_Remote_Client(SITEPULSE_TEST_LICENSE);
+        $delivered = static function () use ($client): array { return array_column($client->post('check-in', array('schema' => 1))['commands'], 'id'); };
+
+        $this->assertSame(array($plugins['id'], $refresh['id']), $delivered());
+        $this->assertSame(array(), $delivered(), 'The next update waits for a result.');
+        $client->post('command-result', array('id' => $plugins['id'], 'status' => 'running', 'result' => null, 'error' => null));
+        $client->post('command-result', array('id' => $refresh['id'], 'status' => 'done', 'result' => null, 'error' => null));
+        $this->assertSame(array(), $delivered());
+        $client->post('command-result', array('id' => $plugins['id'], 'status' => 'failed', 'result' => null, 'error' => 'update_failed'));
+        $this->assertSame(array($themes['id']), $delivered());
+        $this->assertSame($themes['id'], $this->mock('/mock/state')['updating']);
+    }
+
     public function test_the_mock_refuses_what_the_api_refuses(): void {
         $this->assertSame('http_401', (new Sitepulse_Remote_Client('sk_some_other_license'))->post('check-in', array('schema' => 1))->get_error_code());
         $this->assertSame('http_409', (new Sitepulse_Remote_Client(SITEPULSE_TEST_LICENSE))->post('key', array('schema' => 1))->get_error_code(), 'No rotation is pending.');
@@ -97,6 +114,6 @@ final class RemoteApiMockTest extends Sitepulse_Test_Case {
         $state = $this->mock('/mock/state');
         $this->assertSame(array($key, null), array($state['key'], $state['pending_key']));
         $this->assertCount(2, $state['check_ins'], 'The second check-in is signed with the new key.');
-        $this->assertSame(array('key' => SITEPULSE_TEST_LICENSE, 'queue' => array()), array_intersect_key($this->mock('/mock/reset'), array('key' => 1, 'queue' => 1)));
+        $this->assertSame(array('key' => SITEPULSE_TEST_LICENSE, 'queue' => array(), 'updating' => null), array_intersect_key($this->mock('/mock/reset'), array('key' => 1, 'queue' => 1, 'updating' => 1)));
     }
 }
