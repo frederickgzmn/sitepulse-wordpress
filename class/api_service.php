@@ -18,32 +18,40 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Sitepulse_Api_Service {
 
 	/**
-	 * API endpoint URL
+	 * The SitePulse API. SITEPULSE_API_BASE in wp-config.php points the plugin at another one,
+	 * such as a local API during development.
 	 *
 	 * @var string
 	 */
-	private const API_ENDPOINT = 'https://api.sitepulse.me/api/website/website-request';
+	const DEFAULT_API_BASE = 'https://api.sitepulse.me';
 
 	/**
-	 * API endpoint Vulnerabilities URL
+	 * Path of the site report endpoint.
 	 *
 	 * @var string
 	 */
-	private const API_ENDPOINT_VULNERABILITIES = 'https://api.sitepulse.me/api/website/website-vulnerabilities';
+	private const API_ENDPOINT = '/api/website/website-request';
 
 	/**
-	 * API endpoint for AI diagnostic
+	 * Path of the vulnerabilities endpoint.
 	 *
 	 * @var string
 	 */
-	private const API_ENDPOINT_AI_DIAGNOSTIC = 'https://api.sitepulse.me/api/ai-diagnostic';
+	private const API_ENDPOINT_VULNERABILITIES = '/api/website/website-vulnerabilities';
 
 	/**
-	 * API endpoint for deactivation feedback
+	 * Path of the AI diagnostic endpoint.
 	 *
 	 * @var string
 	 */
-	private const API_ENDPOINT_DEACTIVATION_FEEDBACK = 'https://api.sitepulse.me/api/feedback/deactivation';
+	private const API_ENDPOINT_AI_DIAGNOSTIC = '/api/ai-diagnostic';
+
+	/**
+	 * Path of the deactivation feedback endpoint.
+	 *
+	 * @var string
+	 */
+	const API_ENDPOINT_DEACTIVATION_FEEDBACK = '/api/feedback/deactivation';
 
 	/**
 	 * Option key for storing license number
@@ -58,6 +66,41 @@ class Sitepulse_Api_Service {
 	 * @var string
 	 */
 	private const LAST_REQUEST_OPTION_KEY = 'sitepulse_last_api_request';
+
+	/**
+	 * Base URL of the SitePulse API, without a trailing slash: SITEPULSE_API_BASE when it is an
+	 * http(s) URL, otherwise api.sitepulse.me.
+	 *
+	 * @return string
+	 */
+	public static function api_base() {
+		$base  = defined( 'SITEPULSE_API_BASE' ) && is_string( SITEPULSE_API_BASE ) ? trim( SITEPULSE_API_BASE ) : '';
+		$parts = '' !== $base ? wp_parse_url( $base ) : false;
+		if ( ! is_array( $parts ) || ! in_array( strtolower( (string) ( $parts['scheme'] ?? '' ) ), array( 'http', 'https' ), true ) || empty( $parts['host'] ) ) {
+			return self::DEFAULT_API_BASE;
+		}
+
+		return untrailingslashit( $base );
+	}
+
+	/**
+	 * Full URL of an API path.
+	 *
+	 * @param string $path Path starting with a slash.
+	 * @return string
+	 */
+	public static function api_url( $path ) {
+		return self::api_base() . $path;
+	}
+
+	/**
+	 * Host of the SitePulse API, to recognize its requests in the outbound request log.
+	 *
+	 * @return string
+	 */
+	public static function api_host() {
+		return (string) wp_parse_url( self::api_base(), PHP_URL_HOST );
+	}
 
 	/**
 	 * Option key for storing pagespeed report
@@ -210,7 +253,7 @@ class Sitepulse_Api_Service {
 		// Check for testing endpoint override (defined in wp-config.php for testing purposes)
 		$endpoint = defined( 'SITEPULSE_TESTING_API_ENDPOINT' ) && ! empty( SITEPULSE_TESTING_API_ENDPOINT )
 			? SITEPULSE_TESTING_API_ENDPOINT
-			: self::API_ENDPOINT;
+			: self::api_url( self::API_ENDPOINT );
 
 		// Validate endpoint URL
 		if ( empty( $endpoint ) || ! filter_var( $endpoint, FILTER_VALIDATE_URL ) ) {
@@ -646,7 +689,7 @@ class Sitepulse_Api_Service {
 		}
 
 		// Use the defined vulnerability endpoint
-		$endpoint = self::API_ENDPOINT_VULNERABILITIES;
+		$endpoint = self::api_url( self::API_ENDPOINT_VULNERABILITIES );
 
 		// Encode payload
 		$payload_json = wp_json_encode( $payload );
@@ -997,7 +1040,7 @@ class Sitepulse_Api_Service {
 	 * @return array Response array with success status, message, and data
 	 */
 	private static function make_ai_diagnostic_api_request( array $payload, $retry = false ) {
-		$endpoint = self::API_ENDPOINT_AI_DIAGNOSTIC;
+		$endpoint = self::api_url( self::API_ENDPOINT_AI_DIAGNOSTIC );
 
 		// Encode payload
 		$payload_json = wp_json_encode( $payload );

@@ -18,8 +18,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Sitepulse_Remote_Client {
 
-	/** API that manages the site; SITEPULSE_REMOTE_API_BASE replaces it during development. */
-	const API_BASE = 'https://api.sitepulse.me';
 
 	/** Path of the site endpoints; it is part of every signature. */
 	const PATH_PREFIX = '/api/website/remote/';
@@ -139,10 +137,11 @@ class Sitepulse_Remote_Client {
 	}
 
 	/**
-	 * @return string API base URL without a trailing slash.
+	 * @return string API base URL without a trailing slash: SITEPULSE_REMOTE_API_BASE (remote
+	 *                management only), else the plugin's API base (SITEPULSE_API_BASE).
 	 */
 	private static function base_url() {
-		return defined( 'SITEPULSE_REMOTE_API_BASE' ) ? untrailingslashit( (string) SITEPULSE_REMOTE_API_BASE ) : self::API_BASE;
+		return defined( 'SITEPULSE_REMOTE_API_BASE' ) ? untrailingslashit( (string) SITEPULSE_REMOTE_API_BASE ) : Sitepulse_Api_Service::api_base();
 	}
 
 	/**
