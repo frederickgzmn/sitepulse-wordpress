@@ -373,16 +373,16 @@ The dashboard shows what all of a user's sites can update, and updates chosen it
 ```json
 {
   "domain": "shop.example", "active": true, "can_update": true, "reason": null, "collected_at": "2026-10-16T02:56:19+00:00",
-  "plugins": [ { "id": "elementor/elementor.php", "name": "Elementor", "from": "3.30.1", "to": "3.31.0", "installable": true, "security": false } ],
-  "themes": [ { "id": "astra", "name": "Astra", "from": "4.11.0", "to": "4.11.1", "installable": true, "security": false } ],
-  "core": { "id": "wordpress", "name": "WordPress", "from": "7.1.2", "to": "7.1.3", "installable": true, "security": false },
+  "plugins": [ { "id": "elementor/elementor.php", "name": "Elementor", "from": "3.30.1", "to": "3.31.0", "installable": true, "security": false, "excluded": false } ],
+  "themes": [ { "id": "astra", "name": "Astra", "from": "4.11.0", "to": "4.11.1", "installable": true, "security": false, "excluded": false } ],
+  "core": { "id": "wordpress", "name": "WordPress", "from": "7.1.2", "to": "7.1.3", "installable": true, "security": false, "excluded": false },
   "pending": { "plugins": [ "woocommerce/woocommerce.php" ], "themes": [], "core": false }
 }
 ```
 
-It lists every update in the site's last inventory, whatever its update policy. `installable` is `false` for an update without a download package or that needs a newer PHP or WordPress than the site has; `security` says it fixes a vulnerability SitePulse found in the installed version. `core` is the newest WordPress release offered, or `null`. `pending` holds what update commands that are `queued`, `sent` or `running` already install.
+It lists every update in the site's last inventory, whatever its update policy. `installable` is `false` for an update without a download package or that needs a newer PHP or WordPress than the site has; `security` says it fixes a vulnerability SitePulse found in the installed version; `excluded` that the site's update policy excludes it (see "Update policy"). `core` is the newest WordPress release offered and newer than the installed one, or `null`. `pending` holds what update commands that are `queued`, `sent` or `running` already install.
 
-`updates/queue` queues, on each site, the chosen items it offers and can install, leaving out the ones already `pending`, and answers `{ "sites": [ { "domain", "status", "reason", "commands", "items" } ], "unknown_sites": [...] }`. `status` is `queued` (with the new command ids and the number of items) or `skipped` with `reason`: `not_active`, `not_allowed` (the user's role on the site is below manager), `no_inventory`, `cannot_update` (`can_update` is `false`), `already_updating` (everything chosen is already `pending`) or `nothing_to_update`. A site gets one `update_plugins` command per 50 plugins, one `update_themes` command and one `update_core` command for the newest release, with the site's `backup_wait`; only its first command backs up first (when its policy says so), since the commands run one after the other (see "One update at a time"). At least one item or `core` must be chosen.
+`updates/queue` queues, on each site, the chosen items it offers and can install, leaving out the ones already `pending` and the ones its update policy excludes, and answers `{ "sites": [ { "domain", "status", "reason", "commands", "items" } ], "unknown_sites": [...] }`. `status` is `queued` (with the new command ids and the number of items) or `skipped` with `reason`: `not_active`, `not_allowed` (the user's role on the site is below manager), `no_inventory`, `cannot_update` (`can_update` is `false`), `already_updating` (what it offers of the choice is already `pending`), `excluded` (its update policy excludes the rest) or `nothing_to_update`. A site gets one `update_plugins` command per 50 plugins, one `update_themes` command and one `update_core` command for the newest release, with the site's `backup_wait`; only its first command backs up first (when its policy says so), since the commands run one after the other (see "One update at a time"). At least one item or `core` must be chosen.
 
 ### Backup warnings
 
@@ -419,7 +419,7 @@ Each site has an update policy; until the dashboard changes it, it is this defau
 - `minor`: security updates and updates within the same major version (the first number for plugins and themes, such as 3.30.1 → 3.31.0; the same branch for WordPress, such as 7.1.2 → 7.1.3).
 - `all`: every update.
 
-`exclude` lists plugin files and theme stylesheets that are never updated automatically, such as `woocommerce/woocommerce.php`. `wait_days` (0–30) holds an update until that many days after SitePulse first saw it offered on any site, so quick fix releases arrive first; security updates do not wait. `window` is the hours of the day, in the site's time zone, in which automatic updates may start (`start` 0–23, `end` 1–24; a window such as 22–4 wraps past midnight). `backup_first` and `backup_wait` apply to automatic updates. `automatic: false` turns automatic updates off; the dashboard can still queue updates.
+`exclude` lists plugin files and theme stylesheets that are never updated automatically or by updates across sites (`updates/queue`), such as `woocommerce/woocommerce.php`; the dashboard can still update them on the site's own page (`commands/create`). `wait_days` (0–30) holds an update until that many days after SitePulse first saw it offered on any site, so quick fix releases arrive first; security updates do not wait. `window` is the hours of the day, in the site's time zone, in which automatic updates may start (`start` 0–23, `end` 1–24; a window such as 22–4 wraps past midnight). `backup_first` and `backup_wait` apply to automatic updates. `automatic: false` turns automatic updates off; the dashboard can still queue updates.
 
 **Automatic updates.** While remote management is active, at each check-in in the site's window the API queues at most one automatic update command (`requested_by` is `automatic`): plugins first, then themes, then WordPress, each with the security updates first. It skips items that are excluded, have no download package, need a newer PHP or WordPress than the site has, or failed in an update command during the last 24 hours. It queues nothing while another update command is queued or running, before the inventory has been refreshed after the last update, or after an automatic update failed in the last 24 hours. WordPress minor releases are left to WordPress when its own automatic updates install them (`core.auto_update` `minor` or `major`).
 
@@ -546,7 +546,7 @@ The API keeps events, finished commands, notifications and finished rollouts for
 `scripts/remote-api-mock.php`, in the plugin repository, is a small stand-in for the API for local development. Run it with `SITEPULSE_MOCK_LICENSE=<the site's license> php -S 127.0.0.1:8099 scripts/remote-api-mock.php`, and define `SITEPULSE_REMOTE_API_BASE` as `http://127.0.0.1:8099` in the site's `wp-config.php`.
 
 - **The site endpoints:** it checks and signs requests as the API does, and answers check-ins as active every minute.
-- **Commands:** `GET /mock/queue?type=…&args=<JSON>` queues one.
+- **Commands:** `GET /mock/queue?type=…&args=<JSON>` queues one. Like the API, it delivers one update command at a time: the next waits until the site reports the previous one `done` or `failed`.
 - **Key rotation:** `GET /mock/rotate?key=…` offers a new signing key at the next check-in.
 - **State:** `GET /mock/state` shows what the site sent (check-ins, inventory, events, command results). It is kept in a JSON file, `SITEPULSE_MOCK_STATE`, which defaults to the system's temporary folder.
 
