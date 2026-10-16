@@ -66,7 +66,7 @@ class Sitepulse_Backend {
 				true
 			);
 			wp_localize_script( 'sitepulse-deactivation-modal', 'SitePulseDeactivationData', [
-				'api_endpoint'      => 'https://api.sitepulse.me/api/feedback/deactivation',
+				'api_endpoint'      => Sitepulse_Api_Service::api_url( Sitepulse_Api_Service::API_ENDPOINT_DEACTIVATION_FEEDBACK ),
 				'domain'            => esc_url_raw( home_url() ),
 				'plugin_version'    => defined( 'SITEPULSE_VERSION' ) ? SITEPULSE_VERSION : '',
 				'wp_version'        => get_bloginfo( 'version' ),

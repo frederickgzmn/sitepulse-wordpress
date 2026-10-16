@@ -72,21 +72,21 @@
     "semantic_hash": "7d680f57eebda0d0a72c8a3dafef985d"
   },
   "class/api_service.php": {
-    "mtime": 1791937169.151719,
-    "seen": 1791937551.6073086,
-    "ast_hash": "0e422afd08f4b9a8fc180f18fe2087b1",
+    "mtime": 1792157585.693306,
+    "seen": 1792157815.378459,
+    "ast_hash": "a2d6e9a1f7d22ffff3b964cbb2bf5722",
     "semantic_hash": ""
   },
   "class/backend.php": {
-    "mtime": 1791937240.7247636,
-    "seen": 1791937551.60731,
-    "ast_hash": "6e8d07fd642d892bcb23a6f360b20a1c",
+    "mtime": 1792157565.6325178,
+    "seen": 1792157815.3784604,
+    "ast_hash": "b692e2e262f528f182df57fbc26f8ad4",
     "semantic_hash": ""
   },
   "class/curloader.php": {
-    "mtime": 1791936657.7172894,
-    "seen": 1791937551.6073112,
-    "ast_hash": "a9383d6dac9d581a16205a4814951f94",
+    "mtime": 1792157585.6937213,
+    "seen": 1792157815.3784614,
+    "ast_hash": "30d1f170c78531857a48d86f13da0c4a",
     "semantic_hash": ""
   },
   "class/easy_mode.php": {
@@ -198,9 +198,9 @@
     "semantic_hash": ""
   },
   "templates/backend/curl_api.php": {
-    "mtime": 1791318107.4639072,
-    "seen": 1791937551.6073592,
-    "ast_hash": "33f3fa66967a82b0fa2aa05025cd0278",
+    "mtime": 1792157585.694051,
+    "seen": 1792157815.3785017,
+    "ast_hash": "fc86f01f2a37755d2b008ec48ce56053",
     "semantic_hash": ""
   },
   "templates/backend/dashboard.php": {
@@ -978,9 +978,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1792108150.398562,
-    "seen": 1792108155.2724378,
-    "ast_hash": "eebd139b9db41627fdb3b85ff8dfa165",
+    "mtime": 1792157810.2852037,
+    "seen": 1792157815.3786225,
+    "ast_hash": "390b137233e27a7b03ed0a149fae3c84",
     "semantic_hash": ""
   },
   "scripts/bump-version.php": {
@@ -1008,9 +1008,9 @@
     "semantic_hash": ""
   },
   "class/remote_client.php": {
-    "mtime": 1792071338.6357465,
-    "seen": 1792073216.440779,
-    "ast_hash": "b873007bbbe21acf2372509eb0b87de8",
+    "mtime": 1792157585.6930134,
+    "seen": 1792157815.3784778,
+    "ast_hash": "a543c46b005878fe9950f77e6d7c8f0c",
     "semantic_hash": ""
   },
   "class/remote_events.php": {
@@ -1143,6 +1143,12 @@
     "mtime": 1792136305.3669066,
     "seen": 1792137648.0226476,
     "ast_hash": "ca72f7d9f9b0089f7857bf93e97f6383",
+    "semantic_hash": ""
+  },
+  "tests/php/ApiBaseTest.php": {
+    "mtime": 1792157653.813428,
+    "seen": 1792157815.378538,
+    "ast_hash": "5f74de3d1cb26911b9bb680e516d4d2a",
     "semantic_hash": ""
   }
 }
