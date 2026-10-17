@@ -1,7 +1,7 @@
 # Graph Report - sitepulse  (2026-10-16)
 
 ## Corpus Check
-- 182 files · ~371,231 words
+- 182 files · ~371,403 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 19 file(s) not represented in the graph (top: .css 8, .map 7, (none) 2)
 
