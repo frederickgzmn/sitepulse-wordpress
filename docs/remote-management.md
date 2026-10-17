@@ -551,7 +551,7 @@ Each site has its notification settings. Until the dashboard saves them, there a
 | `update_failed` | An update command (`update_plugins`, `update_themes`, `update_core`) finishes `failed`, including rolled-back updates | Once per command |
 | `backup_failed` | A `backup.completed` event with `ok: false`, or a `backup_now` command that failed | Once per event or command |
 | `backup_overdue` | The `overdue` or `no_backup` backup warning appears | Once until the warning clears |
-| `check_ins_stopped` | An active site has not checked in for 2 hours: the site may be down, or WP-Cron is not running | Once, plus a second message when check-ins resume |
+| `check_ins_stopped` | An active site has not checked in for 2 hours: the site may be down, or WP-Cron is not running | Once, plus a second message when check-ins resume, whose `data` has `"resolved": true` |
 | `fatal_error` | `error.fatal` events arrive | At most once an hour per site, summarizing them |
 | `update_slowdown` | An update slowdown | Once per measurement |
 | `site_slowdown` | A site slowdown | Once per day |
