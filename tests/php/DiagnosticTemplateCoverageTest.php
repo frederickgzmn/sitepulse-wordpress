@@ -32,7 +32,7 @@ final class DiagnosticTemplateCoverageTest extends Sitepulse_Test_Case {
             'vulnerabilities' => array(), 'last_vulnerability_check' => '',
             'sp_ai_external_api_enabled' => true, 'has_ai_report' => false, 'is_ai_pending' => false, 'is_ai_failed' => false,
             'ai_diagnostic_report' => null, 'ai_diagnostic_status' => null, 'ai_diagnostic_requested_at' => null,
-            'ai_diagnostic_queue_position' => null,
+            'ai_diagnostic_queue_position' => null, 'ai_diagnostic_error' => '', 'vulnerability_scan_queued_at' => '',
             'disk_write' => array('avg_ms' => 5, 'min_ms' => 3, 'max_ms' => 7, 'dir' => '/tmp/test-logs', 'iterations' => 3, 'size_bytes' => 1024, 'total_written_bytes' => 3072, 'success' => true),
             'slow_queries' => array('success' => true, 'results' => array(), 'error' => '', 'message' => ''),
         );
@@ -111,6 +111,52 @@ final class DiagnosticTemplateCoverageTest extends Sitepulse_Test_Case {
             $this->assertStringNotContainsString('needs improvement', $html);
             $this->assertStringContainsString($view === 'backend/dashboard.php' ? 'Auto-checking every minute' : 'safely navigate away', $html);
         }
+    }
+
+    public function test_a_failed_diagnostic_shows_the_reason_the_api_gave(): void {
+        // The classic dashboard has the widget in both of its views.
+        foreach (array('backend/dashboard.php' => 2, 'easy/views/home.php' => 1) as $view => $widgets) {
+            $failed = array('ai_diagnostic_status' => 'failed', 'is_ai_failed' => true);
+            $html = $this->render($view, $failed + array('ai_diagnostic_error' => 'Providers <b>failed</b>'));
+            $this->assertSame($widgets, substr_count($html, 'Providers &lt;b&gt;failed&lt;/b&gt;'), $view);
+            $this->assertStringNotContainsString('Reason:', $this->render($view, $failed), $view);
+        }
+    }
+
+    public function test_a_queued_vulnerability_scan_is_shown_until_its_results_arrive(): void {
+        $queued = array('vulnerability_scan_queued_at' => '2026-10-04 12:00:00');
+        $classic = $this->render('backend/dashboard.php', $queued);
+        $this->assertSame(2, substr_count($classic, 'in the queue for a vulnerability scan since Oct 4, 12:00 PM'));
+        $this->assertStringNotContainsString('Run a scan to check for vulnerabilities.', $classic);
+        $this->assertStringContainsString('Run a scan to check for vulnerabilities.', $this->render('backend/dashboard.php'));
+
+        $easy = $this->render('easy/views/security.php', $queued);
+        $this->assertStringContainsString('in the queue for a vulnerability scan since Oct 4, 12:00 PM', $easy);
+        $this->assertStringNotContainsString('Not Scanned Yet', $easy);
+        $this->assertStringContainsString('Vulnerability scan in progress', $this->render('easy/views/home.php', $queued));
+    }
+
+    public function test_easy_mode_never_calls_a_site_safe_before_its_first_scan(): void {
+        $never = $this->render('easy/views/security.php');
+        $this->assertStringContainsString('Not Scanned Yet', $never);
+        $this->assertStringNotContainsString('No Threats Found', $never);
+        $this->assertStringContainsString('sp-badge-secondary">&mdash;', $never);
+        $this->assertStringContainsString('Not scanned yet', $this->render('easy/views/home.php'));
+
+        $checked = array('last_vulnerability_check' => '2026-10-04 12:00:00');
+        $clean = $this->render('easy/views/security.php', $checked);
+        $this->assertStringContainsString('No Threats Found', $clean);
+        $this->assertStringContainsString('Last checked: Oct 4, 12:00 PM', $clean);
+        $this->assertStringContainsString('Oct 4, 12:00 PM', $this->render('backend/dashboard.php', $checked));
+        $this->assertStringContainsString('No issues detected', $this->render('easy/views/home.php', $checked));
+
+        // A scan stores each finding's severity as its "version".
+        $found = $checked + array('vulnerabilities' => array(array('name' => 'XSS in <Plugin>', 'version' => 'high'), array('name' => 'Unrated finding')));
+        $html = $this->render('easy/views/security.php', $found);
+        $this->assertStringContainsString('sp-badge-danger">High<', $html);
+        $this->assertStringContainsString('>Unknown<', $html);
+        $this->assertStringContainsString('2 vulnerabilities found', $this->render('easy/views/home.php', $found));
+        $this->assertStringContainsString('1 vulnerability found', $this->render('easy/views/home.php', array('vulnerabilities' => array(array('name' => 'XSS', 'version' => 'low')))));
     }
 
     public static function screenshotFormats(): array {

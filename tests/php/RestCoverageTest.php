@@ -131,6 +131,7 @@ final class RestCoverageTest extends Sitepulse_Test_Case {
 
     public function test_vulnerability_normalization_skips_malformed_plugin_and_theme_entries(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('vulnerabilities' => array(
             'plugins' => array('invalid-plugin' => 'malformed', 'valid-plugin' => array('name' => 'Good Plugin', 'vulnerabilities' => array(array('title' => 'Plugin XSS', 'severity' => 'high')))),
             'theme' => array('valid-theme' => array('name' => 'Good Theme', 'vulnerabilities' => array(array('title' => 'Theme XSS', 'severity' => 'medium'))), 'invalid-theme' => 'malformed'),
@@ -144,13 +145,22 @@ final class RestCoverageTest extends Sitepulse_Test_Case {
 
     public function test_vulnerability_scan_wait_preserves_previous_findings_and_last_success_time(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         update_option('sitepulse_vulnerabilities_list', array(array('name' => 'Previous finding', 'version' => 'high')));
         update_option('sitepulse_last_vulnerability_check', '2026-01-01 09:00:00');
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('vuln_wait' => true, 'message' => 'Your scan is queued'));
         $result = sitepulse_check_vulnerabilities_api($this->request())->get_data();
-        $this->assertSame(array('success' => true, 'data' => array('message' => 'Your scan is queued', 'vuln_wait' => true)), $result);
+        // The plugin says when to come back instead of the API's "shortly".
+        $this->assertSame(array('success' => true, 'data' => array('message' => 'Your site is in the queue for a vulnerability scan. Results are usually ready within 30 minutes: check again then.', 'vuln_wait' => true)), $result);
         $this->assertSame(array(array('name' => 'Previous finding', 'version' => 'high')), get_option('sitepulse_vulnerabilities_list'));
         $this->assertSame('2026-01-01 09:00:00', get_option('sitepulse_last_vulnerability_check'));
+        $this->assertSame(Sitepulse_Test_WP::$now, get_option('sitepulse_vulnerability_scan_queued_at'));
+
+        // Checking again while the scan waits keeps the time it was first queued.
+        update_option('sitepulse_vulnerability_scan_queued_at', '2026-01-01 08:00:00');
+        Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('vuln_wait' => true));
+        sitepulse_check_vulnerabilities_api($this->request());
+        $this->assertSame('2026-01-01 08:00:00', get_option('sitepulse_vulnerability_scan_queued_at'));
     }
 
     /**

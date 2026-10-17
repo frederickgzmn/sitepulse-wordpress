@@ -231,7 +231,8 @@ final class CronTest extends Sitepulse_Test_Case {
         Sitepulse_AI_Diagnostic_Cron::schedule_status_check();
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('success' => true, 'status' => $status, 'diagnostic_result' => array('summary' => 'Done')));
         Sitepulse_AI_Diagnostic_Cron::check_status_callback();
-        $this->assertSame($status, get_option('sitepulse_ai_diagnostic_status'));
+        // "none": the API has nothing in progress, so the stale request is forgotten.
+        $this->assertSame('none' === $status ? false : $status, get_option('sitepulse_ai_diagnostic_status'));
         $this->assertSame($scheduled, Sitepulse_AI_Diagnostic_Cron::is_scheduled());
         $this->assertCount(1, Sitepulse_Test_WP::$http_requests);
     }

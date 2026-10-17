@@ -814,6 +814,8 @@ class Sitepulse_Backend {
 			return array_merge( [ 'name' => '' ], $vulnerability );
 		}, array_filter( (array) get_option( 'sitepulse_vulnerabilities_list', [] ), 'is_array' ) );
 		$last_vulnerability_check = get_option( 'sitepulse_last_vulnerability_check', '' );
+		// A scan the API queued and has not finished yet.
+		$vulnerability_scan_queued_at = get_option( 'sitepulse_vulnerability_scan_queued_at', '' );
 
 		if ( ! empty( $pagespeed_report ) && is_array( $pagespeed_report ) && ! empty( $pagespeed_report['has_data'] ) ) {
 			// Check for desktop data first, then mobile
@@ -849,11 +851,14 @@ class Sitepulse_Backend {
 		$ai_diagnostic_requested_at = null;
 		$ai_diagnostic_queue_position = null;
 		$ai_diagnostic_report = null;
+		$ai_diagnostic_error = '';
 
 		if ( $sp_ai_external_api_enabled ) {
 			$ai_diagnostic_status = get_option( 'sitepulse_ai_diagnostic_status', null );
 			$ai_diagnostic_requested_at = get_option( 'sitepulse_ai_diagnostic_requested_at', null );
 			$ai_diagnostic_queue_position = get_transient( 'sitepulse_ai_diagnostic_queue_position' );
+			// Why the last diagnostic failed, as the API reported it.
+			$ai_diagnostic_error = (string) get_option( 'sitepulse_ai_diagnostic_error', '' );
 			
 			// Get report if completed or no status yet
 			if ( $ai_diagnostic_status === 'completed' || empty( $ai_diagnostic_status ) ) {
