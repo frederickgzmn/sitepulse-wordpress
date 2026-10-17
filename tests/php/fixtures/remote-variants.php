@@ -40,4 +40,12 @@ if ($input['mode'] === 'api_base') {
     register_shutdown_function(static function () { echo json_encode(array('redirects' => Sitepulse_Test_WP::$redirects, 'blocked' => Sitepulse_Remote_Management::is_blocked())); });
     Sitepulse_Remote_Management::handle_block_form();
     echo 'unexpected continuation';
+} elseif ($input['mode'] === 'connection_exit') {
+    Sitepulse_Test_WP::$redirect_throws = false;
+    $_REQUEST['_wpnonce'] = 'nonce-sitepulse_remote_connection';
+    $_POST['sitepulse_connection'] = 'key';
+    Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_response(array('success' => true, 'data' => array('key' => 'spc_exit_key', 'connectable' => true, 'has_key' => true, 'connections' => array())));
+    register_shutdown_function(static function () { echo json_encode(array('redirects' => Sitepulse_Test_WP::$redirects, 'key' => get_option(Sitepulse_Remote_Management::CONNECTION_OPTION)['key'])); });
+    Sitepulse_Remote_Management::handle_connection_form();
+    echo 'unexpected continuation';
 }

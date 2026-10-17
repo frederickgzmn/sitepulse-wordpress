@@ -37,6 +37,7 @@ $sp_remote_badges = array(
 		</label>
 		<button type="submit" class="button sp-action-btn"><?php echo esc_html__( 'Save', 'sitepulse' ); ?></button>
 	</form>
+	<?php include SITEPULSE_PATH . 'templates/backend/remote_connection.php'; ?>
 	<div class="sp-setting-help-box">
 		<div class="alert alert-info" style="margin-top: 10px;">
 			<p class="mb-2"><?php echo esc_html__( 'When you turn remote management on in your SitePulse dashboard and UpdraftPlus or BackWPup is active, the dashboard can show the backups and updates of this site, start or cancel a backup, apply backup settings saved there, and update plugins, themes and WordPress, each after a backup and checked so a broken update is rolled back. Updates come from WordPress.org or a plugin\'s own updater, as in wp-admin. It never restores or deletes backups. Blocking it here always wins.', 'sitepulse' ); ?></p>
