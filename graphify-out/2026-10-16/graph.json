@@ -48231,7 +48231,7 @@
       "node_kind": "heading",
       "norm_label": "backup commands",
       "source_file": "docs/remote-management.md",
-      "source_location": "L226"
+      "source_location": "L228"
     },
     {
       "id": "docs_remote_management_backup_preset_format",
@@ -48243,7 +48243,7 @@
       "node_kind": "heading",
       "norm_label": "backup preset format",
       "source_file": "docs/remote-management.md",
-      "source_location": "L239"
+      "source_location": "L241"
     },
     {
       "id": "docs_remote_management_commands",
@@ -48255,7 +48255,7 @@
       "node_kind": "heading",
       "norm_label": "commands",
       "source_file": "docs/remote-management.md",
-      "source_location": "L213"
+      "source_location": "L215"
     },
     {
       "id": "docs_remote_management_post_api_website_remote_events",
@@ -48267,7 +48267,7 @@
       "node_kind": "heading",
       "norm_label": "`post /api/website/remote/events`",
       "source_file": "docs/remote-management.md",
-      "source_location": "L171"
+      "source_location": "L173"
     },
     {
       "id": "docs_remote_management_post_api_website_remote_inventory",
@@ -48279,7 +48279,7 @@
       "node_kind": "heading",
       "norm_label": "`post /api/website/remote/inventory`",
       "source_file": "docs/remote-management.md",
-      "source_location": "L113"
+      "source_location": "L115"
     },
     {
       "id": "docs_remote_management_update_commands",
@@ -48291,7 +48291,7 @@
       "node_kind": "heading",
       "norm_label": "update commands",
       "source_file": "docs/remote-management.md",
-      "source_location": "L253"
+      "source_location": "L255"
     },
     {
       "id": "docs_remote_management_update_policy",
@@ -48303,7 +48303,7 @@
       "node_kind": "heading",
       "norm_label": "update policy",
       "source_file": "docs/remote-management.md",
-      "source_location": "L427"
+      "source_location": "L429"
     },
     {
       "id": "assets_js_page_analysis",
@@ -51558,7 +51558,7 @@
       "node_kind": "heading",
       "norm_label": "backup warnings",
       "source_file": "docs/remote-management.md",
-      "source_location": "L416"
+      "source_location": "L418"
     },
     {
       "id": "docs_remote_management_dashboard_portal_endpoints",
@@ -51570,7 +51570,7 @@
       "node_kind": "heading",
       "norm_label": "dashboard (portal) endpoints",
       "source_file": "docs/remote-management.md",
-      "source_location": "L281"
+      "source_location": "L283"
     },
     {
       "id": "docs_remote_management_development",
@@ -51582,7 +51582,7 @@
       "node_kind": "heading",
       "norm_label": "development",
       "source_file": "docs/remote-management.md",
-      "source_location": "L573"
+      "source_location": "L575"
     },
     {
       "id": "docs_remote_management_endpoints",
@@ -51594,7 +51594,7 @@
       "node_kind": "heading",
       "norm_label": "endpoints",
       "source_file": "docs/remote-management.md",
-      "source_location": "L70"
+      "source_location": "L72"
     },
     {
       "id": "docs_remote_management_key_rotation",
@@ -51606,7 +51606,7 @@
       "node_kind": "heading",
       "norm_label": "key rotation",
       "source_file": "docs/remote-management.md",
-      "source_location": "L345"
+      "source_location": "L347"
     },
     {
       "id": "docs_remote_management_monthly_reports",
@@ -51618,7 +51618,7 @@
       "node_kind": "heading",
       "norm_label": "monthly reports",
       "source_file": "docs/remote-management.md",
-      "source_location": "L493"
+      "source_location": "L495"
     },
     {
       "id": "docs_remote_management_notifications",
@@ -51630,7 +51630,7 @@
       "node_kind": "heading",
       "norm_label": "notifications",
       "source_file": "docs/remote-management.md",
-      "source_location": "L529"
+      "source_location": "L531"
     },
     {
       "id": "docs_remote_management_post_api_website_remote_check_in",
@@ -51642,7 +51642,7 @@
       "node_kind": "heading",
       "norm_label": "`post /api/website/remote/check-in`",
       "source_file": "docs/remote-management.md",
-      "source_location": "L74"
+      "source_location": "L76"
     },
     {
       "id": "docs_remote_management_post_api_website_remote_command_result",
@@ -51654,7 +51654,7 @@
       "node_kind": "heading",
       "norm_label": "`post /api/website/remote/command-result`",
       "source_file": "docs/remote-management.md",
-      "source_location": "L203"
+      "source_location": "L205"
     },
     {
       "id": "docs_remote_management_post_api_website_remote_key",
@@ -51666,7 +51666,7 @@
       "node_kind": "heading",
       "norm_label": "`post /api/website/remote/key`",
       "source_file": "docs/remote-management.md",
-      "source_location": "L109"
+      "source_location": "L111"
     },
     {
       "id": "docs_remote_management_remote_management",
@@ -51690,7 +51690,7 @@
       "node_kind": "heading",
       "norm_label": "retention",
       "source_file": "docs/remote-management.md",
-      "source_location": "L569"
+      "source_location": "L571"
     },
     {
       "id": "docs_remote_management_roles",
@@ -51702,7 +51702,7 @@
       "node_kind": "heading",
       "norm_label": "roles",
       "source_file": "docs/remote-management.md",
-      "source_location": "L331"
+      "source_location": "L333"
     },
     {
       "id": "docs_remote_management_rollouts",
@@ -51714,7 +51714,7 @@
       "node_kind": "heading",
       "norm_label": "rollouts",
       "source_file": "docs/remote-management.md",
-      "source_location": "L355"
+      "source_location": "L357"
     },
     {
       "id": "docs_remote_management_slowdowns_and_security_fixes",
@@ -51726,7 +51726,7 @@
       "node_kind": "heading",
       "norm_label": "slowdowns and security fixes",
       "source_file": "docs/remote-management.md",
-      "source_location": "L469"
+      "source_location": "L471"
     },
     {
       "id": "docs_remote_management_timeline",
@@ -51738,7 +51738,7 @@
       "node_kind": "heading",
       "norm_label": "timeline",
       "source_file": "docs/remote-management.md",
-      "source_location": "L477"
+      "source_location": "L479"
     },
     {
       "id": "docs_remote_management_update_warnings",
@@ -51750,7 +51750,7 @@
       "node_kind": "heading",
       "norm_label": "update warnings",
       "source_file": "docs/remote-management.md",
-      "source_location": "L457"
+      "source_location": "L459"
     },
     {
       "id": "docs_remote_management_updates_across_sites",
@@ -51762,7 +51762,7 @@
       "node_kind": "heading",
       "norm_label": "updates across sites",
       "source_file": "docs/remote-management.md",
-      "source_location": "L369"
+      "source_location": "L371"
     },
     {
       "id": "docs_remote_management_when_it_is_active",
@@ -51786,7 +51786,7 @@
       "node_kind": "heading",
       "norm_label": "wp-cron",
       "source_file": "docs/remote-management.md",
-      "source_location": "L399"
+      "source_location": "L401"
     },
     {
       "id": "tests_php_remoteeventstest",
@@ -51809,7 +51809,7 @@
       "node_kind": "heading",
       "norm_label": "phases",
       "source_file": "docs/remote-management.md",
-      "source_location": "L584"
+      "source_location": "L586"
     },
     {
       "id": "tests_php_templaterenderingtest",
@@ -52170,7 +52170,7 @@
       "node_kind": "heading",
       "norm_label": "api \u2192 site",
       "source_file": "docs/remote-management.md",
-      "source_location": "L47"
+      "source_location": "L49"
     },
     {
       "id": "docs_remote_management_signing",
@@ -52194,7 +52194,7 @@
       "node_kind": "heading",
       "norm_label": "site \u2192 api",
       "source_file": "docs/remote-management.md",
-      "source_location": "L23"
+      "source_location": "L25"
     },
     {
       "id": "docs_remote_management_test_vector",
@@ -52206,7 +52206,7 @@
       "node_kind": "heading",
       "norm_label": "test vector",
       "source_file": "docs/remote-management.md",
-      "source_location": "L58"
+      "source_location": "L60"
     },
     {
       "id": "class_remote_backups",
@@ -103092,7 +103092,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L226",
+      "source_location": "L228",
       "weight": 1.0
     },
     {
@@ -103103,7 +103103,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L239",
+      "source_location": "L241",
       "weight": 1.0
     },
     {
@@ -103114,7 +103114,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L253",
+      "source_location": "L255",
       "weight": 1.0
     },
     {
@@ -103125,7 +103125,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L331",
+      "source_location": "L333",
       "weight": 1.0
     },
     {
@@ -103136,7 +103136,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L345",
+      "source_location": "L347",
       "weight": 1.0
     },
     {
@@ -103147,7 +103147,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L355",
+      "source_location": "L357",
       "weight": 1.0
     },
     {
@@ -103158,7 +103158,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L369",
+      "source_location": "L371",
       "weight": 1.0
     },
     {
@@ -103169,7 +103169,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L399",
+      "source_location": "L401",
       "weight": 1.0
     },
     {
@@ -103180,7 +103180,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L416",
+      "source_location": "L418",
       "weight": 1.0
     },
     {
@@ -103191,7 +103191,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L427",
+      "source_location": "L429",
       "weight": 1.0
     },
     {
@@ -103202,7 +103202,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L457",
+      "source_location": "L459",
       "weight": 1.0
     },
     {
@@ -103213,7 +103213,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L469",
+      "source_location": "L471",
       "weight": 1.0
     },
     {
@@ -103224,7 +103224,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L477",
+      "source_location": "L479",
       "weight": 1.0
     },
     {
@@ -103235,7 +103235,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L493",
+      "source_location": "L495",
       "weight": 1.0
     },
     {
@@ -103246,7 +103246,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L529",
+      "source_location": "L531",
       "weight": 1.0
     },
     {
@@ -103257,7 +103257,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L109",
+      "source_location": "L111",
       "weight": 1.0
     },
     {
@@ -103268,7 +103268,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L113",
+      "source_location": "L115",
       "weight": 1.0
     },
     {
@@ -103279,7 +103279,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L171",
+      "source_location": "L173",
       "weight": 1.0
     },
     {
@@ -103290,7 +103290,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L203",
+      "source_location": "L205",
       "weight": 1.0
     },
     {
@@ -103301,7 +103301,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L74",
+      "source_location": "L76",
       "weight": 1.0
     },
     {
@@ -103323,7 +103323,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L213",
+      "source_location": "L215",
       "weight": 1.0
     },
     {
@@ -103334,7 +103334,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L281",
+      "source_location": "L283",
       "weight": 1.0
     },
     {
@@ -103356,7 +103356,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L569",
+      "source_location": "L571",
       "weight": 1.0
     },
     {
@@ -103367,7 +103367,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L573",
+      "source_location": "L575",
       "weight": 1.0
     },
     {
@@ -103378,7 +103378,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L584",
+      "source_location": "L586",
       "weight": 1.0
     },
     {
@@ -103389,7 +103389,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L70",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -103400,7 +103400,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L23",
+      "source_location": "L25",
       "weight": 1.0
     },
     {
@@ -103411,7 +103411,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L47",
+      "source_location": "L49",
       "weight": 1.0
     },
     {
@@ -103422,7 +103422,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L58",
+      "source_location": "L60",
       "weight": 1.0
     },
     {
@@ -172290,7 +172290,7 @@
       "confidence_score": 0.95,
       "context": "command",
       "source_file": "docs/remote-management.md",
-      "source_location": "L364",
+      "source_location": "L366",
       "weight": 1.0
     },
     {
@@ -172302,7 +172302,7 @@
       "confidence_score": 0.95,
       "context": "command",
       "source_file": "docs/remote-management.md",
-      "source_location": "L490",
+      "source_location": "L492",
       "weight": 1.0
     },
     {
@@ -172314,7 +172314,7 @@
       "confidence_score": 0.95,
       "context": "cron",
       "source_file": "docs/remote-management.md",
-      "source_location": "L287",
+      "source_location": "L289",
       "weight": 1.0
     },
     {
@@ -172326,7 +172326,7 @@
       "confidence_score": 0.95,
       "context": "cron",
       "source_file": "docs/remote-management.md",
-      "source_location": "L93",
+      "source_location": "L95",
       "weight": 1.0
     },
     {
@@ -172338,7 +172338,7 @@
       "confidence_score": 0.95,
       "context": "cron",
       "source_file": "docs/remote-management.md",
-      "source_location": "L395",
+      "source_location": "L397",
       "weight": 1.0
     },
     {
@@ -172350,7 +172350,7 @@
       "confidence_score": 0.95,
       "context": "cron",
       "source_file": "docs/remote-management.md",
-      "source_location": "L408",
+      "source_location": "L410",
       "weight": 1.0
     },
     {
@@ -172362,7 +172362,7 @@
       "confidence_score": 0.95,
       "context": "daily",
       "source_file": "docs/remote-management.md",
-      "source_location": "L248",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -172374,7 +172374,7 @@
       "confidence_score": 0.95,
       "context": "daily",
       "source_file": "docs/remote-management.md",
-      "source_location": "L163",
+      "source_location": "L165",
       "weight": 1.0
     },
     {
@@ -172386,7 +172386,7 @@
       "confidence_score": 0.95,
       "context": "data",
       "source_file": "docs/remote-management.md",
-      "source_location": "L184",
+      "source_location": "L186",
       "weight": 1.0
     },
     {
@@ -172398,7 +172398,7 @@
       "confidence_score": 0.95,
       "context": "data",
       "source_file": "docs/remote-management.md",
-      "source_location": "L479",
+      "source_location": "L481",
       "weight": 1.0
     },
     {
@@ -172410,7 +172410,7 @@
       "confidence_score": 0.95,
       "context": "day",
       "source_file": "docs/remote-management.md",
-      "source_location": "L192",
+      "source_location": "L194",
       "weight": 1.0
     },
     {
@@ -172422,7 +172422,7 @@
       "confidence_score": 0.95,
       "context": "domain",
       "source_file": "docs/remote-management.md",
-      "source_location": "L283",
+      "source_location": "L285",
       "weight": 1.0
     },
     {
@@ -172434,7 +172434,7 @@
       "confidence_score": 0.95,
       "context": "domain",
       "source_file": "docs/remote-management.md",
-      "source_location": "L397",
+      "source_location": "L399",
       "weight": 1.0
     },
     {
@@ -172446,7 +172446,7 @@
       "confidence_score": 0.95,
       "context": "failed",
       "source_file": "docs/remote-management.md",
-      "source_location": "L297",
+      "source_location": "L299",
       "weight": 1.0
     },
     {
@@ -172458,7 +172458,7 @@
       "confidence_score": 0.95,
       "context": "failed",
       "source_file": "docs/remote-management.md",
-      "source_location": "L578",
+      "source_location": "L580",
       "weight": 1.0
     },
     {
@@ -172470,7 +172470,7 @@
       "confidence_score": 0.95,
       "context": "failed",
       "source_file": "docs/remote-management.md",
-      "source_location": "L549",
+      "source_location": "L551",
       "weight": 1.0
     },
     {
@@ -172482,7 +172482,7 @@
       "confidence_score": 0.95,
       "context": "failed",
       "source_file": "docs/remote-management.md",
-      "source_location": "L209",
+      "source_location": "L211",
       "weight": 1.0
     },
     {
@@ -172494,7 +172494,7 @@
       "confidence_score": 0.95,
       "context": "failed",
       "source_file": "docs/remote-management.md",
-      "source_location": "L364",
+      "source_location": "L366",
       "weight": 1.0
     },
     {
@@ -172506,7 +172506,7 @@
       "confidence_score": 0.95,
       "context": "failed",
       "source_file": "docs/remote-management.md",
-      "source_location": "L268",
+      "source_location": "L270",
       "weight": 1.0
     },
     {
@@ -172518,7 +172518,7 @@
       "confidence_score": 0.95,
       "context": "files",
       "source_file": "docs/remote-management.md",
-      "source_location": "L248",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -172530,7 +172530,7 @@
       "confidence_score": 0.95,
       "context": "files",
       "source_file": "docs/remote-management.md",
-      "source_location": "L218",
+      "source_location": "L220",
       "weight": 1.0
     },
     {
@@ -172542,7 +172542,7 @@
       "confidence_score": 0.95,
       "context": "files",
       "source_file": "docs/remote-management.md",
-      "source_location": "L162",
+      "source_location": "L164",
       "weight": 1.0
     },
     {
@@ -172554,7 +172554,7 @@
       "confidence_score": 0.95,
       "context": "initiator",
       "source_file": "docs/remote-management.md",
-      "source_location": "L186",
+      "source_location": "L188",
       "weight": 1.0
     },
     {
@@ -172566,7 +172566,7 @@
       "confidence_score": 0.95,
       "context": "initiator",
       "source_file": "docs/remote-management.md",
-      "source_location": "L268",
+      "source_location": "L270",
       "weight": 1.0
     },
     {
@@ -172578,7 +172578,7 @@
       "confidence_score": 0.95,
       "context": "key",
       "source_file": "docs/remote-management.md",
-      "source_location": "L353",
+      "source_location": "L355",
       "weight": 1.0
     },
     {
@@ -172590,7 +172590,7 @@
       "confidence_score": 0.95,
       "context": "key",
       "source_file": "docs/remote-management.md",
-      "source_location": "L489",
+      "source_location": "L491",
       "weight": 1.0
     },
     {
@@ -172614,7 +172614,7 @@
       "confidence_score": 0.95,
       "context": "name",
       "source_file": "docs/remote-management.md",
-      "source_location": "L220",
+      "source_location": "L222",
       "weight": 1.0
     },
     {
@@ -172626,7 +172626,7 @@
       "confidence_score": 0.95,
       "context": "name",
       "source_file": "docs/remote-management.md",
-      "source_location": "L319",
+      "source_location": "L321",
       "weight": 1.0
     },
     {
@@ -172638,7 +172638,7 @@
       "confidence_score": 0.95,
       "context": "name",
       "source_file": "docs/remote-management.md",
-      "source_location": "L187",
+      "source_location": "L189",
       "weight": 1.0
     },
     {
@@ -172650,7 +172650,7 @@
       "confidence_score": 0.95,
       "context": "pending",
       "source_file": "docs/remote-management.md",
-      "source_location": "L519",
+      "source_location": "L521",
       "weight": 1.0
     },
     {
@@ -172662,7 +172662,7 @@
       "confidence_score": 0.95,
       "context": "pending",
       "source_file": "docs/remote-management.md",
-      "source_location": "L567",
+      "source_location": "L569",
       "weight": 1.0
     },
     {
@@ -172674,7 +172674,7 @@
       "confidence_score": 0.95,
       "context": "pending",
       "source_file": "docs/remote-management.md",
-      "source_location": "L364",
+      "source_location": "L366",
       "weight": 1.0
     },
     {
@@ -172686,7 +172686,7 @@
       "confidence_score": 0.95,
       "context": "pending",
       "source_file": "docs/remote-management.md",
-      "source_location": "L391",
+      "source_location": "L393",
       "weight": 1.0
     },
     {
@@ -172698,7 +172698,7 @@
       "confidence_score": 0.95,
       "context": "plugins",
       "source_file": "docs/remote-management.md",
-      "source_location": "L248",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -172710,7 +172710,7 @@
       "confidence_score": 0.95,
       "context": "plugins",
       "source_file": "docs/remote-management.md",
-      "source_location": "L221",
+      "source_location": "L223",
       "weight": 1.0
     },
     {
@@ -172722,7 +172722,7 @@
       "confidence_score": 0.95,
       "context": "plugins",
       "source_file": "docs/remote-management.md",
-      "source_location": "L307",
+      "source_location": "L309",
       "weight": 1.0
     },
     {
@@ -172734,7 +172734,7 @@
       "confidence_score": 0.95,
       "context": "plugins",
       "source_file": "docs/remote-management.md",
-      "source_location": "L445",
+      "source_location": "L447",
       "weight": 1.0
     },
     {
@@ -172746,7 +172746,7 @@
       "confidence_score": 0.95,
       "context": "preset",
       "source_file": "docs/remote-management.md",
-      "source_location": "L234",
+      "source_location": "L236",
       "weight": 1.0
     },
     {
@@ -172758,7 +172758,7 @@
       "confidence_score": 0.95,
       "context": "preset",
       "source_file": "docs/remote-management.md",
-      "source_location": "L220",
+      "source_location": "L222",
       "weight": 1.0
     },
     {
@@ -172770,7 +172770,7 @@
       "confidence_score": 0.95,
       "context": "problems",
       "source_file": "docs/remote-management.md",
-      "source_location": "L268",
+      "source_location": "L270",
       "weight": 1.0
     },
     {
@@ -172782,7 +172782,7 @@
       "confidence_score": 0.95,
       "context": "progress",
       "source_file": "docs/remote-management.md",
-      "source_location": "L166",
+      "source_location": "L168",
       "weight": 1.0
     },
     {
@@ -172794,7 +172794,7 @@
       "confidence_score": 0.95,
       "context": "provider",
       "source_file": "docs/remote-management.md",
-      "source_location": "L228",
+      "source_location": "L230",
       "weight": 1.0
     },
     {
@@ -172806,7 +172806,7 @@
       "confidence_score": 0.95,
       "context": "provider",
       "source_file": "docs/remote-management.md",
-      "source_location": "L189",
+      "source_location": "L191",
       "weight": 1.0
     },
     {
@@ -172818,7 +172818,7 @@
       "confidence_score": 0.95,
       "context": "provider",
       "source_file": "docs/remote-management.md",
-      "source_location": "L157",
+      "source_location": "L159",
       "weight": 1.0
     },
     {
@@ -172830,7 +172830,7 @@
       "confidence_score": 0.95,
       "context": "result",
       "source_file": "docs/remote-management.md",
-      "source_location": "L268",
+      "source_location": "L270",
       "weight": 1.0
     },
     {
@@ -172842,7 +172842,7 @@
       "confidence_score": 0.95,
       "context": "set_auto_updates",
       "source_file": "docs/remote-management.md",
-      "source_location": "L224",
+      "source_location": "L226",
       "weight": 1.0
     },
     {
@@ -172854,7 +172854,7 @@
       "confidence_score": 0.95,
       "context": "set_auto_updates",
       "source_file": "docs/remote-management.md",
-      "source_location": "L588",
+      "source_location": "L590",
       "weight": 1.0
     },
     {
@@ -172866,7 +172866,7 @@
       "confidence_score": 0.95,
       "context": "set_auto_updates",
       "source_file": "docs/remote-management.md",
-      "source_location": "L270",
+      "source_location": "L272",
       "weight": 1.0
     },
     {
@@ -172878,7 +172878,7 @@
       "confidence_score": 0.95,
       "context": "size",
       "source_file": "docs/remote-management.md",
-      "source_location": "L189",
+      "source_location": "L191",
       "weight": 1.0
     },
     {
@@ -172890,7 +172890,7 @@
       "confidence_score": 0.95,
       "context": "time",
       "source_file": "docs/remote-management.md",
-      "source_location": "L189",
+      "source_location": "L191",
       "weight": 1.0
     },
     {
@@ -172902,7 +172902,7 @@
       "confidence_score": 0.95,
       "context": "time",
       "source_file": "docs/remote-management.md",
-      "source_location": "L479",
+      "source_location": "L481",
       "weight": 1.0
     },
     {

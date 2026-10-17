@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "readme.txt": {
-    "mtime": 1792123045.7759593,
-    "seen": 1792123050.6282246,
-    "ast_hash": "cbe256e0f1eda1cedd25fed887d021a1",
+    "mtime": 1792179578.581967,
+    "seen": 1792179684.2733362,
+    "ast_hash": "af68eccffca5c6759c6ae9688fc1a4b3",
     "semantic_hash": ""
   },
   "assets/img/only-logo.png": {
@@ -978,9 +978,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1792161729.4596612,
-    "seen": 1792162715.5537171,
-    "ast_hash": "390b137233e27a7b03ed0a149fae3c84",
+    "mtime": 1792179578.5823088,
+    "seen": 1792179684.27333,
+    "ast_hash": "245e65997ec0b243e7fd58c741aa3291",
     "semantic_hash": ""
   },
   "scripts/bump-version.php": {
@@ -1092,9 +1092,9 @@
     "semantic_hash": ""
   },
   "docs/remote-management.md": {
-    "mtime": 1792173234.8969054,
-    "seen": 1792174414.774784,
-    "ast_hash": "ef322eeeffd2e28a18c6c5feb72e3e48",
+    "mtime": 1792179613.4724116,
+    "seen": 1792179684.273335,
+    "ast_hash": "5a4735a7b7e15d02ec6d215622d5d6b6",
     "semantic_hash": ""
   },
   "tests/php/RemoteBackupCommandsTest.php": {
