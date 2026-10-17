@@ -303,6 +303,54 @@ final class ApiServiceTest extends Sitepulse_Test_Case {
         $this->assertCount(3, Sitepulse_Test_WP::$http_requests);
     }
 
+    public function test_ai_request_without_a_license_registers_first_even_after_earlier_requests(): void {
+        // The key was removed (or never issued) on a site that reached the API before.
+        update_option('sitepulse_last_api_request', 1700000000);
+        $this->queue(array('new_license' => array('license_key' => 'issued-license')));
+        $this->queue(array('success' => true, 'status' => 'pending', 'ai_diagnostic_report_id' => 'report-42'));
+        $this->assertTrue(Sitepulse_Api_Service::request_ai_diagnostic()['success']);
+        $this->assertSame('https://api.sitepulse.me/api/website/website-request', Sitepulse_Test_WP::$http_requests[0]['url']);
+        $this->assertArrayNotHasKey('license_key', $this->payload(0));
+        $this->assertSame('issued-license', $this->payload(1)['license_key']);
+    }
+
+    /** @dataProvider refusedRegistrations */
+    public function test_ai_request_explains_a_refused_registration_without_requesting_the_diagnosis(array $answer, int $status, string $reason): void {
+        update_option('sitepulse_last_api_request', 1700000000);
+        $this->queue($answer, $status);
+        $result = Sitepulse_Api_Service::request_ai_diagnostic();
+        $this->assertFalse($result['success']);
+        $this->assertSame('This site is not registered with SitePulse yet: ' . $reason, $result['message']);
+        $this->assertCount(1, Sitepulse_Test_WP::$http_requests);
+        $this->assertNull(get_option('sitepulse_ai_diagnostic_status', null));
+    }
+
+    public static function refusedRegistrations(): array {
+        return array(
+            'domain owned by another key' => array(array('success' => false, 'error' => 'website_ownership_required', 'message' => 'The existing license key is required to update this website.'), 403, 'The existing license key is required to update this website.'),
+            'refused without a reason' => array(array('success' => false), 403, 'API request failed with status code: 403'),
+            'no key issued' => array(array('success' => true), 200, 'the API did not issue a license key.'),
+        );
+    }
+
+    public function test_ai_poll_without_a_license_registers_and_keeps_the_pending_state_when_refused(): void {
+        $this->pending();
+        delete_option('sitepulse_license_key');
+        $this->queue(array('message' => 'Too many requests'), 429);
+        $result = Sitepulse_Api_Service::check_ai_diagnostic_status();
+        $this->assertFalse($result['success']);
+        $this->assertSame('This site is not registered with SitePulse yet: Too many requests', $result['message']);
+        $this->assertSame('pending', $result['status']);
+        $this->assertSame('2026-10-01 10:15:00', $result['requested_at']);
+        $this->assertCount(1, Sitepulse_Test_WP::$http_requests);
+        $this->assertSame('pending', get_option('sitepulse_ai_diagnostic_status'));
+
+        $this->queue(array('license_key' => 'issued-license'));
+        $this->queue(array('status' => 'processing', 'success' => true));
+        $this->assertSame('processing', Sitepulse_Api_Service::check_ai_diagnostic_status()['status']);
+        $this->assertSame('issued-license', $this->payload(2)['license_key']);
+    }
+
     public function test_ai_invalid_json_fails_without_replacing_a_previous_report(): void {
         $this->pending();
         update_option('sitepulse_ai_diagnostic_report', 'previous');

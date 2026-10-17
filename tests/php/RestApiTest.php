@@ -349,6 +349,7 @@ final class RestApiTest extends Sitepulse_Test_Case {
 
     public function test_pending_ai_request_schedules_polling_and_forwards_force_new(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         $this->queue(array('success' => true, 'status' => 'pending', 'ai_diagnostic_report_id' => 'report-7'));
         $result = sitepulse_request_ai_diagnostic_api($this->request(array('force_new' => true)))->get_data();
         $this->assertTrue($result['success']);
