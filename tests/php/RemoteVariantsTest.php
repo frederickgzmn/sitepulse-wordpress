@@ -66,4 +66,10 @@ final class RemoteVariantsTest extends Sitepulse_Test_Case {
         $this->assertSame(array(array('url' => 'https://example.test/wp-admin/admin.php?page=wpsp_sitepulse_settings', 'status' => 302)), $result['redirects']);
         $this->assertTrue($result['blocked']);
     }
+
+    public function test_connection_buttons_stop_the_request_after_redirecting(): void {
+        $result = $this->runVariant(array('mode' => 'connection_exit'));
+        $this->assertSame(array(array('url' => 'https://example.test/wp-admin/admin.php?page=wpsp_sitepulse_settings', 'status' => 302)), $result['redirects']);
+        $this->assertSame('spc_exit_key', $result['key']);
+    }
 }

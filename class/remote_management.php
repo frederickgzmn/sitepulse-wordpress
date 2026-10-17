@@ -30,6 +30,12 @@ class Sitepulse_Remote_Management {
 	/** admin-post action and nonce of the block switch. */
 	const BLOCK_ACTION = 'sitepulse_remote_management';
 
+	/** admin-post action and nonce of the connection buttons. */
+	const CONNECTION_ACTION = 'sitepulse_remote_connection';
+
+	/** The site's connection key until it is used, and what SitePulse last said about its accounts. */
+	const CONNECTION_OPTION = 'sitepulse_remote_connection';
+
 	/** What the site knows about remote management. */
 	const STATE_OPTION = 'sitepulse_remote_state';
 
@@ -88,6 +94,7 @@ class Sitepulse_Remote_Management {
 	public static function init() {
 		add_action( self::CHECK_IN_HOOK, array( __CLASS__, 'check_in' ) );
 		add_action( 'admin_post_' . self::BLOCK_ACTION, array( __CLASS__, 'handle_block_form' ) );
+		add_action( 'admin_post_' . self::CONNECTION_ACTION, array( __CLASS__, 'handle_connection_form' ) );
 		add_action( 'sitepulse_settings_after_form', array( __CLASS__, 'render_settings' ) );
 		Sitepulse_Remote_Events::init();
 		Sitepulse_Remote_Backups::init();
@@ -360,6 +367,94 @@ class Sitepulse_Remote_Management {
 	}
 
 	/**
+	 * The connection buttons: show a connection key, check the connection, or disconnect the site
+	 * from its SitePulse accounts (see "Connecting a site to an account" in docs/remote-management.md).
+	 */
+	public static function handle_connection_form() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'sitepulse' ), '', array( 'response' => 403 ) );
+		}
+
+		check_admin_referer( self::CONNECTION_ACTION );
+
+		$endpoints = array(
+			'key'        => 'connection/key',
+			'status'     => 'connection',
+			'disconnect' => 'connection/disconnect',
+		);
+		$operation = isset( $_POST['sitepulse_connection'] ) ? sanitize_key( wp_unslash( $_POST['sitepulse_connection'] ) ) : '';
+		if ( isset( $endpoints[ $operation ] ) && self::can_connect() ) {
+			$response = ( new Sitepulse_Remote_Client( self::signing_key() ) )->post( $endpoints[ $operation ], array() );
+			$stored   = self::connection();
+			if ( is_wp_error( $response ) ) {
+				$stored['error'] = __( 'SitePulse could not be reached. Please try again in a moment.', 'sitepulse' );
+			} else {
+				$stored = self::connection_from( is_array( $response['data'] ?? null ) ? $response['data'] : array(), $stored );
+				if ( 'disconnect' === $operation ) {
+					self::log( __( 'This site was disconnected from its SitePulse accounts.', 'sitepulse' ) );
+				}
+			}
+			update_option( self::CONNECTION_OPTION, $stored, false );
+		}
+
+		$referer = wp_get_referer();
+		wp_safe_redirect( $referer ? $referer : admin_url( 'admin.php?page=wpsp_sitepulse_settings' ) );
+		exit;
+	}
+
+	/**
+	 * @return array The stored connection, with defaults for anything missing.
+	 */
+	private static function connection() {
+		$stored = get_option( self::CONNECTION_OPTION, array() );
+		return array_merge(
+			array(
+				'key'         => '',
+				'connectable' => true,
+				'connections' => array(),
+				'checked_at'  => 0,
+				'error'       => '',
+			),
+			is_array( $stored ) ? $stored : array()
+		);
+	}
+
+	/**
+	 * The connection as SitePulse described it. A new key replaces the stored one; the stored key
+	 * is kept while SitePulse still has a key for the site, and dropped once it was used.
+	 *
+	 * @param array $data   The response's data.
+	 * @param array $stored The stored connection.
+	 * @return array
+	 */
+	private static function connection_from( array $data, array $stored ) {
+		$connections = array();
+		foreach ( is_array( $data['connections'] ?? null ) ? $data['connections'] : array() as $connection ) {
+			if ( is_array( $connection ) ) {
+				$connections[] = array(
+					'account'      => is_string( $connection['account'] ?? null ) ? $connection['account'] : '',
+					'plan'         => is_string( $connection['plan'] ?? null ) ? $connection['plan'] : '',
+					'connected_at' => is_string( $connection['connected_at'] ?? null ) ? $connection['connected_at'] : '',
+				);
+			}
+		}
+
+		if ( is_string( $data['key'] ?? null ) ) {
+			$key = $data['key'];
+		} else {
+			$key = empty( $data['has_key'] ) ? '' : $stored['key'];
+		}
+
+		return array(
+			'key'         => $key,
+			'connectable' => ! isset( $data['connectable'] ) || (bool) $data['connectable'],
+			'connections' => $connections,
+			'checked_at'  => time(),
+			'error'       => '',
+		);
+	}
+
+	/**
 	 * Show the remote management settings below the SitePulse settings form.
 	 *
 	 * @param string $context easy for the Simple dashboard, advanced otherwise.
@@ -413,6 +508,38 @@ class Sitepulse_Remote_Management {
 			),
 			'action'        => admin_url( 'admin-post.php' ),
 			'nonce_action'  => self::BLOCK_ACTION,
+			'connection'    => self::connection_view( $format ),
+		);
+	}
+
+	/**
+	 * What the connection box shows.
+	 *
+	 * @param string $format Date and time format.
+	 * @return array
+	 */
+	private static function connection_view( $format ) {
+		$stored = self::connection();
+
+		return array(
+			'available'    => self::can_connect(),
+			'connectable'  => (bool) $stored['connectable'],
+			'key'          => (string) $stored['key'],
+			'connections'  => array_map(
+				static function ( $connection ) use ( $format ) {
+					$time = strtotime( (string) $connection['connected_at'] );
+					return array(
+						'account' => '' !== $connection['account'] ? $connection['account'] : __( 'SitePulse', 'sitepulse' ),
+						'plan'    => (string) $connection['plan'],
+						'since'   => false === $time ? '' : wp_date( $format, $time ),
+					);
+				},
+				$stored['connections']
+			),
+			/* translators: %s: human-readable time difference */
+			'checked'      => $stored['checked_at'] ? sprintf( __( '%s ago', 'sitepulse' ), human_time_diff( (int) $stored['checked_at'], time() ) ) : '',
+			'error'        => (string) $stored['error'],
+			'nonce_action' => self::CONNECTION_ACTION,
 		);
 	}
 
