@@ -36,9 +36,9 @@
     "semantic_hash": "a92b3364fb0a7349f2a1c31a7ad5ed5e"
   },
   "assets/js/backend.js": {
-    "mtime": 1791318107.4296525,
-    "seen": 1791937551.6072934,
-    "ast_hash": "161e918f0e929d387bbc389aeacd97b4",
+    "mtime": 1792198866.1504111,
+    "seen": 1792199426.5804203,
+    "ast_hash": "e20bdd23d6c9a4c6af88188f61979ac0",
     "semantic_hash": ""
   },
   "assets/js/deactivation-modal.js": {
@@ -72,15 +72,15 @@
     "semantic_hash": "7d680f57eebda0d0a72c8a3dafef985d"
   },
   "class/api_service.php": {
-    "mtime": 1792196228.014163,
-    "seen": 1792196581.9719682,
-    "ast_hash": "7661174cbbaa3a9e441f9547993edb60",
+    "mtime": 1792198524.1949103,
+    "seen": 1792199426.580432,
+    "ast_hash": "c004fd0a69e3c5623d0fabd8bac2f04e",
     "semantic_hash": ""
   },
   "class/backend.php": {
-    "mtime": 1792161729.4600637,
-    "seen": 1792162715.5534892,
-    "ast_hash": "b692e2e262f528f182df57fbc26f8ad4",
+    "mtime": 1792198578.7694728,
+    "seen": 1792199426.5804334,
+    "ast_hash": "414728c8fe7bcb44197678a87dfcaedb",
     "semantic_hash": ""
   },
   "class/curloader.php": {
@@ -174,9 +174,9 @@
     "semantic_hash": ""
   },
   "inc/api_backend.php": {
-    "mtime": 1791318107.4628563,
-    "seen": 1791937551.6073442,
-    "ast_hash": "c4e0883b57b19d26c4b897ead34a9d6e",
+    "mtime": 1792198568.9079978,
+    "seen": 1792199426.5804718,
+    "ast_hash": "31388c32a531d598e59b5b416bb5e83d",
     "semantic_hash": ""
   },
   "inc/cron_fallback.php": {
@@ -204,9 +204,9 @@
     "semantic_hash": ""
   },
   "templates/backend/dashboard.php": {
-    "mtime": 1791937082.9044068,
-    "seen": 1791937551.6073606,
-    "ast_hash": "767de158258e331ddfe22203c55a3038",
+    "mtime": 1792198638.961074,
+    "seen": 1792199426.5804896,
+    "ast_hash": "4becbbcf7a5f9cc91e51c7b39fa7fa0f",
     "semantic_hash": ""
   },
   "templates/backend/header.php": {
@@ -276,9 +276,9 @@
     "semantic_hash": ""
   },
   "templates/easy/views/home.php": {
-    "mtime": 1791936499.9182212,
-    "seen": 1791937551.6073828,
-    "ast_hash": "135c3597cb8387f8dd06c0aa45c3ac58",
+    "mtime": 1792198706.6235986,
+    "seen": 1792199426.580509,
+    "ast_hash": "c546c029ca229a4ec48758a2139f87d9",
     "semantic_hash": ""
   },
   "templates/easy/views/insights.php": {
@@ -300,9 +300,9 @@
     "semantic_hash": ""
   },
   "templates/easy/views/security.php": {
-    "mtime": 1791318107.466252,
-    "seen": 1791937551.607391,
-    "ast_hash": "7456a0c4a8dbcc782a869599f795da51",
+    "mtime": 1792198687.8855278,
+    "seen": 1792199426.5805154,
+    "ast_hash": "b1f1505f2c0365c81e2c39edfc738b8b",
     "semantic_hash": ""
   },
   "templates/easy/views/settings.php": {
@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "readme.txt": {
-    "mtime": 1792196249.9271975,
-    "seen": 1792196581.9721498,
-    "ast_hash": "c8afeb7327471f3638332ac1a2f88086",
+    "mtime": 1792199403.322421,
+    "seen": 1792199426.58065,
+    "ast_hash": "9f598de73ce88a86ac270ce7a8b72a63",
     "semantic_hash": ""
   },
   "assets/img/only-logo.png": {
@@ -396,9 +396,9 @@
     "semantic_hash": ""
   },
   "tests/js/backend.test.cjs": {
-    "mtime": 1791318107.466454,
-    "seen": 1791937551.6073961,
-    "ast_hash": "91085f6624cd9757c437ac0af0d7eb05",
+    "mtime": 1792198867.1740186,
+    "seen": 1792199426.5805187,
+    "ast_hash": "cd0829cce83dd2d2db0dafaa31733995",
     "semantic_hash": ""
   },
   "tests/js/deactivation-modal.test.cjs": {
@@ -438,9 +438,9 @@
     "semantic_hash": ""
   },
   "tests/php/ApiServiceTest.php": {
-    "mtime": 1792196229.0621617,
-    "seen": 1792196581.9720588,
-    "ast_hash": "ecc37aef65c464a3844ce7cf97a48277",
+    "mtime": 1792199140.2885578,
+    "seen": 1792199426.5805395,
+    "ast_hash": "184a6cf3832fa2174c383a98da419e88",
     "semantic_hash": ""
   },
   "tests/php/AutoloadRestApiTest.php": {
@@ -462,9 +462,9 @@
     "semantic_hash": ""
   },
   "tests/php/CronTest.php": {
-    "mtime": 1792196361.9565256,
-    "seen": 1792196581.97207,
-    "ast_hash": "15b7b27af80fab2754ba85f7125f6c93",
+    "mtime": 1792198999.212732,
+    "seen": 1792199426.5805533,
+    "ast_hash": "46185cea9f1ca286504e90e2af4e25c8",
     "semantic_hash": ""
   },
   "tests/php/CurLoaderTest.php": {
@@ -522,9 +522,9 @@
     "semantic_hash": ""
   },
   "tests/php/RestApiTest.php": {
-    "mtime": 1792196361.9569392,
-    "seen": 1792196581.972111,
-    "ast_hash": "81802354ae0df5d4e177ed4cf32f38e9",
+    "mtime": 1792199139.2627306,
+    "seen": 1792199426.5806031,
+    "ast_hash": "d3ff149b3895f56b5077e44253ef1598",
     "semantic_hash": ""
   },
   "tests/php/SettingsTest.php": {
@@ -648,9 +648,9 @@
     "semantic_hash": ""
   },
   "tests/php/ApiCoverageTest.php": {
-    "mtime": 1792196361.9560087,
-    "seen": 1792196581.9720566,
-    "ast_hash": "7cec7a0fcb6f1bb4861dbfdbbba2c8e4",
+    "mtime": 1792198952.829075,
+    "seen": 1792199426.5805368,
+    "ast_hash": "4eb071279dc8ffc01d8d55261702712c",
     "semantic_hash": ""
   },
   "tests/php/ApiRegressionTest.php": {
@@ -702,9 +702,9 @@
     "semantic_hash": ""
   },
   "tests/php/DiagnosticTemplateCoverageTest.php": {
-    "mtime": 1791936783.9748912,
-    "seen": 1791937551.6074598,
-    "ast_hash": "1bbe05d450cdf7c922d48e6f8d67f48b",
+    "mtime": 1792199142.4074981,
+    "seen": 1792199426.5805557,
+    "ast_hash": "fbe57b600e2f41ffb66c5468ae27e8ea",
     "semantic_hash": ""
   },
   "tests/php/DirectAccessTemplateTest.php": {
@@ -780,9 +780,9 @@
     "semantic_hash": ""
   },
   "tests/php/RestCoverageTest.php": {
-    "mtime": 1791249751.941446,
-    "seen": 1791256527.5295303,
-    "ast_hash": "445e0d67199441cf35014dff88e5843a",
+    "mtime": 1792198998.165226,
+    "seen": 1792199426.580604,
+    "ast_hash": "c8a2ba7193aa8a343a3dfbd2540ed5e1",
     "semantic_hash": ""
   },
   "tests/php/Support/PresentationWordPress.php": {
@@ -858,9 +858,9 @@
     "semantic_hash": ""
   },
   "docs/KNOWN_DEFECTS.md": {
-    "mtime": 1792196250.9836683,
-    "seen": 1792196581.9721472,
-    "ast_hash": "1174851b9c6025669ae8a4d17849f3a7",
+    "mtime": 1792199402.281563,
+    "seen": 1792199426.5806472,
+    "ast_hash": "d91e2ded531da02f923b676c8b3d1fb0",
     "semantic_hash": ""
   },
   "docs/README.md": {
