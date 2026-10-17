@@ -232,6 +232,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
 
     public function test_ai_request_handles_corrupt_vulnerability_storage_as_empty_list(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         update_option('sitepulse_vulnerabilities_list', 'invalid');
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('status' => 'pending'));
         Sitepulse_Api_Service::request_ai_diagnostic();
@@ -239,6 +240,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
     }
 
     public function test_ai_poll_refreshes_queue_position_while_remaining_pending(): void {
+        update_option('sitepulse_license_key', 'existing-license');
         update_option('sitepulse_ai_diagnostic_status', 'pending');
         update_option('sitepulse_ai_diagnostic_report_id', 'report-42');
         set_transient('sitepulse_ai_diagnostic_queue_position', 8, 600);
@@ -250,6 +252,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
 
     public function test_failed_ai_response_preserves_error_details_and_retry_permission(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('success' => false, 'status' => 'failed', 'message' => 'Diagnostic failed', 'error_message' => 'No metrics supplied', 'can_retry' => true));
         $result = Sitepulse_Api_Service::request_ai_diagnostic();
         $this->assertFalse($result['success']);
@@ -261,6 +264,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
 
     public function test_ai_server_error_is_returned_without_replacing_stored_report(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         update_option('sitepulse_ai_diagnostic_report', 'previous-report');
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('message' => 'Unavailable'), 503);
         $result = Sitepulse_Api_Service::request_ai_diagnostic();

@@ -331,13 +331,17 @@ class Sitepulse_Api_Service {
 
 		// Check if request was successful
 		if ( $response_code !== 200 ) {
+			// The API says why it refused, e.g. a domain registered with another license key.
+			$refusal = json_decode( $response_body, true );
 			return array(
 				'success' => false,
-				'message' => sprintf(
-					/* translators: %d: HTTP response code */
-					__( 'API request failed with status code: %d', 'sitepulse' ),
-					$response_code
-				),
+				'message' => is_array( $refusal ) && ! empty( $refusal['message'] ) && is_string( $refusal['message'] )
+					? sanitize_text_field( $refusal['message'] )
+					: sprintf(
+						/* translators: %d: HTTP response code */
+						__( 'API request failed with status code: %d', 'sitepulse' ),
+						$response_code
+					),
 				'license_key' => null,
 			);
 		}
@@ -826,6 +830,34 @@ class Sitepulse_Api_Service {
 	}
 
 	/**
+	 * The site's license key, registering the site first when it has none (never registered, or
+	 * its key was removed): the AI diagnostic endpoint refuses a request without a key.
+	 *
+	 * @param bool $register Register even when a key is stored (the site's first request).
+	 * @return array 'success' and the 'license_key', or 'message': why the site has no key.
+	 */
+	private static function ensure_license_key( $register = false ) {
+		if ( $register || empty( self::get_license_key() ) ) {
+			$registration = self::send_website_data();
+			if ( empty( self::get_license_key() ) ) {
+				return array(
+					'success' => false,
+					'message' => sprintf(
+						/* translators: %s: why the SitePulse API did not register the site */
+						__( 'This site is not registered with SitePulse yet: %s', 'sitepulse' ),
+						empty( $registration['success'] ) ? $registration['message'] : __( 'the API did not issue a license key.', 'sitepulse' )
+					),
+				);
+			}
+		}
+
+		return array(
+			'success' => true,
+			'license_key' => self::get_license_key(),
+		);
+	}
+
+	/**
 	 * Request AI diagnostic from the API
 	 *
 	 * @param bool $force_new Force a new diagnostic even if one exists
@@ -843,13 +875,12 @@ class Sitepulse_Api_Service {
 		}
 
 		try {
-			// If it's the first time (no last request timestamp), send website data first
-			if ( self::get_last_request_timestamp() === null ) {
-				self::send_website_data();
+			// The first request sends the website data first; a site without a key registers.
+			$license = self::ensure_license_key( self::get_last_request_timestamp() === null );
+			if ( ! $license['success'] ) {
+				return $license;
 			}
-
-			// Get (possibly newly issued) license key
-			$license_key = self::get_license_key();
+			$license_key = $license['license_key'];
 
 			// Collect metrics data
 			$resources = self::get_resources_data();
@@ -971,10 +1002,17 @@ class Sitepulse_Api_Service {
 		}
 
 		// If pending or processing, check API for updated status
-		$license_key = self::get_license_key();
+		$license = self::ensure_license_key();
+		if ( ! $license['success'] ) {
+			// Keep the status, so polling goes on once the site is registered.
+			return $license + array(
+				'status' => $current_status,
+				'requested_at' => $requested_at,
+			);
+		}
 		$payload = array(
 			'domain' => wp_parse_url( home_url(), PHP_URL_HOST ),
-			'license_key' => $license_key,
+			'license_key' => $license['license_key'],
 			'force_new' => false,
 		);
 
