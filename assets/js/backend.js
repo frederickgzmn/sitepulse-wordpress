@@ -769,6 +769,18 @@ jQuery(function ($) {
     }
 
     /**
+     * The error of a failed REST call: an expired session asks for a reload, which gives a new
+     * nonce; anything else gives its reason.
+     */
+    async function restError(res, prefix) {
+        const err = await res.json().catch(() => null);
+        if (res.status === 403 && err && (err.code === 'rest_cookie_invalid_nonce' || err.code === 'invalid_nonce')) {
+            return new Error('Your session has expired. Reload the page and try again.');
+        }
+        return new Error(prefix + (err?.message || res.status));
+    }
+
+    /**
      * Check vulnerabilities via REST API
      */
     async function checkVulnerabilities() {
@@ -783,8 +795,7 @@ jQuery(function ($) {
         });
 
         if (!res.ok) {
-            const err = await res.json().catch(() => null);
-            throw new Error('Request failed: ' + (err?.message || res.status));
+            throw await restError(res, 'Request failed: ');
         }
 
         return res.json();
@@ -803,12 +814,20 @@ jQuery(function ($) {
 
         try {
             const response = await checkVulnerabilities();
+            const message = escapeHtml(response.data?.message || '');
+            const $results = $('.sp-vulnerabilities-results');
 
-            if (response.success) {
+            if (response.success && $results.is('[data-sp-reload-on-results]')) {
+                // Easy Mode shows the queued or completed scan as the page renders it.
+                $results.html('<div class="alert alert-' + (response.data.vuln_wait ? 'warning' : 'success') + ' mb-0">' + message + '</div>');
+                showAlert(message, response.data.vuln_wait ? 'info' : 'success', 4000);
+                setTimeout(() => window.location.reload(), 2000);
+            } else if (response.success) {
                 if (response.data.vuln_wait) {
-                    $('.sp-vulnerabilities-results').html('<div class="alert alert-warning"><span class="dashicons dashicons-hourglass me-1"></span> ' + response.data.message + '</div>');
+                    $results.html('<div class="alert alert-warning"><span class="dashicons dashicons-hourglass me-1"></span> ' + message + '</div>');
+                    showAlert(message, 'info', 8000);
                 } else {
-                    $('.sp-last-check-time').html('Last checked: <span class="fw-bold">' + response.data.timestamp + '</span>');
+                    $('.sp-last-check-time').html('Last checked: <span class="fw-bold">' + escapeHtml(response.data.timestamp) + '</span>');
 
                     if (response.data.vulnerabilities && response.data.vulnerabilities.length > 0) {
                         let html = '<div class="alert alert-danger mb-0">';
@@ -827,21 +846,15 @@ jQuery(function ($) {
                         $('.sp-vulnerabilities-results').html('<div class="alert alert-success mb-0"><span class="dashicons dashicons-yes-alt me-1"></span> No vulnerabilities found.</div>');
                     }
 
-                    if (typeof showAlert === 'function') {
-                        showAlert(response.data.message || 'Scan completed successfully.', 'success', 3000);
-                    }
+                    showAlert(message || 'Scan completed successfully.', 'success', 3000);
                 }
             } else {
-                $('.sp-vulnerabilities-results').html('<div class="alert alert-warning mb-0">Scan failed: ' + (response.data?.message || 'Unknown error') + '</div>');
-                if (typeof showAlert === 'function') {
-                    showAlert(response.data?.message || 'Scan failed.', 'warning', 3000);
-                }
+                $results.html('<div class="alert alert-warning mb-0">Scan failed: ' + (message || 'Unknown error') + '</div>');
+                showAlert(message || 'Scan failed.', 'warning', 8000);
             }
         } catch (error) {
-            $('.sp-vulnerabilities-results').html('<div class="alert alert-danger mb-0">Error: ' + error.message + '</div>');
-            if (typeof showAlert === 'function') {
-                showAlert('Error checking vulnerabilities: ' + error.message, 'danger', 3000);
-            }
+            $('.sp-vulnerabilities-results').html('<div class="alert alert-danger mb-0">Error: ' + escapeHtml(error.message) + '</div>');
+            showAlert('Error checking vulnerabilities: ' + escapeHtml(error.message), 'danger', 8000);
         } finally {
             $('.sp-check-vulnerabilities-btn').prop('disabled', false).html(originalHtml);
         }
@@ -880,8 +893,7 @@ jQuery(function ($) {
         });
 
         if (!res.ok) {
-            const err = await res.json().catch(() => null);
-            throw new Error('Request failed: ' + (err?.message || res.status));
+            throw await restError(res, 'Request failed: ');
         }
 
         return res.json();
@@ -902,8 +914,7 @@ jQuery(function ($) {
         });
 
         if (!res.ok) {
-            const err = await res.json().catch(() => null);
-            throw new Error('Status check failed: ' + (err?.message || res.status));
+            throw await restError(res, 'Status check failed: ');
         }
 
         return res.json();
@@ -920,23 +931,25 @@ jQuery(function ($) {
         aiDiagnosticPollingInterval = setInterval(async () => {
             try {
                 const response = await checkAIDiagnosticStatus();
-                if (response.success && response.data) {
-                    const status = response.data.status;
+                const data = response.data || {};
+                const status = data.status;
 
-                    // If completed or failed, stop polling and reload to show results
-                    if (status === 'completed' || status === 'failed') {
-                        stopAIDiagnosticPolling();
+                // A finished, failed or vanished diagnostic stops polling (a failed one comes with
+                // success false) and the page reloads to show it.
+                if (status === 'completed' || status === 'failed' || status === 'none') {
+                    stopAIDiagnosticPolling();
 
-                        if (status === 'completed') {
-                            showAlert('AI Diagnostic completed! Refreshing...', 'success', 2000);
-                        } else {
-                            showAlert('AI Diagnostic failed. Please try again.', 'danger', 3000);
-                        }
-
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
+                    if (status === 'completed') {
+                        showAlert('AI Diagnostic completed! Refreshing...', 'success', 2000);
+                    } else if (status === 'failed') {
+                        showAlert(escapeHtml(data.message || 'AI Diagnostic failed. Please try again.'), 'danger', 5000);
+                    } else {
+                        showAlert('No AI diagnostic is in progress any more. You can request a new one.', 'info', 5000);
                     }
+
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
                 }
             } catch (err) {
                 console.error('Failed to check AI diagnostic status:', err);
@@ -968,32 +981,33 @@ jQuery(function ($) {
 
         try {
             const response = await requestAIDiagnostic(forceNew);
+            const data = response.data || {};
+            const status = data.status;
+            const message = escapeHtml(data.message || '');
 
-            if (response.success && response.data) {
-                const status = response.data.status;
+            if (response.success && status === 'completed') {
+                showAlert('AI Diagnostic completed! Refreshing...', 'success', 2000);
+                setTimeout(() => window.location.reload(), 2000);
+            } else if (response.success && (status === 'pending' || status === 'processing')) {
+                showAlert('AI Diagnostic requested! Analysis is in progress...', 'info', 3000);
 
-                if (status === 'completed') {
-                    showAlert('AI Diagnostic completed! Refreshing...', 'success', 2000);
-                    setTimeout(() => window.location.reload(), 2000);
-                } else if (status === 'pending' || status === 'processing') {
-                    showAlert('AI Diagnostic requested! Analysis is in progress...', 'info', 3000);
+                // Start polling
+                startAIDiagnosticPolling();
 
-                    // Start polling
-                    startAIDiagnosticPolling();
-
-                    // Reload to show pending state
-                    setTimeout(() => window.location.reload(), 2000);
-                } else if (status === 'failed') {
-                    showAlert('AI Diagnostic failed: ' + (response.data.message || 'Unknown error'), 'danger', 5000);
-                    $btn.prop('disabled', false).html(originalHtml);
-                }
+                // Reload to show pending state
+                setTimeout(() => window.location.reload(), 2000);
+            } else if (status === 'failed') {
+                // The reloaded page shows the reason and a button that retries.
+                showAlert(message || 'AI Diagnostic failed.', 'danger', 6000);
+                $btn.prop('disabled', false).html(originalHtml);
+                setTimeout(() => window.location.reload(), 3000);
             } else {
-                showAlert(response.data?.message || 'Failed to request AI diagnostic', 'warning', 5000);
+                showAlert(message || 'Failed to request AI diagnostic', 'warning', 8000);
                 $btn.prop('disabled', false).html(originalHtml);
             }
         } catch (error) {
             console.error('Failed to request AI diagnostic:', error);
-            showAlert('Error: ' + error.message, 'danger', 5000);
+            showAlert('Error: ' + escapeHtml(error.message), 'danger', 8000);
             $btn.prop('disabled', false).html(originalHtml);
         }
     });

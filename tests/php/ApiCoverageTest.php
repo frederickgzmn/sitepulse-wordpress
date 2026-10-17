@@ -169,6 +169,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
     /** @dataProvider vulnerabilityFailures */
     public function test_failed_vulnerability_response_is_not_reported_as_clean_scan($response): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         Sitepulse_Test_WP::$http_queue[] = $response;
         $result = Sitepulse_Api_Service::check_vulnerabilities();
         $this->assertFalse($result['success']);
@@ -187,6 +188,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
     /** @dataProvider vulnerabilityLicenseFormats */
     public function test_vulnerability_scan_rotates_legacy_and_full_license_metadata($license, array $expected): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('new_license' => $license, 'vulnerabilities' => array()));
         $this->assertTrue(Sitepulse_Api_Service::check_vulnerabilities()['success']);
         foreach ($expected as $key => $value) {
@@ -196,6 +198,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
 
     public function test_queued_vulnerability_scan_without_message_returns_a_useful_wait_state(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('vuln_wait' => true));
         $result = Sitepulse_Api_Service::check_vulnerabilities();
         $this->assertTrue($result['success']);

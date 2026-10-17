@@ -778,10 +778,15 @@ function sitepulse_check_vulnerabilities_api( WP_REST_Request $request ) {
 		$vuln_wait = isset( $response['vuln_wait'] ) ? $response['vuln_wait'] : false;
 
 		if ( $vuln_wait ) {
+			// The dashboard shows the queued scan, from when it was first queued, until results arrive.
+			if ( ! get_option( 'sitepulse_vulnerability_scan_queued_at' ) ) {
+				update_option( 'sitepulse_vulnerability_scan_queued_at', current_time( 'mysql' ), false );
+			}
+
 			return rest_ensure_response( array(
 				'success' => true,
 				'data' => array(
-					'message' => $response['message'],
+					'message' => __( 'Your site is in the queue for a vulnerability scan. Results are usually ready within 30 minutes: check again then.', 'sitepulse' ),
 					'vuln_wait' => true
 				)
 			) );
@@ -872,13 +877,22 @@ function sitepulse_check_vulnerabilities_api( WP_REST_Request $request ) {
 
 			update_option( 'sitepulse_vulnerabilities_list', $formatted_vulns, false );
 			update_option( 'sitepulse_last_vulnerability_check', current_time( 'mysql' ), false );
+			delete_option( 'sitepulse_vulnerability_scan_queued_at' );
 
+			$found = count( $formatted_vulns );
 			return rest_ensure_response( array(
 				'success' => true,
 				'data' => array(
-					'message' => $response['message'],
+					// A clean scan still returns its (empty) sections, so the findings decide the message.
+					'message' => 0 === $found
+						? __( 'No known vulnerabilities found.', 'sitepulse' )
+						: sprintf(
+							/* translators: %d: number of known vulnerabilities */
+							_n( '%d known vulnerability found: update the affected plugin, theme or WordPress.', '%d known vulnerabilities found: update the affected plugins, themes or WordPress.', $found, 'sitepulse' ),
+							$found
+						),
 					'vulnerabilities' => $formatted_vulns,
-					'timestamp' => current_time( 'g:i A' ),
+					'timestamp' => date_i18n( 'M j, g:i A', current_time( 'timestamp' ) ),
 					'vuln_wait' => false
 				)
 			) );
@@ -955,8 +969,8 @@ function sitepulse_check_ai_diagnostic_status_api( WP_REST_Request $request ) {
 		$response = Sitepulse_Api_Service::check_ai_diagnostic_status();
 	}
 
-	// If status changed to completed or failed, unschedule cron
-	if ( isset( $response['status'] ) && in_array( $response['status'], array( 'completed', 'failed' ), true ) ) {
+	// If status changed to completed, failed or none (nothing in progress), unschedule cron
+	if ( isset( $response['status'] ) && in_array( $response['status'], array( 'completed', 'failed', 'none' ), true ) ) {
 		if ( class_exists( 'Sitepulse_AI_Diagnostic_Cron' ) ) {
 			Sitepulse_AI_Diagnostic_Cron::unschedule();
 		}
