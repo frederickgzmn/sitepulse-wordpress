@@ -212,6 +212,33 @@ Response: `{ "success": true, "accepted": 1 }`.
 
 A command that answers later (the update commands) is first reported as `{ "id", "status": "running", "result": null, "error": null }` when the site starts it; the API records `started_at` and moves it from `sent` to `running`. The final `done` or `failed` is accepted from `sent` or `running`.
 
+## Connecting a site to an account
+
+A free site joins a dashboard user's account with its **connection key**, as a ManageWP site does: the site's administrator copies the key from the plugin (Settings → Remote management) and the user pastes it, with the site's address, into the dashboard (Remote Management → Sites → Connect a site). The API connects the site to the user's paid plan the user picks, within the plan's connected-site limit; the site then appears in that account (sites, remote management, MCP) like a site an administrator connected in Backpack.
+
+- A key is `spc_` and 40 random characters; the API keeps only its SHA-256 hash, one per site. A new key replaces the previous one, and connecting the site deletes it, so each key works once.
+- A site belongs to one account: a site already connected (to any plan) is refused until its administrator disconnects it in the plugin. SitePulse administrators can still connect a site to more plans in Backpack.
+- Pro sites (`type` `pro` or `is_pro`) are not connected: they already appear for the account that owns their license.
+- Disconnecting in the plugin removes every connection of the site and switches remote management off for it, which cancels the commands still queued.
+
+The plugin calls these with license-signed requests (see "Signing"), with an empty body:
+
+| Endpoint | Response `data` |
+|---|---|
+| `POST /api/website/remote/connection` | `{ "connectable", "reason", "has_key", "connections": [ { "account", "plan", "connected_at" } ] }` |
+| `POST /api/website/remote/connection/key` | the same, and `key`: a new connection key, shown this once |
+| `POST /api/website/remote/connection/disconnect` | the same, after disconnecting |
+
+`connectable` is `false` for a Pro site, with `reason` `pro_site`. `account` is the email of the dashboard user who connected the site, masked (`j***@agency.example`), or `null` when SitePulse connected it; `plan` is the plan's name.
+
+The dashboard calls these with signed portal requests (see "Dashboard (portal) endpoints"); those that change something are accepted once:
+
+| Endpoint | Body | Response |
+|---|---|---|
+| `POST /api/portal/site-connections` | `license_keys` (the user's licenses) | `data.plans`: `[ { "license_key", "plan", "active", "used", "limit", "remaining", "sites" } ]` for the licenses the API knows; `active` is whether the plan may connect sites now (paid, not cancelled, blocked or expired) and `sites` are the connected domains |
+| `POST /api/portal/site-connections/connect` | `email`, `license_key` (the user's paid plan), `domain`, `connection_key` | `data`: `{ "domain", "plans" }`; 422 with a message for the user when the key does not match the site, the site is Pro or already connected, or the plan is not active or is full |
+| `POST /api/portal/site-connections/disconnect` | `license_keys` (the user's licenses), `domain` | `{ "success": true }` after disconnecting the site from those plans; 404 when it is connected to none of them |
+
 ## Commands
 
 | Type | `args` | Phase |
@@ -551,7 +578,7 @@ Each site has its notification settings. Until the dashboard saves them, there a
 | `update_failed` | An update command (`update_plugins`, `update_themes`, `update_core`) finishes `failed`, including rolled-back updates | Once per command |
 | `backup_failed` | A `backup.completed` event with `ok: false`, or a `backup_now` command that failed | Once per event or command |
 | `backup_overdue` | The `overdue` or `no_backup` backup warning appears | Once until the warning clears |
-| `check_ins_stopped` | An active site has not checked in for 2 hours: the site may be down, or WP-Cron is not running | Once, plus a second message when check-ins resume |
+| `check_ins_stopped` | An active site has not checked in for 2 hours: the site may be down, or WP-Cron is not running | Once, plus a second message when check-ins resume, whose `data` has `"resolved": true` |
 | `fatal_error` | `error.fatal` events arrive | At most once an hour per site, summarizing them |
 | `update_slowdown` | An update slowdown | Once per measurement |
 | `site_slowdown` | A site slowdown | Once per day |
