@@ -318,6 +318,7 @@ final class RestApiTest extends Sitepulse_Test_Case {
     /** @dataProvider vulnerabilityFormats */
     public function test_vulnerability_results_are_normalized_and_persisted(array $raw, array $expected): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         $this->queue(array('vulnerabilities' => $raw));
         $result = sitepulse_check_vulnerabilities_api($this->request())->get_data();
         $this->assertTrue($result['success']);
@@ -337,8 +338,42 @@ final class RestApiTest extends Sitepulse_Test_Case {
         );
     }
 
+    /** @dataProvider scanMessages */
+    public function test_vulnerability_results_say_how_many_known_vulnerabilities_were_found(array $raw, string $message): void {
+        update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
+        update_option('sitepulse_vulnerability_scan_queued_at', '2026-01-01 08:00:00');
+        $this->queue(array('vulnerabilities' => $raw));
+        $result = sitepulse_check_vulnerabilities_api($this->request())->get_data();
+        $this->assertSame($message, $result['data']['message']);
+        // Results end the queued state.
+        $this->assertFalse(get_option('sitepulse_vulnerability_scan_queued_at'));
+    }
+
+    public static function scanMessages(): array {
+        return array(
+            // A clean scan still returns its sections and summary.
+            'clean scan' => array(array('wordpress_core' => array(), 'plugins' => array(), 'theme' => array(), 'summary' => array('total' => 0)), 'No known vulnerabilities found.'),
+            'one finding' => array(array('wordpress_core' => array(array('title' => 'XSS', 'severity' => 'high')), 'summary' => array('total' => 1)), '1 known vulnerability found: update the affected plugin, theme or WordPress.'),
+            'two findings' => array(array('wordpress_core' => array(array('title' => 'XSS', 'severity' => 'high'), array('title' => 'CSRF', 'severity' => 'low'))), '2 known vulnerabilities found: update the affected plugins, themes or WordPress.'),
+        );
+    }
+
+    public function test_a_poll_that_finds_no_diagnostic_stops_the_status_checks(): void {
+        update_option('sitepulse_license_key', 'existing-license');
+        update_option('sitepulse_ai_diagnostic_status', 'pending');
+        update_option('sitepulse_ai_diagnostic_report_id', 'report-7');
+        Sitepulse_AI_Diagnostic_Cron::schedule_status_check();
+        $this->queue(array('success' => true, 'status' => 'none'));
+        $result = sitepulse_check_ai_diagnostic_status_api($this->request())->get_data();
+        $this->assertSame('none', $result['data']['status']);
+        $this->assertFalse(Sitepulse_AI_Diagnostic_Cron::is_scheduled());
+        $this->assertFalse(get_option('sitepulse_ai_diagnostic_status'));
+    }
+
     public function test_failed_vulnerability_scan_preserves_previous_findings(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         update_option('sitepulse_vulnerabilities_list', array(array('name' => 'Previous', 'version' => 'high')));
         $this->queue(array('message' => 'Rate limited'), 429);
         $result = sitepulse_check_vulnerabilities_api($this->request())->get_data();
@@ -349,6 +384,7 @@ final class RestApiTest extends Sitepulse_Test_Case {
 
     public function test_pending_ai_request_schedules_polling_and_forwards_force_new(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         $this->queue(array('success' => true, 'status' => 'pending', 'ai_diagnostic_report_id' => 'report-7'));
         $result = sitepulse_request_ai_diagnostic_api($this->request(array('force_new' => true)))->get_data();
         $this->assertTrue($result['success']);

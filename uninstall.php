@@ -32,6 +32,12 @@ delete_option('sitepulse_error_log');
 delete_option('sitepulse_plugin_profiler_stats');
 delete_option('sitepulse_plugin_profiler_current_time');
 delete_option('sitepulse_plugin_profiler_total_time');
+delete_option('sitepulse_remote_state');
+delete_option('sitepulse_remote_events');
+delete_option('sitepulse_remote_log');
+delete_option('sitepulse_remote_update_job');
+delete_option('sitepulse_remote_activity');
+delete_option('sitepulse_remote_key');
 
 // Remove all user meta
 delete_metadata( 'user', 0, 'sitepulse_trackers_disabled_notice_dismissed', '', true );
@@ -48,5 +54,6 @@ delete_transient('sitepulse_load_single_page_list');
 delete_transient('sitepulse_single_page_list');
 delete_transient('sitepulse_cron_healthy');
 delete_transient('sitepulse_cron_fallback_frontend_check');
+delete_transient('sitepulse_remote_update_lock');
 
 

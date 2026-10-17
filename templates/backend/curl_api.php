@@ -88,7 +88,7 @@ if (!defined('ABSPATH')) {
                 // Label SitePulse internal API calls clearly
                 $is_internal = false;
                 $display_origin = $event['origin'];
-                if ( isset( $event['url'] ) && strpos( $event['url'], 'api.sitepulse.me' ) !== false ) {
+                if ( isset( $event['url'] ) && strtolower( (string) wp_parse_url( $event['url'], PHP_URL_HOST ) ) === strtolower( Sitepulse_Api_Service::api_host() ) ) {
                   $is_internal = true;
                   $display_origin = esc_html__( 'SitePulse (API)', 'sitepulse' );
                 }

@@ -66,7 +66,7 @@ class Sitepulse_Backend {
 				true
 			);
 			wp_localize_script( 'sitepulse-deactivation-modal', 'SitePulseDeactivationData', [
-				'api_endpoint'      => 'https://api.sitepulse.me/api/feedback/deactivation',
+				'api_endpoint'      => Sitepulse_Api_Service::api_url( Sitepulse_Api_Service::API_ENDPOINT_DEACTIVATION_FEEDBACK ),
 				'domain'            => esc_url_raw( home_url() ),
 				'plugin_version'    => defined( 'SITEPULSE_VERSION' ) ? SITEPULSE_VERSION : '',
 				'wp_version'        => get_bloginfo( 'version' ),
@@ -814,6 +814,8 @@ class Sitepulse_Backend {
 			return array_merge( [ 'name' => '' ], $vulnerability );
 		}, array_filter( (array) get_option( 'sitepulse_vulnerabilities_list', [] ), 'is_array' ) );
 		$last_vulnerability_check = get_option( 'sitepulse_last_vulnerability_check', '' );
+		// A scan the API queued and has not finished yet.
+		$vulnerability_scan_queued_at = get_option( 'sitepulse_vulnerability_scan_queued_at', '' );
 
 		if ( ! empty( $pagespeed_report ) && is_array( $pagespeed_report ) && ! empty( $pagespeed_report['has_data'] ) ) {
 			// Check for desktop data first, then mobile
@@ -849,11 +851,14 @@ class Sitepulse_Backend {
 		$ai_diagnostic_requested_at = null;
 		$ai_diagnostic_queue_position = null;
 		$ai_diagnostic_report = null;
+		$ai_diagnostic_error = '';
 
 		if ( $sp_ai_external_api_enabled ) {
 			$ai_diagnostic_status = get_option( 'sitepulse_ai_diagnostic_status', null );
 			$ai_diagnostic_requested_at = get_option( 'sitepulse_ai_diagnostic_requested_at', null );
 			$ai_diagnostic_queue_position = get_transient( 'sitepulse_ai_diagnostic_queue_position' );
+			// Why the last diagnostic failed, as the API reported it.
+			$ai_diagnostic_error = (string) get_option( 'sitepulse_ai_diagnostic_error', '' );
 			
 			// Get report if completed or no status yet
 			if ( $ai_diagnostic_status === 'completed' || empty( $ai_diagnostic_status ) ) {

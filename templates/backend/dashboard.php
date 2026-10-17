@@ -158,6 +158,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 									<p class="text-muted mb-3">
 										<?php echo esc_html__( 'The AI diagnostic could not be completed. Please try again.', 'sitepulse' ); ?>
 									</p>
+									<?php if ( ! empty( $ai_diagnostic_error ) ) : ?>
+										<p class="small mb-3">
+											<strong><?php echo esc_html__( 'Reason:', 'sitepulse' ); ?></strong>
+											<?php echo esc_html( $ai_diagnostic_error ); ?>
+										</p>
+									<?php endif; ?>
 									<button type="button" class="btn btn-primary sp-request-ai-diagnostic-btn" data-force="true">
 										<span class="dashicons dashicons-update-alt me-1"></span>
 										<?php echo esc_html__( 'Retry Diagnostic', 'sitepulse' ); ?>
@@ -755,7 +761,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 									<?php if ( ! empty( $last_vulnerability_check ) ) : ?>
 										<?php echo esc_html__( 'Last checked:', 'sitepulse' ); ?>
 										<span
-											class="fw-bold"><?php echo esc_html( date( 'g:i A', strtotime( $last_vulnerability_check ) ) ); ?></span>
+											class="fw-bold"><?php echo esc_html( date_i18n( 'M j, g:i A', strtotime( $last_vulnerability_check ) ) ); ?></span>
 									<?php else : ?>
 										<?php echo esc_html__( 'Not checked yet', 'sitepulse' ); ?>
 									<?php endif; ?>
@@ -763,6 +769,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 							</div>
 
 							<div class="sp-vulnerabilities-results">
+								<?php if ( ! empty( $vulnerability_scan_queued_at ) ) : ?>
+									<div class="alert alert-warning mb-2">
+										<span class="dashicons dashicons-hourglass me-1"></span>
+										<?php echo esc_html( sprintf(
+											/* translators: %s: when the scan was queued */
+											__( 'Your site has been in the queue for a vulnerability scan since %s. Results are usually ready within 30 minutes: click "Check Vulnerabilities" to see them.', 'sitepulse' ),
+											date_i18n( 'M j, g:i A', strtotime( $vulnerability_scan_queued_at ) )
+										) ); ?>
+									</div>
+								<?php endif; ?>
 								<?php if ( ! empty( $vulnerabilities ) ) : ?>
 									<div class="alert alert-danger mb-0">
 										<h6 class="alert-heading">
@@ -785,7 +801,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 										<span class="dashicons dashicons-yes-alt me-1"></span>
 										<?php echo esc_html__( 'No vulnerabilities found.', 'sitepulse' ); ?>
 									</div>
-								<?php else : ?>
+								<?php elseif ( empty( $vulnerability_scan_queued_at ) ) : ?>
 									<div class="alert alert-info mb-0">
 										<span class="dashicons dashicons-info me-1"></span>
 										<?php echo esc_html__( 'Run a scan to check for vulnerabilities.', 'sitepulse' ); ?>
@@ -2012,6 +2028,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 									<p class="text-muted mb-3">
 										<?php echo esc_html__( 'The AI diagnostic could not be completed. Please try again.', 'sitepulse' ); ?>
 									</p>
+									<?php if ( ! empty( $ai_diagnostic_error ) ) : ?>
+										<p class="small mb-3">
+											<strong><?php echo esc_html__( 'Reason:', 'sitepulse' ); ?></strong>
+											<?php echo esc_html( $ai_diagnostic_error ); ?>
+										</p>
+									<?php endif; ?>
 									<button type="button" class="btn btn-primary sp-request-ai-diagnostic-btn" data-force="true">
 										<span class="dashicons dashicons-update-alt me-1"></span>
 										<?php echo esc_html__( 'Retry Diagnostic', 'sitepulse' ); ?>
@@ -2434,7 +2456,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 									<?php if ( ! empty( $last_vulnerability_check ) ) : ?>
 										<?php echo esc_html__( 'Last checked:', 'sitepulse' ); ?>
 										<span
-											class="fw-bold"><?php echo esc_html( date( 'g:i A', strtotime( $last_vulnerability_check ) ) ); ?></span>
+											class="fw-bold"><?php echo esc_html( date_i18n( 'M j, g:i A', strtotime( $last_vulnerability_check ) ) ); ?></span>
 									<?php else : ?>
 										<?php echo esc_html__( 'Not checked yet', 'sitepulse' ); ?>
 									<?php endif; ?>
@@ -2442,6 +2464,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 							</div>
 
 							<div class="sp-vulnerabilities-results">
+								<?php if ( ! empty( $vulnerability_scan_queued_at ) ) : ?>
+									<div class="alert alert-warning mb-2">
+										<span class="dashicons dashicons-hourglass me-1"></span>
+										<?php echo esc_html( sprintf(
+											/* translators: %s: when the scan was queued */
+											__( 'Your site has been in the queue for a vulnerability scan since %s. Results are usually ready within 30 minutes: click "Check Vulnerabilities" to see them.', 'sitepulse' ),
+											date_i18n( 'M j, g:i A', strtotime( $vulnerability_scan_queued_at ) )
+										) ); ?>
+									</div>
+								<?php endif; ?>
 								<?php if ( ! empty( $vulnerabilities ) ) : ?>
 									<div class="alert alert-danger mb-0">
 										<h6 class="alert-heading">
@@ -2464,7 +2496,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 										<span class="dashicons dashicons-yes-alt me-1"></span>
 										<?php echo esc_html__( 'No vulnerabilities found.', 'sitepulse' ); ?>
 									</div>
-								<?php else : ?>
+								<?php elseif ( empty( $vulnerability_scan_queued_at ) ) : ?>
 									<div class="alert alert-info mb-0">
 										<span class="dashicons dashicons-info me-1"></span>
 										<?php echo esc_html__( 'Run a scan to check for vulnerabilities.', 'sitepulse' ); ?>

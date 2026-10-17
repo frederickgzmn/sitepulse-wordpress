@@ -18,32 +18,40 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Sitepulse_Api_Service {
 
 	/**
-	 * API endpoint URL
+	 * The SitePulse API. SITEPULSE_API_BASE in wp-config.php points the plugin at another one,
+	 * such as a local API during development.
 	 *
 	 * @var string
 	 */
-	private const API_ENDPOINT = 'https://api.sitepulse.me/api/website/website-request';
+	const DEFAULT_API_BASE = 'https://api.sitepulse.me';
 
 	/**
-	 * API endpoint Vulnerabilities URL
+	 * Path of the site report endpoint.
 	 *
 	 * @var string
 	 */
-	private const API_ENDPOINT_VULNERABILITIES = 'https://api.sitepulse.me/api/website/website-vulnerabilities';
+	private const API_ENDPOINT = '/api/website/website-request';
 
 	/**
-	 * API endpoint for AI diagnostic
+	 * Path of the vulnerabilities endpoint.
 	 *
 	 * @var string
 	 */
-	private const API_ENDPOINT_AI_DIAGNOSTIC = 'https://api.sitepulse.me/api/ai-diagnostic';
+	private const API_ENDPOINT_VULNERABILITIES = '/api/website/website-vulnerabilities';
 
 	/**
-	 * API endpoint for deactivation feedback
+	 * Path of the AI diagnostic endpoint.
 	 *
 	 * @var string
 	 */
-	private const API_ENDPOINT_DEACTIVATION_FEEDBACK = 'https://api.sitepulse.me/api/feedback/deactivation';
+	private const API_ENDPOINT_AI_DIAGNOSTIC = '/api/ai-diagnostic';
+
+	/**
+	 * Path of the deactivation feedback endpoint.
+	 *
+	 * @var string
+	 */
+	const API_ENDPOINT_DEACTIVATION_FEEDBACK = '/api/feedback/deactivation';
 
 	/**
 	 * Option key for storing license number
@@ -58,6 +66,41 @@ class Sitepulse_Api_Service {
 	 * @var string
 	 */
 	private const LAST_REQUEST_OPTION_KEY = 'sitepulse_last_api_request';
+
+	/**
+	 * Base URL of the SitePulse API, without a trailing slash: SITEPULSE_API_BASE when it is an
+	 * http(s) URL, otherwise api.sitepulse.me.
+	 *
+	 * @return string
+	 */
+	public static function api_base() {
+		$base  = defined( 'SITEPULSE_API_BASE' ) && is_string( SITEPULSE_API_BASE ) ? trim( SITEPULSE_API_BASE ) : '';
+		$parts = '' !== $base ? wp_parse_url( $base ) : false;
+		if ( ! is_array( $parts ) || ! in_array( strtolower( (string) ( $parts['scheme'] ?? '' ) ), array( 'http', 'https' ), true ) || empty( $parts['host'] ) ) {
+			return self::DEFAULT_API_BASE;
+		}
+
+		return untrailingslashit( $base );
+	}
+
+	/**
+	 * Full URL of an API path.
+	 *
+	 * @param string $path Path starting with a slash.
+	 * @return string
+	 */
+	public static function api_url( $path ) {
+		return self::api_base() . $path;
+	}
+
+	/**
+	 * Host of the SitePulse API, to recognize its requests in the outbound request log.
+	 *
+	 * @return string
+	 */
+	public static function api_host() {
+		return (string) wp_parse_url( self::api_base(), PHP_URL_HOST );
+	}
 
 	/**
 	 * Option key for storing pagespeed report
@@ -93,6 +136,13 @@ class Sitepulse_Api_Service {
 	 * @var string
 	 */
 	private const AI_DIAGNOSTIC_REQUESTED_AT_KEY = 'sitepulse_ai_diagnostic_requested_at';
+
+	/**
+	 * Option key for why the last AI diagnostic failed, shown with the failed state
+	 *
+	 * @var string
+	 */
+	private const AI_DIAGNOSTIC_ERROR_KEY = 'sitepulse_ai_diagnostic_error';
 
 	/**
 	 * Send website data to the API endpoint
@@ -210,7 +260,7 @@ class Sitepulse_Api_Service {
 		// Check for testing endpoint override (defined in wp-config.php for testing purposes)
 		$endpoint = defined( 'SITEPULSE_TESTING_API_ENDPOINT' ) && ! empty( SITEPULSE_TESTING_API_ENDPOINT )
 			? SITEPULSE_TESTING_API_ENDPOINT
-			: self::API_ENDPOINT;
+			: self::api_url( self::API_ENDPOINT );
 
 		// Validate endpoint URL
 		if ( empty( $endpoint ) || ! filter_var( $endpoint, FILTER_VALIDATE_URL ) ) {
@@ -290,11 +340,7 @@ class Sitepulse_Api_Service {
 		if ( $response_code !== 200 ) {
 			return array(
 				'success' => false,
-				'message' => sprintf(
-					/* translators: %d: HTTP response code */
-					__( 'API request failed with status code: %d', 'sitepulse' ),
-					$response_code
-				),
+				'message' => self::refusal_message( $response_code, json_decode( $response_body, true ) ),
 				'license_key' => null,
 			);
 		}
@@ -397,6 +443,51 @@ class Sitepulse_Api_Service {
 			'license_key' => $license_key,
 			'response' => $decoded_response,
 		);
+	}
+
+	/**
+	 * What to tell the user about a request the API refused: what to do next, with the API's own
+	 * reason when it gives one (such as a domain registered with another license key).
+	 *
+	 * @param int   $code    HTTP status of the answer.
+	 * @param mixed $decoded The decoded answer.
+	 * @return string
+	 */
+	private static function refusal_message( $code, $decoded ) {
+		if ( 429 === $code ) {
+			return __( 'Too many requests to SitePulse. Please wait a minute and try again.', 'sitepulse' );
+		}
+		if ( 402 === $code ) {
+			return __( 'This site has reached today\'s limit of free SitePulse requests. Please try again tomorrow.', 'sitepulse' );
+		}
+		if ( 409 === $code ) {
+			return __( 'This site has a SitePulse Pro license. Activate the SitePulse Pro plugin to use it.', 'sitepulse' );
+		}
+		if ( $code >= 500 ) {
+			return sprintf(
+				/* translators: %d: HTTP response code */
+				__( 'SitePulse is temporarily unavailable (HTTP %d). Please try again in a few minutes.', 'sitepulse' ),
+				$code
+			);
+		}
+
+		$reason = is_array( $decoded ) && isset( $decoded['message'] ) && is_string( $decoded['message'] ) ? sanitize_text_field( $decoded['message'] ) : '';
+		// A validation answer names the field it rejected.
+		if ( is_array( $decoded ) && isset( $decoded['errors'] ) && is_array( $decoded['errors'] ) ) {
+			$first = reset( $decoded['errors'] );
+			$first = is_array( $first ) ? reset( $first ) : $first;
+			if ( is_string( $first ) && '' !== $first ) {
+				$reason = sanitize_text_field( $first );
+			}
+		}
+
+		return '' !== $reason
+			? $reason
+			: sprintf(
+				/* translators: %d: HTTP response code */
+				__( 'SitePulse refused the request (HTTP %d).', 'sitepulse' ),
+				$code
+			);
 	}
 
 	/**
@@ -596,13 +687,11 @@ class Sitepulse_Api_Service {
 				);
 			}
 
-			// If it's the first time (no last request timestamp), send website data first
-			if ( self::get_last_request_timestamp() === null ) {
-				self::send_website_data();
+			// The first request sends the website data first; a site without a key registers.
+			$license = self::ensure_license_key( self::get_last_request_timestamp() === null );
+			if ( ! $license['success'] ) {
+				return $license;
 			}
-
-			// Registration may have issued a new key for this first scan.
-			$license_key = self::get_license_key();
 
 			// Collect website info
 			$website_info = self::get_website_info();
@@ -613,7 +702,7 @@ class Sitepulse_Api_Service {
 				'site_name' => get_bloginfo( 'name' ),
 				'website_info' => $website_info,
 				'timestamp' => current_time( 'mysql' ),
-				'license_key' => $license_key,
+				'license_key' => $license['license_key'],
 			);
 
 			// Send request to API
@@ -646,7 +735,7 @@ class Sitepulse_Api_Service {
 		}
 
 		// Use the defined vulnerability endpoint
-		$endpoint = self::API_ENDPOINT_VULNERABILITIES;
+		$endpoint = self::api_url( self::API_ENDPOINT_VULNERABILITIES );
 
 		// Encode payload
 		$payload_json = wp_json_encode( $payload );
@@ -711,23 +800,11 @@ class Sitepulse_Api_Service {
 			return self::make_vulnerability_api_request( $payload, true );
 		}
 
-		// Handle Rate Limiting
-		if ( 429 === $response_code ) {
-			return array(
-				'success' => false,
-				'message' => __( 'Core: Too many requests. Please wait trying again later.', 'sitepulse' ),
-			);
-		}
-
 		// Check if request was successful
 		if ( 200 !== $response_code ) {
 			return array(
 				'success' => false,
-				'message' => sprintf(
-					/* translators: %d: HTTP response code */
-					__( 'Free scan requests exhausted with status code: %d. Please try again tomorrow.', 'sitepulse' ),
-					$response_code
-				),
+				'message' => self::refusal_message( $response_code, $decoded_response ),
 			);
 		}
 
@@ -777,8 +854,36 @@ class Sitepulse_Api_Service {
 
 		return array(
 			'success' => true,
-			'message' => empty( $vulnerabilities ) ? __( 'No vulnerabilities found. The site is scheduled for a re-scan; please check back later.', 'sitepulse' ) : __( 'Vulnerabilities detected.', 'sitepulse' ),
+			'message' => __( 'Vulnerability scan results received.', 'sitepulse' ),
 			'vulnerabilities' => $vulnerabilities,
+		);
+	}
+
+	/**
+	 * The site's license key, registering the site first when it has none (never registered, or
+	 * its key was removed): the AI diagnostic endpoint refuses a request without a key.
+	 *
+	 * @param bool $register Register even when a key is stored (the site's first request).
+	 * @return array 'success' and the 'license_key', or 'message': why the site has no key.
+	 */
+	private static function ensure_license_key( $register = false ) {
+		if ( $register || empty( self::get_license_key() ) ) {
+			$registration = self::send_website_data();
+			if ( empty( self::get_license_key() ) ) {
+				return array(
+					'success' => false,
+					'message' => sprintf(
+						/* translators: %s: why the SitePulse API did not register the site */
+						__( 'This site is not registered with SitePulse yet: %s', 'sitepulse' ),
+						empty( $registration['success'] ) ? $registration['message'] : __( 'the API did not issue a license key.', 'sitepulse' )
+					),
+				);
+			}
+		}
+
+		return array(
+			'success' => true,
+			'license_key' => self::get_license_key(),
 		);
 	}
 
@@ -800,13 +905,12 @@ class Sitepulse_Api_Service {
 		}
 
 		try {
-			// If it's the first time (no last request timestamp), send website data first
-			if ( self::get_last_request_timestamp() === null ) {
-				self::send_website_data();
+			// The first request sends the website data first; a site without a key registers.
+			$license = self::ensure_license_key( self::get_last_request_timestamp() === null );
+			if ( ! $license['success'] ) {
+				return $license;
 			}
-
-			// Get (possibly newly issued) license key
-			$license_key = self::get_license_key();
+			$license_key = $license['license_key'];
 
 			// Collect metrics data
 			$resources = self::get_resources_data();
@@ -835,25 +939,9 @@ class Sitepulse_Api_Service {
 			// Make API request
 			$response = self::make_ai_diagnostic_api_request( $payload );
 
-			// Store request state if successful
-			if ( $response['success'] ) {
-				update_option( self::AI_DIAGNOSTIC_STATUS_KEY, $response['status'], false );
+			// The answer's state is stored with it; a request that was taken is dated.
+			if ( $response['success'] && in_array( $response['status'], array( 'pending', 'processing', 'completed' ), true ) ) {
 				update_option( self::AI_DIAGNOSTIC_REQUESTED_AT_KEY, current_time( 'mysql' ), false );
-
-				if ( isset( $response['ai_diagnostic_report_id'] ) ) {
-					update_option( self::AI_DIAGNOSTIC_REPORT_ID_KEY, $response['ai_diagnostic_report_id'], false );
-				}
-
-				// Store queue position as transient (expires in 10 minutes)
-				if ( isset( $response['queue_position'] ) ) {
-					set_transient( 'sitepulse_ai_diagnostic_queue_position', $response['queue_position'], 600 );
-				}
-
-				// If completed, store the report and clear queue position
-				if ( $response['status'] === 'completed' && isset( $response['diagnostic_result'] ) ) {
-					self::store_ai_diagnostic_report( $response['diagnostic_result'] );
-					delete_transient( 'sitepulse_ai_diagnostic_queue_position' );
-				}
 			}
 
 			return $response;
@@ -928,33 +1016,63 @@ class Sitepulse_Api_Service {
 		}
 
 		// If pending or processing, check API for updated status
-		$license_key = self::get_license_key();
+		$license = self::ensure_license_key();
+		if ( ! $license['success'] ) {
+			// Keep the status, so polling goes on once the site is registered.
+			return $license + array(
+				'status' => $current_status,
+				'requested_at' => $requested_at,
+			);
+		}
 		$payload = array(
 			'domain' => wp_parse_url( home_url(), PHP_URL_HOST ),
-			'license_key' => $license_key,
+			'license_key' => $license['license_key'],
 			'force_new' => false,
 		);
 
 		$response = self::make_ai_diagnostic_api_request( $payload );
 
-		// Update stored status
-		if ( $response['success'] && isset( $response['status'] ) ) {
-			update_option( self::AI_DIAGNOSTIC_STATUS_KEY, $response['status'], false );
-
-			// Update queue position transient
-			if ( isset( $response['queue_position'] ) ) {
-				set_transient( 'sitepulse_ai_diagnostic_queue_position', $response['queue_position'], 600 );
-			}
-
-			// If completed, store the report and clear queue position
-			if ( $response['status'] === 'completed' && isset( $response['diagnostic_result'] ) ) {
-				self::store_ai_diagnostic_report( $response['diagnostic_result'] );
-				delete_transient( 'sitepulse_ai_diagnostic_queue_position' );
-			}
-		}
-
 		$response['requested_at'] = $requested_at;
 		return $response;
+	}
+
+	/**
+	 * Store the diagnostic state an answer carries, so the dashboard shows it: pending or processing
+	 * (with the queue position), completed (with the report) or failed (with the reason). "none"
+	 * means the API has no diagnostic in progress for the site, so the stale request is cleared.
+	 *
+	 * @param array $response An answer of the API, as make_ai_diagnostic_api_request() builds it.
+	 */
+	private static function remember_ai_state( array $response ) {
+		$status = $response['status'];
+		if ( 'none' === $status ) {
+			self::clear_ai_diagnostic_request();
+			delete_transient( 'sitepulse_ai_diagnostic_queue_position' );
+			return;
+		}
+		if ( ! in_array( $status, array( 'pending', 'processing', 'completed', 'failed' ), true ) ) {
+			return;
+		}
+
+		update_option( self::AI_DIAGNOSTIC_STATUS_KEY, $status, false );
+		if ( isset( $response['ai_diagnostic_report_id'] ) ) {
+			update_option( self::AI_DIAGNOSTIC_REPORT_ID_KEY, $response['ai_diagnostic_report_id'], false );
+		}
+		if ( 'failed' === $status ) {
+			update_option( self::AI_DIAGNOSTIC_ERROR_KEY, isset( $response['error_message'] ) ? $response['error_message'] : '', false );
+		} else {
+			delete_option( self::AI_DIAGNOSTIC_ERROR_KEY );
+		}
+
+		if ( 'completed' === $status || 'failed' === $status ) {
+			delete_transient( 'sitepulse_ai_diagnostic_queue_position' );
+		} elseif ( isset( $response['queue_position'] ) ) {
+			// Store queue position as transient (expires in 10 minutes)
+			set_transient( 'sitepulse_ai_diagnostic_queue_position', $response['queue_position'], 600 );
+		}
+		if ( 'completed' === $status && isset( $response['diagnostic_result'] ) ) {
+			self::store_ai_diagnostic_report( $response['diagnostic_result'] );
+		}
 	}
 
 	/**
@@ -977,6 +1095,7 @@ class Sitepulse_Api_Service {
 		delete_option( self::AI_DIAGNOSTIC_STATUS_KEY );
 		delete_option( self::AI_DIAGNOSTIC_REPORT_ID_KEY );
 		delete_option( self::AI_DIAGNOSTIC_REQUESTED_AT_KEY );
+		delete_option( self::AI_DIAGNOSTIC_ERROR_KEY );
 	}
 
 	/**
@@ -997,7 +1116,7 @@ class Sitepulse_Api_Service {
 	 * @return array Response array with success status, message, and data
 	 */
 	private static function make_ai_diagnostic_api_request( array $payload, $retry = false ) {
-		$endpoint = self::API_ENDPOINT_AI_DIAGNOSTIC;
+		$endpoint = self::api_url( self::API_ENDPOINT_AI_DIAGNOSTIC );
 
 		// Encode payload
 		$payload_json = wp_json_encode( $payload );
@@ -1034,7 +1153,7 @@ class Sitepulse_Api_Service {
 			return array(
 				'success' => false,
 				// Preserve current status so cron/UI polling doesn't stop on transient failures.
-				'status'  => get_option( self::AI_DIAGNOSTIC_STATUS_KEY, 'pending' ),
+				'status'  => get_option( self::AI_DIAGNOSTIC_STATUS_KEY, null ),
 				'message' => __( 'Could not connect to API server: ', 'sitepulse' ) . $error_message,
 			);
 		}
@@ -1066,58 +1185,29 @@ class Sitepulse_Api_Service {
 			return self::make_ai_diagnostic_api_request( $payload, true );
 		}
 
-		// Check for Cloudflare or server errors (5xx)
-		if ( $response_code >= 500 ) {
-			update_option( self::AI_DIAGNOSTIC_STATUS_KEY, 'failed', false );
-
+		// A refused request (rate limit, server error, ...) or an unreadable answer leaves the
+		// diagnostic as it was: polling goes on and a previous report stays on screen.
+		if ( $response_code >= 400 || ! is_array( $decoded_response ) ) {
 			return array(
 				'success' => false,
-				'status' => 'failed',
-				'message' => sprintf(
-					/* translators: %d: HTTP response code */
-					__( 'Server error (HTTP %d). Please try again later.', 'sitepulse' ),
-					$response_code
-				),
+				'status'  => get_option( self::AI_DIAGNOSTIC_STATUS_KEY, null ),
+				'message' => $response_code >= 400
+					? self::refusal_message( $response_code, $decoded_response )
+					: __( 'SitePulse sent an answer that could not be read. Please try again in a few minutes.', 'sitepulse' ),
 			);
 		}
 
-		// Handle rate limiting
-		if ( 429 === $response_code ) {
-			return array(
-				'success' => false,
-				'status'  => get_option( self::AI_DIAGNOSTIC_STATUS_KEY, 'pending' ),
-				'message' => __( 'Too many requests. Please wait before trying again.', 'sitepulse' ),
-			);
+		// The API's state of the diagnostic. It reports success false for a failed diagnostic and
+		// for one already queued, so success follows the state: in progress or done is a success.
+		$status = isset( $decoded_response['status'] ) && is_string( $decoded_response['status'] ) ? $decoded_response['status'] : 'unknown';
+		$api_success = isset( $decoded_response['success'] ) ? (bool) $decoded_response['success'] : true;
+		$message = isset( $decoded_response['message'] ) && is_string( $decoded_response['message'] ) ? sanitize_text_field( $decoded_response['message'] ) : '';
+		if ( in_array( $status, array( 'pending', 'processing' ), true ) && ! $api_success ) {
+			$message = __( 'An AI diagnosis of this site is already in progress.', 'sitepulse' );
 		}
-
-		// Check for other client errors
-		if ( $response_code >= 400 && $response_code < 500 ) {
-			$message = isset( $decoded_response['message'] ) ? $decoded_response['message'] : __( 'Request failed', 'sitepulse' );
-
-			return array(
-				'success' => false,
-				'status'  => get_option( self::AI_DIAGNOSTIC_STATUS_KEY, 'pending' ),
-				'message' => $message,
-			);
-		}
-
-		if ( json_last_error() !== JSON_ERROR_NONE ) {
-			update_option( self::AI_DIAGNOSTIC_STATUS_KEY, 'failed', false );
-
-			return array(
-				'success' => false,
-				'status' => 'failed',
-				'message' => __( 'Failed to decode API response', 'sitepulse' ),
-			);
-		}
-
-		// Build response based on API status
-		$status = isset( $decoded_response['status'] ) ? $decoded_response['status'] : 'unknown';
-		$success = isset( $decoded_response['success'] ) ? $decoded_response['success'] : true;
-		$message = isset( $decoded_response['message'] ) ? $decoded_response['message'] : '';
 
 		$result = array(
-			'success' => $success,
+			'success' => in_array( $status, array( 'pending', 'processing', 'completed', 'none' ), true ) || ( 'failed' !== $status && $api_success ),
 			'status' => $status,
 			'message' => $message,
 		);
@@ -1137,15 +1227,21 @@ class Sitepulse_Api_Service {
 			$result['diagnostic_result'] = $decoded_response['diagnostic_result'];
 		}
 
-		// Include error info if failed
+		// Include error info if failed, with a message that says what happened instead of the
+		// API's instructions to its own clients.
 		if ( $status === 'failed' ) {
-			if ( isset( $decoded_response['error_message'] ) ) {
-				$result['error_message'] = $decoded_response['error_message'];
-			}
+			$error = isset( $decoded_response['error_message'] ) && is_string( $decoded_response['error_message'] ) ? sanitize_text_field( $decoded_response['error_message'] ) : '';
+			$result['error_message'] = $error;
+			$result['message'] = '' !== $error
+				/* translators: %s: why the AI diagnosis failed */
+				? sprintf( __( 'The AI diagnosis failed: %s', 'sitepulse' ), $error )
+				: __( 'The AI diagnosis could not be completed.', 'sitepulse' );
 			if ( isset( $decoded_response['can_retry'] ) ) {
 				$result['can_retry'] = $decoded_response['can_retry'];
 			}
 		}
+
+		self::remember_ai_state( $result );
 
 		return $result;
 	}

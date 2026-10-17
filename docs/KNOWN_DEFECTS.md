@@ -16,6 +16,7 @@ The defects below were reproduced with expected-correct tests, then repaired. Th
 | A memory-diagnostic exception returns an error and closes the output buffer opened by that request. | [ApiVariantsTest](php/ApiVariantsTest.php) |
 | Frontend load durations choose the correct seconds/minutes/hours unit without converting a formatted string back to a number. | [FrontendAdminBarTest](php/FrontendAdminBarTest.php) |
 | Fatal-error recovery messages retain their format placeholders, and SitePulse's own fatal notifications are not blocked by its email filter. | [ErrorHandlerRecoveryTest](php/ErrorHandlerRecoveryTest.php) |
+| An uncaught exception on a page WordPress checks for fatal errors (after a change in its plugin or theme editor) reaches that check as the fatal error it is, and is logged once. | [ErrorHandlerVariantsTest](php/ErrorHandlerVariantsTest.php) |
 | Translation loading uses the plugin translations directory on disk. | [LifecycleTest](php/LifecycleTest.php) |
 | A failed configuration rewrite returns an error before a duplicate SAVEQUERIES declaration can be added. | [PluginAdditionalBehaviorTest](php/PluginAdditionalBehaviorTest.php) |
 | A failed query diagnostic displays its error and retains the SAVEQUERIES enable action. | [DiagnosticTemplateCoverageTest](php/DiagnosticTemplateCoverageTest.php) |
@@ -26,6 +27,11 @@ The defects below were reproduced with expected-correct tests, then repaired. Th
 | Reports and AI diagnoses describe the last 24 hours, and an oversized report keeps the slowest entries. | [ApiServiceTest](php/ApiServiceTest.php), [ApiCoverageTest](php/ApiCoverageTest.php) |
 | Plugin averages cover the last 24 hours and the slowest plugins are listed first. | [PluginProfilerTest](php/PluginProfilerTest.php) |
 | The dashboard assistant shows the slowest item's time and takes the heaviest plugin from its recent average. | [PetAssistantTemplateTest](php/PetAssistantTemplateTest.php) |
+| An UpdraftPlus run that hit an error but will resume is not reported as a failed backup (which sent a "Backup failed" alert); only the backup's last run is. | [RemoteBackupsTest](php/RemoteBackupsTest.php) |
+| An AI diagnosis or its status check on a site without a license key (one that reached the API before, so it skipped its first-request registration) registers the site first instead of sending no key and failing with HTTP 422; a refused registration reports the API's reason without requesting the diagnosis. | [ApiServiceTest](php/ApiServiceTest.php) |
+| A vulnerability scan on a site without a license key registers it first; a refused scan says why (daily limit, Pro license, invalid field, rate limit, temporary unavailability or the API's reason) instead of "Free scan requests exhausted"; a clean scan, which still returns its sections and summary, says no known vulnerabilities were found instead of "Vulnerabilities detected". | [ApiServiceTest](php/ApiServiceTest.php), [RestApiTest](php/RestApiTest.php) |
+| A queued vulnerability scan is remembered from when it was first queued and shown, with when to check again, until its results arrive; Easy Mode no longer calls a never-scanned site safe and shows each finding's stored severity instead of "Unknown". | [RestCoverageTest](php/RestCoverageTest.php), [DiagnosticTemplateCoverageTest](php/DiagnosticTemplateCoverageTest.php) |
+| A failed AI diagnosis (which the API reports with success false) is stored with its reason and shown with a retry button instead of "Waiting in queue" forever, and one already in progress is shown as in progress; a server error or unreadable answer keeps the diagnosis and the previous report as they were instead of marking it failed; a status check that finds nothing in progress forgets the stale request. | [ApiServiceTest](php/ApiServiceTest.php), [CronTest](php/CronTest.php), [RestApiTest](php/RestApiTest.php), [DiagnosticTemplateCoverageTest](php/DiagnosticTemplateCoverageTest.php) |
 
 ## JavaScript
 
@@ -36,5 +42,6 @@ The defects below were reproduced with expected-correct tests, then repaired. Th
 | Profiler events already measured in milliseconds keep those units in completion reports. | [Browser regressions](js/browser-regressions.test.cjs) |
 | Failed onboarding collection requests display an error rather than marking the task complete. | [Browser regressions](js/browser-regressions.test.cjs) |
 | A rejected SAVEQUERIES request displays its failure without an unhandled promise rejection. | [Browser regressions](js/browser-regressions.test.cjs) |
+| Vulnerability scans and AI diagnoses show every outcome as escaped text in a notice: a queued scan says when to check again (Easy Mode, which had nowhere to show it, reloads to show the queued or completed scan), a refusal gives its reason, an expired session asks for a reload, and polling stops on a failed or vanished diagnosis even though the answer is not a success. | [Backend](js/backend.test.cjs) |
 
 These tests execute production code with isolated WordPress/browser boundaries. They protect these specific behaviors; they do not establish that no other defects remain.
