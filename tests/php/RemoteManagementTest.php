@@ -107,7 +107,7 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         Sitepulse_Remote_Management::check_in();
 
         $this->assertSame(array('check-in'), $this->endpoints());
-        $this->assertSame(array('schema' => 1, 'plugin_version' => SITEPULSE_VERSION, 'wp_version' => '6.8', 'blocked' => false, 'backup_provider' => null, 'backup_providers' => array(), 'cron' => array('url' => site_url('wp-cron.php'), 'disabled' => false, 'late' => 0), 'features' => array('safe_update')), sitepulse_test_remote_request_body(0));
+        $this->assertSame(array('schema' => 1, 'plugin_version' => SITEPULSE_VERSION, 'wp_version' => '6.8', 'blocked' => false, 'backup_provider' => null, 'backup_providers' => array(), 'cron' => array('url' => site_url('wp-cron.php'), 'disabled' => false, 'late' => 0), 'features' => array('safe_update')), sitepulse_test_remote_request_body(0), 'No wp_admin before the first wp-admin check.');
         $state = Sitepulse_Remote_Management::state();
         $this->assertFalse($state['enabled']);
         $this->assertFalse($state['active']);
@@ -115,6 +115,38 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         $this->assertSame(array(), $state['done_commands'], 'Commands run only while the dashboard manages the site.');
         $this->assertEqualsWithDelta(time() + 3600, $this->nextCheckIn(), 2);
         $this->assertSame(array(), $this->messages());
+    }
+
+    public function test_check_in_reports_whether_the_server_can_reach_wp_admin(): void {
+        $this->connect();
+        $recent = array('reachable' => false, 'status' => 503, 'login_status' => 200, 'ms' => 184, 'error' => 'http_503', 'checked_at' => gmdate('Y-m-d\TH:i:s\Z', time() - 600));
+        update_option(SITEPULSE_ADMIN_ACCESS_OPTION, array('last' => $recent, 'previous' => null));
+        $this->queue($this->answer(self::IDLE));
+
+        Sitepulse_Remote_Management::check_in();
+
+        $this->assertSame(array('check-in'), $this->endpoints(), 'A result of the last 15 minutes is sent as it is, without waiting for a new check.');
+        $body = sitepulse_test_remote_request_body(0);
+        $this->assertSame($recent, $body['wp_admin']);
+        $this->assertSame(array('schema', 'plugin_version', 'wp_version', 'blocked', 'backup_provider', 'backup_providers', 'cron', 'wp_admin', 'features'), array_keys($body));
+    }
+
+    public function test_check_in_checks_wp_admin_again_first_when_the_result_is_older_than_15_minutes(): void {
+        $this->connect();
+        Sitepulse_Test_Upgrades::reset();
+        update_option(SITEPULSE_ADMIN_ACCESS_OPTION, array('last' => array('reachable' => false, 'status' => 0, 'login_status' => 0, 'ms' => 10001, 'error' => 'timeout', 'message' => 'cURL error 28', 'checked_at' => gmdate('Y-m-d\TH:i:s\Z', time() - 16 * 60))));
+        $this->queue($this->answer(self::IDLE));
+
+        Sitepulse_Remote_Management::check_in();
+
+        $pages = array_map(static function ($request) { return strtok($request['url'], '?'); }, array_slice(Sitepulse_Test_WP::$http_requests, 0, 2));
+        $this->assertSame(array(admin_url(), wp_login_url()), $pages, 'The site loads its wp-admin before it checks in.');
+        $wp_admin = sitepulse_test_remote_request_body(2)['wp_admin'];
+        $this->assertSame(array('reachable', 'status', 'login_status', 'ms', 'error', 'checked_at'), array_keys($wp_admin));
+        $this->assertSame(array(true, 200, 200, null), array($wp_admin['reachable'], $wp_admin['status'], $wp_admin['login_status'], $wp_admin['error']));
+        $this->assertEqualsWithDelta(time(), strtotime($wp_admin['checked_at']), 2);
+        $this->assertSame($wp_admin, Sitepulse_Admin_Access::last());
+        Sitepulse_Test_Upgrades::reset();
     }
 
     public function test_check_in_says_how_late_scheduled_tasks_run(): void {
