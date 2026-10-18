@@ -327,11 +327,11 @@ A command expires 15 minutes after it is created unless it was delivered. The pl
 A safe update updates one plugin or theme between two visual scans of the site, after a backup, so the dashboard can show what the update changed and undo it:
 
 1. **Before.** The dashboard asks for it (`safe-updates/create`). At the same time:
-   - the API scans the site's visual monitoring pages (the home page when it monitors none yet, even while its scheduled scans are off) on a comparison branch of the safe update's own, so that branch's baselines are the site right before the update;
+   - the API scans the site's visual monitoring pages (the home page when it monitors none yet, even while its scheduled scans are off) on a comparison branch of the safe update's own. When the scan is done, the API approves each page's capture as that branch's baseline, so the branch's baselines are the site right before the update (a branch without baselines of its own is compared with the site's approved look). These scans are not part of the site's visual monitoring: its scan history, page statuses and reports leave them out;
    - the API queues the update command, with `backup_parts` (`plugins` or `themes`) and `safe_update`, so the site backs up that folder and the database while the scan runs. A site without a supported backup plugin updates without a backup.
 2. **Update.** Once its backup is done, the site waits for the scan (see "Update commands", step 3), then updates as any update command does, with the health checks and the rollback of a plugin or theme that breaks a page.
 3. **After.** When the update command is done, the API scans the same pages on the same branch, so each page is compared with its capture before the update.
-4. **Verdict.** `passed` when no page changed by 20% or more of its pixels. Otherwise `changed`: a page changed by 20% or more, or a page that loaded before no longer does. The API sends the `visual_change` notification, and the dashboard shows each page before and after the update, with its differences, and offers:
+4. **Verdict.** `passed` when no page changed by 20% or more of its pixels. Otherwise `changed`: a page changed by 20% or more, or a page that loaded before no longer does. A page the scan before could not capture is not judged: there is nothing to compare it with. The API sends the `visual_change` notification, and the dashboard shows each page before and after the update, with its differences, and offers:
    - **Keep the update** (`safe-updates/keep`);
    - **Restore** (`safe-updates/recover`): with a backup UpdraftPlus made, the API queues `restore_backup`, which restores the item's folder and the database from the backup taken before the update. Without one (no backup plugin, or BackWPup), it queues `rollback_item`, which reinstalls the version that was installed. Afterwards the API scans the pages once more and records how far they still are from the captures before the update (`check`).
 
@@ -339,7 +339,7 @@ A safe update updates one plugin or theme between two visual scans of the site, 
 
 | Error | Meaning |
 |---|---|
-| `visual_check_failed` | The scan before the update failed; nothing was updated |
+| `visual_check_failed` | The scan before the update failed, or its captures could not be approved; nothing was updated |
 | `visual_check_timeout` | The scan before the update took more than 30 minutes; nothing was updated |
 | `update_failed`, `backup_failed`, `backup_timeout`, … | The update command's error; a plugin or theme that broke a page was rolled back |
 | `update_expired`, `update_cancelled` | The update command was never run |
