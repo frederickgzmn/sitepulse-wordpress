@@ -192,9 +192,9 @@
     "semantic_hash": ""
   },
   "loader.php": {
-    "mtime": 1792339113.1204462,
-    "seen": 1792340883.4424953,
-    "ast_hash": "aaecfb38dcf60fa3159f692ed3f0a234",
+    "mtime": 1792363465.3101404,
+    "seen": 1792363558.1705334,
+    "ast_hash": "5c12d9a65d12abe219acfccd02a07fd1",
     "semantic_hash": ""
   },
   "templates/backend/curl_api.php": {
@@ -330,9 +330,9 @@
     "semantic_hash": "0f0ea13a48fd9dc655eeb20a6b8a9f27"
   },
   "AGENTS.md": {
-    "mtime": 1791249751.49905,
-    "seen": 1791256527.52958,
-    "ast_hash": "0ed3f3a1b59c64cdb5bd0141a019152e",
+    "mtime": 1792363534.5370512,
+    "seen": 1792363558.1706786,
+    "ast_hash": "67b0b686404ca75fb07c48e4f53aa8d2",
     "semantic_hash": ""
   },
   "README.md": {
@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "readme.txt": {
-    "mtime": 1792360515.7955914,
-    "seen": 1792361201.817828,
-    "ast_hash": "055adda98d11721a08d2251bf999bba7",
+    "mtime": 1792363465.3103604,
+    "seen": 1792363558.1706855,
+    "ast_hash": "fda8c8524339b9e3133a51701554359f",
     "semantic_hash": ""
   },
   "assets/img/only-logo.png": {
@@ -384,9 +384,9 @@
     "semantic_hash": "3b1732c37f31f136cb5381caec63491f"
   },
   "composer.json": {
-    "mtime": 1791938115.1511421,
-    "seen": 1791938240.0972574,
-    "ast_hash": "bf8083b755949adffe0ecddf4ec44e77",
+    "mtime": 1792363534.53649,
+    "seen": 1792363558.1705277,
+    "ast_hash": "2f56e281e56c6103f2ad72ed9a7d1d0f",
     "semantic_hash": ""
   },
   "package.json": {
@@ -978,9 +978,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1792290817.626208,
-    "seen": 1792294062.5202947,
-    "ast_hash": "bb2d4fc883ad2216609988479b42f11a",
+    "mtime": 1792363534.5367985,
+    "seen": 1792363558.1706796,
+    "ast_hash": "95c5086015b1f30d52fb31b5a97df7f0",
     "semantic_hash": ""
   },
   "scripts/bump-version.php": {
@@ -1197,6 +1197,12 @@
     "mtime": 1792360616.912782,
     "seen": 1792361201.8177743,
     "ast_hash": "eb313a8010baec364029d22c14f8c28c",
+    "semantic_hash": ""
+  },
+  "scripts/build-zip.sh": {
+    "mtime": 1792363533.4376452,
+    "seen": 1792363558.1705353,
+    "ast_hash": "17ffa7ea7b94f6b1cf809d1159eb3d34",
     "semantic_hash": ""
   }
 }
