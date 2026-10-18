@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	<div class="sp-card sp-mb-16">
 		<div class="sp-card-header">
-			<h3 class="sp-card-title"><span class="dashicons dashicons-backup"></span> <?php echo esc_html__( 'Backups & Updates from Your Dashboard', 'sitepulse' ); ?></h3>
+			<h3 class="sp-card-title"><span class="dashicons dashicons-backup"></span> <?php echo esc_html__( 'Updates & Backups from Your Dashboard', 'sitepulse' ); ?></h3>
 			<span class="sp-badge sp-badge-<?php echo esc_attr( $sp_remote['tone'] ); ?>"><?php echo esc_html( $sp_remote['label'] ); ?></span>
 		</div>
 		<div class="sp-card-body">
@@ -47,7 +47,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</form>
 			<?php include SITEPULSE_PATH . 'templates/backend/remote_connection.php'; ?>
 
-			<p class="sp-text-xs sp-text-muted sp-mt-16 sp-mb-8"><?php echo esc_html__( 'While remote management is on, your SitePulse dashboard can start or cancel a backup, apply backup settings saved there, and update plugins, themes and WordPress, after a backup and with a check that rolls back a broken update. It never restores or deletes backups.', 'sitepulse' ); ?></p>
+			<p class="sp-text-xs sp-text-muted sp-mt-16 sp-mb-8"><?php echo esc_html__( 'While remote management is on, your SitePulse dashboard can update plugins, themes and WordPress, with a check that rolls back a broken update. With UpdraftPlus or BackWPup active, it can also start or cancel a backup, apply backup settings saved there, and back up before each update. It never restores or deletes backups.', 'sitepulse' ); ?></p>
 			<p class="sp-text-xs sp-text-muted sp-mb-0"><?php echo esc_html__( 'While Cloud Services are on, this site checks in with api.sitepulse.me every hour, and every 5 minutes while remote management is on. It sends plugin and theme names, versions and available updates, the WordPress, PHP and database versions, the backup schedules and recent backups (dates, sizes, storage types), the time plugins, themes and WordPress take per page load, and PHP fatal errors (message, file and line). It never sends backup files, passwords, storage credentials or site content.', 'sitepulse' ); ?></p>
 
 			<?php if ( $sp_remote['log'] ) : ?>

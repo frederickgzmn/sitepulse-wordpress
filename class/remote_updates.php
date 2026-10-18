@@ -3,9 +3,9 @@
  * SitePulse remote management updates
  *
  * Runs the dashboard's plugin, theme and WordPress updates through WordPress's own
- * upgrader: a backup first, a health baseline, then one item at a time, each checked
- * and rolled back when it breaks the site. An update runs across WordPress cron
- * requests and is answered to the API when it is done.
+ * upgrader: a backup first (with UpdraftPlus or BackWPup), a health baseline, then one
+ * item at a time, each checked and rolled back when it breaks the site. An update runs
+ * across WordPress cron requests and is answered to the API when it is done.
  *
  * @package SitePulse
  */
@@ -106,24 +106,29 @@ class Sitepulse_Remote_Updates {
 			return self::failed( 'not_enough_disk' );
 		}
 
-		$backup_first = false !== ( $args['backup_first'] ?? true );
+		// Updates do not need a backup plugin: without a supported one, the update skips the backup.
+		$wanted       = false !== ( $args['backup_first'] ?? true );
+		$provider     = Sitepulse_Remote_Backups::provider();
+		$skipped      = $wanted && ( null === $provider || ! $provider['supported'] ) ? 'no_backup_plugin' : null;
+		$backup_first = $wanted && null === $skipped;
 		self::save_job(
 			array(
-				'command'      => $id,
-				'type'         => $type,
-				'args'         => $args,
-				'kind'         => $kind,
-				'items'        => $items,
-				'backup_first' => $backup_first,
-				'backup_wait'  => $wait,
-				'phase'        => $backup_first ? 'backup' : 'baseline',
-				'backup'       => null,
-				'baseline'     => null,
-				'current'      => null,
-				'results'      => array(),
-				'started_at'   => time(),
-				'finished'     => false,
-				'error'        => null,
+				'command'        => $id,
+				'type'           => $type,
+				'args'           => $args,
+				'kind'           => $kind,
+				'items'          => $items,
+				'backup_first'   => $backup_first,
+				'backup_wait'    => $wait,
+				'phase'          => $backup_first ? 'backup' : 'baseline',
+				'backup'         => null,
+				'backup_skipped' => $skipped,
+				'baseline'       => null,
+				'current'        => null,
+				'results'        => array(),
+				'started_at'     => time(),
+				'finished'       => false,
+				'error'          => null,
 			)
 		);
 		self::schedule( 0 );
@@ -561,9 +566,13 @@ class Sitepulse_Remote_Updates {
 			$job['args'],
 			Sitepulse_Remote_Management::command_result(
 				null === $job['error'] ? 'done' : 'failed',
-				array(
-					'backup' => null === $job['backup'] ? null : array_intersect_key( $job['backup'], array_flip( array( 'provider', 'job' ) ) ),
-					'items'  => $job['results'],
+				array_merge(
+					array(
+						'backup' => null === $job['backup'] ? null : array_intersect_key( $job['backup'], array_flip( array( 'provider', 'job' ) ) ),
+						'items'  => $job['results'],
+					),
+					// An update started by an older version of the plugin has no backup_skipped.
+					empty( $job['backup_skipped'] ) ? array() : array( 'backup_skipped' => $job['backup_skipped'] )
 				),
 				$job['error']
 			)

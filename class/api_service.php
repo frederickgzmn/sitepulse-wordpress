@@ -860,6 +860,16 @@ class Sitepulse_Api_Service {
 	}
 
 	/**
+	 * The site's license key, registering the site with its first site report when it has none
+	 * yet, as remote management needs before it shows a connection key.
+	 *
+	 * @return array 'success' and the 'license_key', or 'message': why the site has no key.
+	 */
+	public static function ensure_registered() {
+		return self::ensure_license_key();
+	}
+
+	/**
 	 * The site's license key, registering the site first when it has none (never registered, or
 	 * its key was removed): the AI diagnostic endpoint refuses a request without a key.
 	 *
