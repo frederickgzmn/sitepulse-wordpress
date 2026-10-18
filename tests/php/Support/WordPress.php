@@ -32,6 +32,8 @@ final class Sitepulse_Test_WP {
     public static $redirects = array();
     public static $redirect_throws = true;
     public static $option_writes = array();
+    /** Whether WordPress loads an option on every request, for options saved with an autoload setting; others are loaded. */
+    public static $autoload = array();
     public static $cache_deletes = array();
     public static $is_singular = false;
     public static $is_home = false;
@@ -210,11 +212,17 @@ function __return_true() { return true; }
 function __return_empty_array() { return array(); }
 function __return_zero() { return 0; }
 function get_option($key, $default = false) { $pre = apply_filters('pre_option_' . $key, false, $key, $default); return $pre !== false ? $pre : (array_key_exists($key, Sitepulse_Test_WP::$options) ? Sitepulse_Test_WP::$options[$key] : $default); }
-function update_option($key, $value, $autoload = null) { $old = get_option($key); Sitepulse_Test_WP::$options[$key] = $value; Sitepulse_Test_WP::$option_writes[] = array('key' => $key, 'value' => $value, 'autoload' => $autoload); return $old !== $value; }
+function update_option($key, $value, $autoload = null) {
+    $exists = array_key_exists($key, Sitepulse_Test_WP::$options); $old = get_option($key);
+    Sitepulse_Test_WP::$options[$key] = $value; Sitepulse_Test_WP::$option_writes[] = array('key' => $key, 'value' => $value, 'autoload' => $autoload);
+    // Like WordPress, a new option or a changed value takes the autoload setting given; an unchanged value keeps its own.
+    if (null !== $autoload && (!$exists || $old !== $value)) { Sitepulse_Test_WP::$autoload[$key] = !in_array($autoload, array(false, 'no', 'off'), true); }
+    return $old !== $value;
+}
 function add_option($key, $value = '', $deprecated = '', $autoload = true) { if (array_key_exists($key, Sitepulse_Test_WP::$options)) { return false; } return update_option($key, $value, $autoload); }
-function delete_option($key) { $found = array_key_exists($key, Sitepulse_Test_WP::$options); unset(Sitepulse_Test_WP::$options[$key]); return $found; }
+function delete_option($key) { $found = array_key_exists($key, Sitepulse_Test_WP::$options); unset(Sitepulse_Test_WP::$options[$key], Sitepulse_Test_WP::$autoload[$key]); return $found; }
 function get_site_option($key, $default = false) { return Sitepulse_Test_WP::$site_options[$key] ?? $default; }
-function wp_load_alloptions() { return Sitepulse_Test_WP::$options; }
+function wp_load_alloptions() { return array_diff_key(Sitepulse_Test_WP::$options, array_filter(Sitepulse_Test_WP::$autoload, static function ($autoload) { return !$autoload; })); }
 function set_transient($key, $value, $expiration = 0) { Sitepulse_Test_WP::$transients[$key] = $value; Sitepulse_Test_WP::$transient_expirations[$key] = $expiration; return true; }
 function get_transient($key) { return Sitepulse_Test_WP::$transients[$key] ?? false; }
 function delete_transient($key) { $found = isset(Sitepulse_Test_WP::$transients[$key]); unset(Sitepulse_Test_WP::$transients[$key], Sitepulse_Test_WP::$transient_expirations[$key]); return $found; }
@@ -284,6 +292,7 @@ function wp_die($message = '', $title = '', $args = array()) { throw new Sitepul
 function wp_safe_redirect($url, $status = 302) { Sitepulse_Test_WP::$redirects[] = array('url' => $url, 'status' => $status); if (Sitepulse_Test_WP::$redirect_throws) { throw new Sitepulse_Test_Redirect($url, $status); } return true; }
 function wp_remote_post($url, $args = array()) { return Sitepulse_Test_WP::http($url, array_merge(array('method' => 'POST'), $args)); }
 function wp_remote_get($url, $args = array()) { return Sitepulse_Test_WP::http($url, array_merge(array('method' => 'GET'), $args)); }
+function wp_remote_head($url, $args = array()) { return Sitepulse_Test_WP::http($url, array_merge(array('method' => 'HEAD'), $args)); }
 function wp_remote_request($url, $args = array()) { return Sitepulse_Test_WP::http($url, $args); }
 function wp_remote_retrieve_response_code($response) { return is_wp_error($response) ? '' : ($response['response']['code'] ?? ''); }
 function wp_remote_retrieve_body($response) { return is_wp_error($response) ? '' : ($response['body'] ?? ''); }

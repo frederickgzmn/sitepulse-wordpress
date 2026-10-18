@@ -636,6 +636,7 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         $this->assertStringContainsString($toggle, $html);
         $this->assertStringContainsString('Blocked &lt;b&gt;here&lt;/b&gt;', $html);
         $this->assertStringContainsString('It never sends backup files, passwords, storage credentials or site content.', $html);
+        $this->assertStringContainsString('It restores a backup only when you undo a safe update there, and never deletes backups.', $html);
     }
 
     public static function dashboards(): array {

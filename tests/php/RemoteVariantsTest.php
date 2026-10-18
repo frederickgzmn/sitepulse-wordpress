@@ -40,7 +40,7 @@ final class RemoteVariantsTest extends Sitepulse_Test_Case {
     }
 
     /** @dataProvider diskSpace */
-    public function test_updates_need_free_disk_space(array $input, array $expected): void {
+    public function test_updates_and_recoveries_need_free_disk_space(array $input, array $expected): void {
         if (PHP_VERSION_ID < 80000) {
             $this->markTestSkipped('PHP 8+ allows isolated replacement of the disabled disk space function; PHP 7.4 retains its native definition.');
         }
@@ -51,9 +51,9 @@ final class RemoteVariantsTest extends Sitepulse_Test_Case {
 
     public static function diskSpace(): array {
         return array(
-            'almost full' => array(array('disk_free' => 1000), array('disk_free' => 1000, 'update' => array('status' => 'failed', 'result' => null, 'error' => 'not_enough_disk'))),
-            'enough' => array(array('disk_free' => 104857600), array('disk_free' => 104857600, 'update' => null)),
-            'the server does not tell' => array(array(), array('disk_free' => null, 'update' => null)),
+            'almost full' => array(array('disk_free' => 1000), array('disk_free' => 1000, 'update' => array('status' => 'failed', 'result' => null, 'error' => 'not_enough_disk'), 'recovery' => array('status' => 'failed', 'result' => null, 'error' => 'not_enough_disk'))),
+            'enough' => array(array('disk_free' => 104857600), array('disk_free' => 104857600, 'update' => null, 'recovery' => null)),
+            'the server does not tell' => array(array(), array('disk_free' => null, 'update' => null, 'recovery' => null)),
         );
     }
 

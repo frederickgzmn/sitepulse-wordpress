@@ -90,6 +90,19 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         for ($i = 0; $i < $responses; $i++) { Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_response(); }
     }
 
+    /** UpdraftPlus finished a backup (by default the update's) with the database and these folders, as its history and its record of the last backup say. */
+    private function updraftplusBackedUp(array $folders, string $nonce = 'abc123def456', int $success = 1): void {
+        $set = array('nonce' => $nonce, 'db' => "backup_{$nonce}-db.gz", 'db-size' => 1000);
+        foreach ($folders as $folder) { $set[$folder] = array("backup_{$nonce}-{$folder}.zip"); }
+        update_option('updraft_backup_history', array(time() + 1 => $set) + (array) get_option('updraft_backup_history', array()));
+        update_option('updraft_last_backup', array('backup_time' => time() + 1, 'success' => $success, 'errors' => array(), 'backup_nonce' => $nonce));
+    }
+
+    /** How many times the update was saved. */
+    private function jobWrites(): int {
+        return count(array_filter(Sitepulse_Test_WP::$option_writes, static function ($write) { return Sitepulse_Remote_Updates::JOB_OPTION === $write['key']; }));
+    }
+
     /** @dataProvider invalidCommands */
     public function test_invalid_update_commands_are_refused(string $type, array $args): void {
         $this->assertSame(array('status' => 'failed', 'result' => null, 'error' => 'invalid_arguments'), $this->start($type, $args));
@@ -108,6 +121,10 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
             'backup of the uploads' => array('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_parts' => array('uploads'))),
             'backup of two folders' => array('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_parts' => array('plugins', 'themes'))),
             'backup parts as text' => array('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_parts' => 'plugins')),
+            'the themes backed up for plugins' => array('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_parts' => array('themes'))),
+            'the plugins backed up for themes' => array('update_themes', array('themes' => array('astra'), 'backup_parts' => array('plugins'))),
+            'a folder backed up for WordPress' => array('update_core', array('version' => '7.1.3', 'backup_parts' => array('plugins'))),
+            'backup parts not a list' => array('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_parts' => array(1 => 'plugins'))),
             'empty safe update' => array('update_plugins', array('plugins' => array('seo/seo.php'), 'safe_update' => '')),
             'safe update not text' => array('update_themes', array('themes' => array('astra'), 'safe_update' => 7)),
             'no version' => array('update_core', array()),
@@ -457,6 +474,7 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         $job = $this->job();
         $this->assertSame(array('updraftplus', 'abc123def456'), array($job['backup']['provider'], $job['backup']['job']));
         $this->assertSame('updraft_backupnow_backup_all', Sitepulse_Test_WP::$scheduled[0]->hook);
+        $this->assertSame(array('nocloud' => false, 'use_nonce' => 'abc123def456', 'label' => 'SitePulse (before update)', 'always_keep' => false, 'extradata' => array('autobackup' => true)), Sitepulse_Test_WP::$scheduled[0]->args[0], 'UpdraftPlus\'s own automatic backup before updates, which its retention counts apart.');
         $this->assertEqualsWithDelta(time() + 60, wp_next_scheduled(Sitepulse_Remote_Updates::JOB_HOOK), 2);
         $this->assertSame(array('command-progress'), $this->endpoints(), 'Only the backup\'s start is reported.');
 
@@ -468,7 +486,7 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         $this->assertSame('backup', $this->job()['phase'], 'Still waiting for the backup.');
         unset(Sitepulse_Test_WP::$cron[time()]['updraft_backup_resume']);
 
-        update_option('updraft_last_backup', array('backup_time' => time() + 1, 'success' => 1));
+        $this->updraftplusBackedUp(array('plugins', 'themes', 'uploads', 'others'));
         $this->api();
         Sitepulse_Remote_Updates::run_job();
 
@@ -493,8 +511,11 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         Sitepulse_Test_Upgrades::$progress_unreachable = true;
         update_option(Sitepulse_Remote_Updates::JOB_OPTION, array_replace($this->job(), array('phase' => 'baseline')));
         $this->api();
+        $writes = $this->jobWrites();
 
         Sitepulse_Remote_Updates::run_job();
+
+        $this->assertSame($writes + 5, $this->jobWrites(), 'Saved after each of its 3 steps and before each item, not again for reports that changed nothing.');
 
         $this->assertSame(array(
             self::progress('updating', 10, null, 0, 'seo/seo.php', 2),
@@ -530,11 +551,16 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
             'the backup failed' => array(static function () use ($job) {
                 Sitepulse_Test_Backups::updraftplus();
                 $job(array('backup' => array('provider' => 'updraftplus', 'job' => 'x', 'requested_at' => time() - 120)));
-                update_option('updraft_last_backup', array('backup_time' => time() - 60, 'success' => 0));
+                update_option('updraft_last_backup', array('backup_time' => time() - 60, 'success' => 0, 'backup_nonce' => 'x'));
             }, 'backup_failed'),
             'the backup takes too long' => array(static function () use ($job) {
                 Sitepulse_Test_Backups::updraftplus();
                 $job(array('backup' => array('provider' => 'updraftplus', 'job' => 'x', 'requested_at' => time() - 31 * 60)));
+            }, 'backup_timeout'),
+            'only another backup finished in time' => array(static function () use ($job) {
+                Sitepulse_Test_Backups::updraftplus();
+                $job(array('backup' => array('provider' => 'updraftplus', 'job' => 'abc123def456', 'requested_at' => time() - 31 * 60)));
+                update_option('updraft_last_backup', array('backup_time' => time() - 60, 'success' => 1, 'backup_nonce' => 'feedfacecafe'));
             }, 'backup_timeout'),
             'another backup runs too long' => array(static function () use ($job) {
                 Sitepulse_Test_Backups::updraftplus();
@@ -577,7 +603,7 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         Sitepulse_Remote_Updates::run_job();
         $this->assertSame(array('updraft_backupnow_backup_all', array('plugins')), array(Sitepulse_Test_WP::$scheduled[0]->hook, Sitepulse_Test_WP::$scheduled[0]->args[0]['restrict_files_to_override']), 'The plugins and the database.');
 
-        update_option('updraft_last_backup', array('backup_time' => time() + 1, 'success' => 1));
+        $this->updraftplusBackedUp(array('plugins'));
         $this->gate(false);
         Sitepulse_Remote_Updates::run_job();
 
@@ -868,5 +894,207 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         $label = new ReflectionMethod('Sitepulse_Remote_Management', 'command_label');
         if (PHP_VERSION_ID < 80100) { $label->setAccessible(true); }
         $this->assertSame('turn off WordPress auto-updates', $label->invoke(null, 'set_auto_updates', array('enabled' => false)));
+    }
+
+    public function test_another_backup_that_finished_first_is_not_taken_for_the_update_s(): void {
+        Sitepulse_Test_Backups::updraftplus();
+        $this->safeUpdate();
+        Sitepulse_Remote_Updates::run_job();
+        $queued = Sitepulse_Test_WP::$scheduled[0];
+        // As in WordPress, its "Backup Now" waits in the cron array until it starts.
+        Sitepulse_Test_WP::$cron[$queued->timestamp]['updraft_backupnow_backup_all']['k'] = array('args' => $queued->args);
+        // Another backup, such as the scheduled database backup, finished meanwhile.
+        $this->updraftplusBackedUp(array(), 'feedfacecafe');
+
+        Sitepulse_Remote_Updates::run_job();
+
+        $this->assertSame('backup', $this->job()['phase'], 'Still waiting for its own backup.');
+        $this->assertSame(array(), $this->upgrades());
+        $this->assertEqualsWithDelta(time() + 60, wp_next_scheduled(Sitepulse_Remote_Updates::JOB_HOOK), 2);
+
+        // Its own backup ran, and the next one started right after it.
+        unset(Sitepulse_Test_WP::$cron[$queued->timestamp]);
+        $this->updraftplusBackedUp(array('plugins'));
+        Sitepulse_Test_WP::$cron[time() + 60]['updraft_backup_resume']['k'] = array('args' => array(1, 'run111111111'));
+        Sitepulse_Test_WP::$site_options['updraft_jobdata_run111111111'] = array('jobstatus' => 'dbcreating0');
+        $this->gate(true);
+        $this->api();
+        Sitepulse_Remote_Updates::run_job();
+
+        $result = $this->results();
+        $this->assertSame(array('done', array('provider' => 'updraftplus', 'job' => 'abc123def456'), '1.1'), array($result['status'], $result['result']['backup'], $result['result']['items'][0]['to']));
+    }
+
+    public function test_an_update_waits_while_its_backup_runs_again_after_an_error(): void {
+        Sitepulse_Test_Backups::updraftplus();
+        $this->safeUpdate();
+        Sitepulse_Remote_Updates::run_job();
+        // The backup's run hit an error: UpdraftPlus saved its record and runs it again later.
+        $this->updraftplusBackedUp(array('plugins'), 'abc123def456', 0);
+        Sitepulse_Test_WP::$cron[time() + 300]['updraft_backup_resume']['k'] = array('args' => array(1, 'abc123def456'));
+        Sitepulse_Test_WP::$site_options['updraft_jobdata_abc123def456'] = array('jobstatus' => 'resumingforerrors');
+
+        Sitepulse_Remote_Updates::run_job();
+
+        $this->assertSame('backup', $this->job()['phase']);
+
+        // It worked the next time.
+        Sitepulse_Test_WP::$cron = array();
+        $this->updraftplusBackedUp(array('plugins'));
+        $this->gate(true);
+        $this->api();
+        Sitepulse_Remote_Updates::run_job();
+
+        $this->assertSame('done', $this->results()['status']);
+    }
+
+    public function test_an_update_waits_while_updraftplus_cannot_tell_how_its_backup_went(): void {
+        Sitepulse_Test_Backups::updraftplus();
+        $this->safeUpdate();
+        Sitepulse_Remote_Updates::run_job();
+        $this->updraftplusBackedUp(array('plugins'));
+        Sitepulse_Test_Backups::$throw = true;
+
+        Sitepulse_Remote_Updates::run_job();
+
+        $this->assertSame('backup', $this->job()['phase']);
+        $this->assertSame(array(), $this->upgrades());
+    }
+
+    /** @dataProvider savedBackups */
+    public function test_an_update_s_backup_must_hold_what_it_was_to_save(array $args, ?array $set, ?string $error): void {
+        Sitepulse_Test_Backups::updraftplus();
+        $this->plugin('seo/seo.php', '1.0');
+        $this->offer('plugin', 'seo/seo.php', '1.1');
+        Sitepulse_Test_Upgrades::$outcomes['plugin:seo/seo.php'] = function () { $this->plugin('seo/seo.php', '1.1'); return true; };
+        $this->start('update_plugins', $args + array('plugins' => array('seo/seo.php')));
+        Sitepulse_Remote_Updates::run_job();
+        // UpdraftPlus's record says the update's backup worked; its history says what it holds.
+        update_option('updraft_backup_history', null === $set ? array() : array(time() => $set));
+        update_option('updraft_last_backup', array('backup_time' => time() + 1, 'success' => 1, 'backup_nonce' => 'abc123def456'));
+        $this->api();
+
+        Sitepulse_Remote_Updates::run_job();
+
+        $result = $this->results();
+        $this->assertSame(array(null === $error ? 'done' : 'failed', $error), array($result['status'], $result['error']));
+        $this->assertCount(null === $error ? 1 : 0, $this->upgrades());
+    }
+
+    public static function savedBackups(): array {
+        $plugins = array('backup_parts' => array('plugins'));
+        return array(
+            'a full backup with the database' => array(array(), array('nonce' => 'abc123def456', 'db' => 'db.gz'), null),
+            'the plugins and the database' => array($plugins, array('nonce' => 'abc123def456', 'db' => 'db.gz', 'plugins' => array('plugins.zip')), null),
+            'not in UpdraftPlus\'s history' => array(array(), null, 'backup_failed'),
+            'a full backup without the database' => array(array(), array('nonce' => 'abc123def456', 'plugins' => array('plugins.zip')), 'backup_failed'),
+            'the database without the plugins' => array($plugins, array('nonce' => 'abc123def456', 'db' => 'db.gz', 'themes' => array('themes.zip')), 'backup_failed'),
+            'the plugins without the database' => array($plugins, array('nonce' => 'abc123def456', 'db' => '', 'plugins' => array('plugins.zip')), 'backup_failed'),
+        );
+    }
+
+    public function test_a_backwpup_backup_runs_first_and_the_update_waits_for_it(): void {
+        Sitepulse_Test_Backups::$backwpup_version = '5.7.8';
+        Sitepulse_Test_Backups::$destinations = array('FOLDER' => array());
+        $this->plugin('seo/seo.php', '1.0');
+        $this->offer('plugin', 'seo/seo.php', '1.1');
+        Sitepulse_Test_Upgrades::$outcomes['plugin:seo/seo.php'] = function () { $this->plugin('seo/seo.php', '1.1'); return true; };
+        $this->start('update_plugins', array('plugins' => array('seo/seo.php')));
+        Sitepulse_Remote_Updates::run_job();
+        $backup = $this->job()['backup'];
+        $this->assertSame(array('backwpup', 'Backup Now'), array($backup['provider'], Sitepulse_Test_Backups::$jobs[$backup['job']]['name']));
+
+        // BackWPup is making it.
+        Sitepulse_Test_Backups::$working = new BackWPup_Job();
+        Sitepulse_Remote_Updates::run_job();
+        $this->assertSame('backup', $this->job()['phase']);
+
+        // It is done, as its log says; its runs have no name, so the last one counts.
+        Sitepulse_Test_Backups::$working = false;
+        Sitepulse_Test_Backups::$jobs[$backup['job']]['lastrun'] = time() + 1;
+        Sitepulse_Test_Backups::$jobs[$backup['job']]['logfile'] = 'backwpup_log_1.html';
+        Sitepulse_Test_Backups::$log_headers['backwpup_log_1.html'] = array('errors' => 0, 'warnings' => 1);
+        $this->api();
+        Sitepulse_Remote_Updates::run_job();
+
+        $result = $this->results();
+        $this->assertSame(array('done', array('provider' => 'backwpup', 'job' => $backup['job'])), array($result['status'], $result['result']['backup']));
+    }
+
+    public function test_a_request_that_ends_while_it_reports_progress_keeps_the_step_it_made(): void {
+        $this->plugin('seo/seo.php', '1.0');
+        $this->plugin('forms/forms.php', '2.0');
+        $this->offer('plugin', 'seo/seo.php', '1.1');
+        $this->offer('plugin', 'forms/forms.php', '2.1');
+        Sitepulse_Test_Upgrades::$outcomes['plugin:seo/seo.php'] = function () { $this->plugin('seo/seo.php', '1.1'); return true; };
+        Sitepulse_Test_Upgrades::$outcomes['plugin:forms/forms.php'] = function () { $this->plugin('forms/forms.php', '2.1'); return true; };
+        $this->start('update_plugins', array('plugins' => array('seo/seo.php', 'forms/forms.php'), 'backup_first' => false));
+        $reports = 0;
+        Sitepulse_Test_WP::$http_responder = static function ($url, $args) use (&$reports) {
+            if (false !== strpos($url, '/command-progress') && 2 === ++$reports) {
+                throw new RuntimeException('The request is killed while it reports the next item.');
+            }
+            return sitepulse_test_site_pages($url, $args);
+        };
+        try {
+            Sitepulse_Remote_Updates::run_job();
+            $this->fail('The request should have ended.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('killed', $e->getMessage());
+        }
+        $stored = $this->job();
+        $this->assertNull($stored['current'], 'seo was updated, checked and saved before the report.');
+        $this->assertSame(array(array('seo/seo.php', true)), array_map(static function ($item) { return array($item['id'], $item['ok']); }, $stored['results']));
+
+        // The next request.
+        Sitepulse_Test_WP::$http_responder = 'sitepulse_test_site_pages';
+        delete_transient(Sitepulse_Remote_Updates::LOCK);
+        $this->api();
+        Sitepulse_Remote_Updates::run_job();
+
+        $result = $this->results();
+        $this->assertSame('done', $result['status']);
+        $this->assertSame(array(array('seo/seo.php', '1.1', false), array('forms/forms.php', '2.1', false)), array_map(static function ($item) { return array($item['id'], $item['to'], $item['rolled_back']); }, $result['result']['items']));
+        $this->assertSame(array(), array_values(array_filter(Sitepulse_Test_Upgrades::$calls, static function ($call) { return 'restore' === $call[0]; })), 'Nothing is rolled back.');
+    }
+
+    public function test_an_update_that_could_not_start_within_an_hour_of_its_arrival_expires(): void {
+        $this->plugin('seo/seo.php', '1.0');
+        $this->offer('plugin', 'seo/seo.php', '1.1');
+        $this->start('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_first' => false));
+        update_option(Sitepulse_Remote_Updates::JOB_OPTION, array_replace($this->job(), array('started_at' => time() - Sitepulse_Remote_Updates::START_SECONDS - 60)));
+        $this->api();
+
+        Sitepulse_Remote_Updates::run_job();
+
+        $result = $this->results();
+        $this->assertSame(array('failed', 'expired', 'skipped'), array($result['status'], $result['error'], $result['result']['items'][0]['error']));
+        $this->assertSame(array(), $this->pageChecks());
+        $this->assertSame(array(), $this->upgrades());
+        $this->assertNull($this->job());
+    }
+
+    /** @dataProvider timelyUpdates */
+    public function test_an_update_that_started_in_time_goes_on_however_long_it_takes(array $changes): void {
+        $this->plugin('seo/seo.php', '1.0');
+        $this->offer('plugin', 'seo/seo.php', '1.1');
+        Sitepulse_Test_Upgrades::$outcomes['plugin:seo/seo.php'] = function () { $this->plugin('seo/seo.php', '1.1'); return true; };
+        $this->start('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_first' => false));
+        $job = array_replace($this->job(), $changes);
+        if (!array_key_exists('begun', $changes)) { unset($job['begun']); }
+        update_option(Sitepulse_Remote_Updates::JOB_OPTION, $job);
+        $this->api();
+
+        Sitepulse_Remote_Updates::run_job();
+
+        $this->assertSame('done', $this->results()['status']);
+    }
+
+    public static function timelyUpdates(): array {
+        return array(
+            'its first step within the hour' => array(array('started_at' => time() - Sitepulse_Remote_Updates::START_SECONDS + 60, 'begun' => false)),
+            'begun two hours ago, such as after a long backup' => array(array('started_at' => time() - 7200, 'begun' => true)),
+            'received by an older version of the plugin' => array(array('started_at' => time() - 7200)),
+        );
     }
 }
