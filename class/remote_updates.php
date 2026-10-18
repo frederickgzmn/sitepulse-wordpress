@@ -170,7 +170,7 @@ class Sitepulse_Remote_Updates {
 
 		$started = time();
 		do {
-			$job = self::step( $job );
+			$job = self::report_progress( self::step( $job ) );
 			self::save_job( $job );
 		} while ( ! $job['finished'] && ! isset( $job['wait'] ) && time() - $started < self::STEP_SECONDS );
 		delete_transient( self::LOCK );
@@ -253,12 +253,16 @@ class Sitepulse_Remote_Updates {
 			// An update started by an older version of the plugin has no backup_what.
 			$result = Sitepulse_Remote_Backups::run_command( 'backup_now', array( 'what' => $job['backup_what'] ?? 'full' ) );
 			if ( 'done' === $result['status'] ) {
-				$job['backup'] = array(
+				$job['backup']          = array(
 					'provider'     => $result['result']['provider'],
 					'job'          => $result['result']['job'],
 					'requested_at' => $requested,
 				);
-				$job['wait']   = self::POLL_SECONDS;
+				$job['backup_progress'] = array(
+					'percent' => 0,
+					'stage'   => 'queued',
+				);
+				$job['wait']            = self::POLL_SECONDS;
 				return $job;
 			}
 			// A backup that is already running is waited for, then ours starts.
@@ -271,7 +275,14 @@ class Sitepulse_Remote_Updates {
 
 		$status   = Sitepulse_Remote_Backups::status();
 		$last     = is_array( $status['last'] ?? null ) ? $status['last'] : null;
-		$finished = empty( $status['running'] ) && null !== $last && strtotime( (string) $last['time'] ) >= $job['backup']['requested_at'];
+		$running  = is_array( $status['running'] ?? null ) ? $status['running'] : null;
+		$finished = null === $running && null !== $last && strtotime( (string) $last['time'] ) >= $job['backup']['requested_at'];
+		if ( null !== $running ) {
+			$job['backup_progress'] = array(
+				'percent' => is_int( $running['progress'] ) ? max( 0, min( 100, $running['progress'] ) ) : null,
+				'stage'   => '' === $running['stage'] ? null : substr( $running['stage'], 0, 64 ),
+			);
+		}
 		if ( $finished ) {
 			$job['phase'] = self::after_backup( $job['safe_update'] ?? null );
 			return true === $last['ok'] ? $job : self::stop( $job, 'backup_failed' );
@@ -281,6 +292,54 @@ class Sitepulse_Remote_Updates {
 		}
 
 		$job['wait'] = self::POLL_SECONDS;
+		return $job;
+	}
+
+	/**
+	 * Tell the dashboard how far the update is when that changed: its phase, the backup's
+	 * progress, and the item it updates. A report that does not arrive is sent again with the
+	 * next change; the result says the rest.
+	 *
+	 * @param array $job The update after a step.
+	 * @return array The update, with what was reported.
+	 */
+	private static function report_progress( array $job ) {
+		$client = Sitepulse_Remote_Management::client();
+		if ( $job['finished'] || null === $client ) {
+			return $job;
+		}
+
+		$total    = count( $job['items'] );
+		$done     = count( $job['results'] );
+		$updating = 'updating' === $job['phase'];
+		$progress = array(
+			'phase'   => $job['phase'],
+			// The baseline and each item; the backup and the visual check have bars of their own.
+			'percent' => $updating ? 10 + intdiv( 90 * $done, $total ) : ( 'baseline' === $job['phase'] ? 5 : 0 ),
+			'backup'  => 'backup' === $job['phase'] ? ( $job['backup_progress'] ?? array(
+				'percent' => 0,
+				'stage'   => null,
+			) ) : null,
+			'done'    => $done,
+			'total'   => $total,
+			'item'    => $updating ? $job['items'][ $done ] : null,
+		);
+		if ( ( $job['reported'] ?? null ) === $progress ) {
+			return $job;
+		}
+
+		if ( ! is_wp_error(
+			$client->post(
+				'command-progress',
+				array(
+					'id'       => $job['command'],
+					'progress' => $progress,
+				)
+			)
+		) ) {
+			$job['reported'] = $progress;
+		}
+
 		return $job;
 	}
 

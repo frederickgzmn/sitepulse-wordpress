@@ -77,7 +77,7 @@ final class RemoteBackupsTest extends Sitepulse_Test_Case {
             array('name' => 'Files', 'contents' => array('files'), 'frequency' => 'weekly', 'next' => '2025-10-16T02:00:00Z', 'keep' => 4, 'destinations' => array('googledrive')),
             array('name' => 'Database', 'contents' => array('database'), 'frequency' => 'daily', 'next' => '2025-10-15T17:40:00Z', 'keep' => 14, 'destinations' => array('googledrive')),
         ), $status['schedules']);
-        $this->assertSame(array('name' => 'Nightly', 'progress' => null, 'stage' => 'clouduploading'), $status['running']);
+        $this->assertSame(array('name' => 'Nightly', 'progress' => 67, 'stage' => 'clouduploading'), $status['running']);
         $this->assertSame(array('time' => '2025-10-15T02:00:00Z', 'ok' => true, 'errors' => 1, 'warnings' => 2), $status['last']);
         $this->assertSame('2025-10-15T17:40:00Z', $status['next']);
         $this->assertSame(array(
@@ -269,5 +269,30 @@ final class RemoteBackupsTest extends Sitepulse_Test_Case {
         do_action('backwpup_end_job', array(), '', $job);
         apply_filters('updraftplus_save_last_backup', array('backup_time' => 1760493600));
         $this->assertSame(array(), $this->events());
+    }
+
+    /** @dataProvider updraftplusStages */
+    public function test_updraftplus_progress_follows_its_own_progress_bar(array $job, int $percent): void {
+        $progress = new ReflectionMethod('Sitepulse_Remote_Backups', 'updraftplus_progress');
+        if (PHP_VERSION_ID < 80100) { $progress->setAccessible(true); }
+        $this->assertSame($percent, $progress->invoke(null, $job));
+    }
+
+    public static function updraftplusStages(): array {
+        return array(
+            'begun' => array(array('jobstatus' => 'begun'), 0),
+            'zipping files' => array(array('jobstatus' => 'filescreating', 'filecreating_substatus' => array('e' => 'plugins', 'i' => 1, 't' => 4)), 21),
+            'zipping, nothing counted yet' => array(array('jobstatus' => 'filescreating'), 17),
+            'files zipped' => array(array('jobstatus' => 'filescreated'), 34),
+            'half the tables' => array(array('jobstatus' => 'dbcreating0', 'dbcreating_substatus' => array('t' => 'wp_posts', 'i' => 50, 'a' => 100)), 42),
+            'encrypting the database' => array(array('jobstatus' => 'dbencrypting0'), 50),
+            'database done' => array(array('jobstatus' => 'dbcreated0'), 67),
+            'database encrypted' => array(array('jobstatus' => 'dbencrypted0'), 67),
+            'uploading half' => array(array('jobstatus' => 'clouduploading', 'uploading_substatus' => array('i' => 1, 't' => 2, 'p' => 0.5)), 75),
+            'pruning' => array(array('jobstatus' => 'pruning'), 84),
+            'finished' => array(array('jobstatus' => 'finished'), 100),
+            'waiting to retry' => array(array('jobstatus' => 'resumingforerrors'), 0),
+            'no status' => array(array(), 0),
+        );
     }
 }
