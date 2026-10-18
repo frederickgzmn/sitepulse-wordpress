@@ -56,5 +56,6 @@ delete_transient('sitepulse_single_page_list');
 delete_transient('sitepulse_cron_healthy');
 delete_transient('sitepulse_cron_fallback_frontend_check');
 delete_transient('sitepulse_remote_update_lock');
+delete_transient('sitepulse_remote_late_check_in');
 
 

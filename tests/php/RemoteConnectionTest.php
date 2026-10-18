@@ -1,8 +1,9 @@
 <?php
 require_once __DIR__ . '/Support/RemoteManagement.php';
+require_once __DIR__ . '/Support/Database.php';
 
 /**
- * Connecting the site to a SitePulse account with a connection key, from the remote management settings.
+ * Connecting the site to a SitePulse dashboard with a connection key, from the remote management settings.
  */
 final class RemoteConnectionTest extends Sitepulse_Test_Case {
     private const NONCE = 'nonce-sitepulse_remote_connection';
@@ -10,12 +11,18 @@ final class RemoteConnectionTest extends Sitepulse_Test_Case {
     protected function setUp(): void {
         parent::setUp();
         Sitepulse_Test_Backups::reset();
+        // An active site's check-in sends the inventory, which reads the database version.
+        $GLOBALS['wpdb'] = new Sitepulse_Test_Database();
         Sitepulse_Test_WP::$capabilities['manage_options'] = true;
         Sitepulse_Test_WP::$referer = 'https://example.test/wp-admin/admin.php?page=wpsp_sitepulse_settings';
         $_REQUEST['_wpnonce'] = self::NONCE;
     }
 
-    protected function tearDown(): void { Sitepulse_Test_Backups::reset(); unset($_POST['sitepulse_connection']); parent::tearDown(); }
+    protected function tearDown(): void {
+        Sitepulse_Test_Backups::reset();
+        unset($_POST['sitepulse_connection'], $_REQUEST['nonce'], $GLOBALS['wpdb']);
+        parent::tearDown();
+    }
 
     private function connect(): void { update_option('sitepulse_license_key', SITEPULSE_TEST_LICENSE); }
 
@@ -30,68 +37,140 @@ final class RemoteConnectionTest extends Sitepulse_Test_Case {
         Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_response(array('success' => true, 'data' => $data));
     }
 
+    /** The API's answer to a check-in. */
+    private function checkedIn(bool $active = false): void {
+        Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_response(array('success' => true, 'remote_management' => array('enabled' => $active, 'active' => $active, 'check_in_seconds' => $active ? 300 : 3600), 'commands' => array()));
+    }
+
+    private function endpoints(): array { return array_map('sitepulse_test_remote_endpoint', array_keys(Sitepulse_Test_WP::$http_requests)); }
+
     private function stored(): array { return get_option(Sitepulse_Remote_Management::CONNECTION_OPTION); }
 
     private function render(string $context = 'advanced'): string {
         ob_start(); Sitepulse_Remote_Management::render_settings($context); return ob_get_clean();
     }
 
-    public function test_init_registers_the_connection_buttons(): void {
-        Sitepulse_Remote_Management::init();
-        $this->assertNotFalse(has_action('admin_post_sitepulse_remote_connection', array('Sitepulse_Remote_Management', 'handle_connection_form')));
+    /** Ask, as the settings page does while it shows a key, whether the key was used. */
+    private function poll(string $nonce = 'nonce-sitepulse_remote_connection_poll'): Sitepulse_Test_Json_Response {
+        $_REQUEST['nonce'] = $nonce;
+        try { Sitepulse_Remote_Management::ajax_connection_poll(); } catch (Sitepulse_Test_Json_Response $response) { return $response; }
+        $this->fail('Expected a JSON answer.');
     }
 
-    public function test_shows_a_connection_key_until_it_is_used_and_then_the_account(): void {
+    public function test_init_registers_the_buttons_the_poll_the_late_check_in_and_the_plugins_link(): void {
+        Sitepulse_Remote_Management::init();
+        $this->assertNotFalse(has_action('admin_post_sitepulse_remote_connection', array('Sitepulse_Remote_Management', 'handle_connection_form')));
+        $this->assertNotFalse(has_action('wp_ajax_sitepulse_remote_connection_poll', array('Sitepulse_Remote_Management', 'ajax_connection_poll')));
+        $this->assertNotFalse(has_action('admin_init', array('Sitepulse_Remote_Management', 'check_in_when_late')));
+        $this->assertNotFalse(has_filter('plugin_action_links_sitepulse/loader.php', array('Sitepulse_Remote_Management', 'plugin_links')));
+    }
+
+    public function test_a_key_comes_after_a_check_in_and_the_page_waits_for_the_dashboard_to_use_it(): void {
         $this->connect();
+        $this->checkedIn();
         $this->answer(array('key' => 'spc_first_key', 'connectable' => true, 'has_key' => true, 'connections' => array()));
+
         $this->press('key');
 
-        $this->assertSame('connection/key', sitepulse_test_remote_endpoint(0));
-        $this->assertSame('[]', Sitepulse_Test_WP::$http_requests[0]['args']['body']);
+        // The check-in tells the API where to wake the site once the key is used.
+        $this->assertSame(array('check-in', 'connection/key'), $this->endpoints());
+        $this->assertSame('[]', Sitepulse_Test_WP::$http_requests[1]['args']['body']);
         $this->assertSame('spc_first_key', $this->stored()['key']);
         $html = $this->render();
         $this->assertStringContainsString('value="spc_first_key"', $html);
-        $this->assertStringContainsString('Create a new key', $html);
-        $this->assertStringContainsString('name="action" value="sitepulse_remote_connection"', $html);
+        $this->assertStringContainsString('<button type="button" class="button" data-copy="sitepulse-connection-key" data-copied="Copied">Copy</button>', $html);
+        $this->assertStringContainsString('Enter this site&#039;s address (example.test) and the key.', $html);
+        $this->assertStringContainsString('data-poll-url="https://example.test/wp-admin/admin-ajax.php" data-poll-action="sitepulse_remote_connection_poll" data-poll-nonce="nonce-sitepulse_remote_connection_poll"', $html);
+        $this->assertStringContainsString('Waiting for your SitePulse dashboard.', $html);
+        $this->assertStringContainsString('Get a new key', $html);
         $this->assertStringContainsString('name="_wpnonce" value="nonce-sitepulse_remote_connection"', $html);
+        $this->assertSame('https://example.test/wp-content/plugins/sitepulse/assets/js/remote-connection.js', Sitepulse_Test_WP::$scripts['sitepulse-remote-connection']['src']);
+        // The Simple dashboard's buttons.
+        $this->assertStringContainsString('class="sp-btn sp-btn-outline sp-btn-sm" data-copy="sitepulse-connection-key"', $this->render('easy'));
+    }
+
+    public function test_a_site_without_a_license_registers_before_it_shows_a_key(): void {
+        Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(json_encode(array('license_key' => SITEPULSE_TEST_LICENSE)));
+        $this->checkedIn();
+        $this->answer(array('key' => 'spc_new_site', 'connectable' => true, 'has_key' => true, 'connections' => array()));
+
+        $this->press('key');
+
+        $this->assertSame('https://api.sitepulse.me/api/website/website-request', Sitepulse_Test_WP::$http_requests[0]['url']);
+        $this->assertSame(SITEPULSE_TEST_LICENSE, get_option('sitepulse_license_key'));
+        $this->assertSame(array('check-in', 'connection/key'), array_slice($this->endpoints(), 1));
+        $this->assertSame('spc_new_site', $this->stored()['key']);
+    }
+
+    public function test_says_why_a_site_that_cannot_register_gets_no_key(): void {
+        Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(json_encode(array('success' => false, 'message' => 'Maintenance')), 503);
+
+        $this->press('key');
+
+        $this->assertCount(1, Sitepulse_Test_WP::$http_requests, 'Only the registration was tried.');
+        $this->assertStringStartsWith('This site is not registered with SitePulse yet: ', $this->stored()['error']);
+        $this->assertStringContainsString('This site is not registered with SitePulse yet: ', $this->render());
+    }
+
+    public function test_checking_the_connection_checks_in_and_shows_the_accounts_once_the_key_was_used(): void {
+        $this->connect();
+        update_option(Sitepulse_Remote_Management::CONNECTION_OPTION, array('key' => 'spc_first_key'));
 
         // Still waiting: the key stays.
         $this->answer(array('connectable' => true, 'has_key' => true, 'connections' => array()));
+        $this->checkedIn();
         $this->press('status');
         $this->assertSame('spc_first_key', $this->stored()['key']);
+        $this->assertSame(array('connection', 'check-in'), $this->endpoints());
 
-        // The dashboard used the key: it is gone, and the account shows.
+        // The dashboard used the key: it is gone, the account shows and the site is managed.
         $this->answer(array('connectable' => true, 'has_key' => false, 'connections' => array(
             array('account' => 'o***@agency.example', 'plan' => 'Agency', 'connected_at' => '2026-10-20T10:00:00+00:00'),
             array('account' => null, 'plan' => 'Starter', 'connected_at' => 'not a date'),
             'not a connection',
         )));
+        $this->checkedIn(true);
+        $this->answer(array('success' => true));
         $this->press('status');
 
-        $this->assertSame('connection', sitepulse_test_remote_endpoint(2));
         $this->assertSame('', $this->stored()['key']);
+        $this->assertTrue(Sitepulse_Remote_Management::is_active());
         foreach (array('advanced', 'easy') as $context) {
             $html = $this->render($context);
             $this->assertStringContainsString('Connected to o***@agency.example (Agency plan) since 2026-10-20 10:00.', $html);
-            $this->assertStringContainsString('Connected to SitePulse (Starter plan) since .', $html);
+            $this->assertStringContainsString('Connected to a SitePulse account (Starter plan) by SitePulse since .', $html);
             $this->assertStringContainsString('Disconnect from SitePulse accounts', $html);
-            $this->assertStringNotContainsString('Show connection key', $html);
+            $this->assertStringNotContainsString('to manage this site from there', $html, 'A managed site is not asked to get a key.');
+            $this->assertStringContainsString('Get connection key', $html);
+            $this->assertStringNotContainsString('data-poll-url', $html);
             $this->assertStringContainsString('Checked 1 min ago.', $html);
         }
+    }
+
+    public function test_a_site_connected_by_sitepulse_offers_a_key_to_be_managed(): void {
+        $this->connect();
+        update_option(Sitepulse_Remote_Management::CONNECTION_OPTION, array('connections' => array(array('account' => '', 'plan' => 'Agency', 'connected_at' => '2026-07-19T17:00:00+00:00'))));
+
+        $html = $this->render();
+
+        $this->assertStringContainsString('Connected to a SitePulse account (Agency plan) by SitePulse since 2026-07-19 17:00.', $html);
+        $this->assertStringContainsString('Get connection key', $html);
+        $this->assertStringContainsString('Get a connection key and enter it in your SitePulse dashboard to manage this site from there', $html);
     }
 
     public function test_disconnects_the_site_from_its_accounts(): void {
         $this->connect();
         update_option(Sitepulse_Remote_Management::CONNECTION_OPTION, array('connections' => array(array('account' => 'o***@agency.example', 'plan' => 'Agency', 'connected_at' => ''))));
         $this->answer(array('connectable' => true, 'has_key' => false, 'connections' => array()));
+        $this->checkedIn();
 
         $this->press('disconnect');
 
-        $this->assertSame('connection/disconnect', sitepulse_test_remote_endpoint(0));
+        $this->assertSame(array('connection/disconnect', 'check-in'), $this->endpoints());
         $this->assertSame(array(), $this->stored()['connections']);
         $this->assertSame(array('This site was disconnected from its SitePulse accounts.'), array_column(Sitepulse_Remote_Management::log_entries(), 'message'));
-        $this->assertStringContainsString('Show connection key', $this->render());
-        $this->assertStringContainsString('Not connected yet.', $this->render());
+        $this->assertStringContainsString('Get connection key', $this->render());
+        $this->assertStringNotContainsString('Disconnect from SitePulse accounts', $this->render());
     }
 
     public function test_keeps_the_key_and_shows_an_error_when_sitepulse_cannot_be_reached(): void {
@@ -108,21 +187,27 @@ final class RemoteConnectionTest extends Sitepulse_Test_Case {
     public function test_explains_a_pro_site_and_a_site_that_cannot_connect(): void {
         $this->connect();
         $this->answer(array('connectable' => false, 'reason' => 'pro_site', 'has_key' => false, 'connections' => 'none'));
+        $this->checkedIn();
         $this->press('status');
         $this->assertStringContainsString('This site has a SitePulse Pro license, so it already appears in the account that owns the license.', $this->render());
 
-        delete_option('sitepulse_license_key');
-        $this->assertStringContainsString('Turn on Cloud Services so this site can connect to your SitePulse account.', $this->render());
+        update_option('sitepulse_settings', array('external_api_enabled' => false));
+        $this->assertStringContainsString('Turn on Cloud Services so this site can connect to your SitePulse dashboard.', $this->render());
         $this->assertFalse(Sitepulse_Remote_Management::view_data()['connection']['available']);
     }
 
-    public function test_sends_nothing_for_an_unknown_button_or_an_unlicensed_site(): void {
+    public function test_sends_nothing_for_an_unknown_button_or_without_cloud_services(): void {
         $this->connect();
         $this->press('delete-everything');
         unset($_POST['sitepulse_connection']);
         try { Sitepulse_Remote_Management::handle_connection_form(); } catch (Sitepulse_Test_Redirect $redirect) {}
-        delete_option('sitepulse_license_key');
+        update_option('sitepulse_settings', array('external_api_enabled' => false));
         $this->press('key');
+        // Without a license, only asking for a key does something: it registers the site.
+        update_option('sitepulse_settings', array());
+        delete_option('sitepulse_license_key');
+        $this->press('status');
+        $this->press('disconnect');
 
         $this->assertSame(array(), Sitepulse_Test_WP::$http_requests);
         $this->assertFalse(get_option(Sitepulse_Remote_Management::CONNECTION_OPTION));
@@ -131,6 +216,7 @@ final class RemoteConnectionTest extends Sitepulse_Test_Case {
     public function test_redirects_to_the_settings_without_a_referer(): void {
         Sitepulse_Test_WP::$referer = false;
         $_POST['sitepulse_connection'] = 'status';
+        update_option('sitepulse_settings', array('external_api_enabled' => false));
         try { Sitepulse_Remote_Management::handle_connection_form(); $this->fail('Expected a redirect.'); }
         catch (Sitepulse_Test_Redirect $redirect) { $this->assertSame('https://example.test/wp-admin/admin.php?page=wpsp_sitepulse_settings', $redirect->getMessage()); }
     }
@@ -145,5 +231,101 @@ final class RemoteConnectionTest extends Sitepulse_Test_Case {
         try { Sitepulse_Remote_Management::handle_connection_form(); $this->fail('Expected wp_die.'); } catch (Sitepulse_Test_Die $die) { $this->assertStringContainsString('expired', $die->getMessage()); }
 
         $this->assertSame(array(), Sitepulse_Test_WP::$http_requests);
+    }
+
+    public function test_the_page_learns_when_the_key_was_used_and_the_site_checks_in_at_once(): void {
+        $this->connect();
+        update_option(Sitepulse_Remote_Management::CONNECTION_OPTION, array('key' => 'spc_waiting'));
+
+        // Not used yet.
+        $this->answer(array('connectable' => true, 'has_key' => true, 'connections' => array()));
+        $response = $this->poll();
+        $this->assertSame(array(true, array('used' => false)), array($response->success, $response->data));
+        $this->assertSame(array('connection'), $this->endpoints());
+
+        // SitePulse cannot be reached: asked again later.
+        Sitepulse_Test_WP::$http_queue[] = new WP_Error('http_request_failed', 'timeout');
+        $this->assertSame(array('used' => false), $this->poll()->data);
+        $this->assertSame('spc_waiting', $this->stored()['key']);
+
+        // Used: the site checks in now, without waiting for WP-Cron.
+        $this->answer(array('connectable' => true, 'has_key' => false, 'connections' => array(array('account' => 'o***@agency.example', 'plan' => 'Agency', 'connected_at' => '2026-10-20T10:00:00+00:00'))));
+        $this->checkedIn(true);
+        $this->answer(array('success' => true));
+        $this->assertSame(array('used' => true), $this->poll()->data);
+        $this->assertSame(array('connection', 'connection', 'connection', 'check-in', 'inventory'), $this->endpoints());
+        $this->assertSame('', $this->stored()['key']);
+        $this->assertTrue(Sitepulse_Remote_Management::is_active());
+
+        // Nothing waits any more: the page reloads without asking SitePulse.
+        $this->assertSame(array('used' => true), $this->poll()->data);
+        $this->assertCount(5, Sitepulse_Test_WP::$http_requests);
+    }
+
+    public function test_the_poll_needs_an_administrator_and_its_nonce_and_a_site_that_can_connect(): void {
+        update_option(Sitepulse_Remote_Management::CONNECTION_OPTION, array('key' => 'spc_waiting'));
+        $this->assertSame(array(false, 403), array($this->poll('forged')->success, $this->poll('forged')->status));
+        Sitepulse_Test_WP::$capabilities['manage_options'] = false;
+        $this->assertSame(403, $this->poll()->status);
+
+        Sitepulse_Test_WP::$capabilities['manage_options'] = true;
+        $this->assertSame(array('used' => false), $this->poll()->data, 'Without a license, the key cannot have been used.');
+        $this->assertSame(array(), Sitepulse_Test_WP::$http_requests);
+    }
+
+    public function test_the_plugins_screen_links_to_the_connection_key(): void {
+        $links = Sitepulse_Remote_Management::plugin_links(array('deactivate' => '<a>Deactivate</a>'));
+        $this->assertSame(array('sitepulse-connection', 'deactivate'), array_keys($links));
+        $this->assertSame('<a href="https://example.test/wp-admin/admin.php?page=wpsp_sitepulse_settings#sitepulse-remote-connection">Connection key</a>', $links['sitepulse-connection']);
+
+        Sitepulse_Test_WP::$capabilities['manage_options'] = false;
+        $this->assertSame(array('deactivate' => '<a>Deactivate</a>'), Sitepulse_Remote_Management::plugin_links(array('deactivate' => '<a>Deactivate</a>')));
+        Sitepulse_Test_WP::$capabilities['manage_options'] = true;
+        Sitepulse_Test_WP::$multisite = true;
+        $this->assertSame(array(), Sitepulse_Remote_Management::plugin_links(array()));
+    }
+
+    public function test_an_administrator_page_checks_in_after_it_is_sent_when_wp_cron_does_not_run(): void {
+        $this->connect();
+        // Not late yet.
+        wp_schedule_single_event(time() - 300, Sitepulse_Remote_Management::CHECK_IN_HOOK);
+        Sitepulse_Remote_Management::check_in_when_late();
+        $this->assertFalse(has_action('shutdown', array('Sitepulse_Remote_Management', 'check_in_after_response')));
+
+        // Ten minutes late: once the page is sent, it checks in.
+        wp_clear_scheduled_hook(Sitepulse_Remote_Management::CHECK_IN_HOOK);
+        wp_schedule_single_event(time() - 700, Sitepulse_Remote_Management::CHECK_IN_HOOK);
+        Sitepulse_Remote_Management::check_in_when_late();
+        $this->assertNotFalse(has_action('shutdown', array('Sitepulse_Remote_Management', 'check_in_after_response')));
+        $this->assertSame(600, Sitepulse_Test_WP::$transient_expirations['sitepulse_remote_late_check_in']);
+
+        $this->checkedIn();
+        $finished = Sitepulse_Test_WP::$finished_requests;
+        Sitepulse_Remote_Management::check_in_after_response();
+        $this->assertSame($finished + 1, Sitepulse_Test_WP::$finished_requests, 'The page was sent first.');
+        $this->assertSame(array('check-in'), $this->endpoints());
+        $this->assertEqualsWithDelta(time() + 3600, wp_next_scheduled(Sitepulse_Remote_Management::CHECK_IN_HOOK), 2);
+    }
+
+    /** @dataProvider requestsThatDoNotCheckInLate */
+    public function test_only_late_check_ins_of_administrator_pages_check_in(callable $setup): void {
+        $this->connect();
+        wp_schedule_single_event(time() - 700, Sitepulse_Remote_Management::CHECK_IN_HOOK);
+        $setup();
+
+        Sitepulse_Remote_Management::check_in_when_late();
+
+        $this->assertFalse(has_action('shutdown', array('Sitepulse_Remote_Management', 'check_in_after_response')));
+    }
+
+    public static function requestsThatDoNotCheckInLate(): array {
+        return array(
+            'an AJAX request' => array(static function () { Sitepulse_Test_WP::$doing_ajax = true; }),
+            'a cron request' => array(static function () { Sitepulse_Test_WP::$doing_cron = true; }),
+            'not an administrator' => array(static function () { Sitepulse_Test_WP::$capabilities['manage_options'] = false; }),
+            'a site that cannot connect' => array(static function () { delete_option('sitepulse_license_key'); }),
+            'no check-in scheduled' => array(static function () { wp_clear_scheduled_hook(Sitepulse_Remote_Management::CHECK_IN_HOOK); }),
+            'another page checks in' => array(static function () { set_transient('sitepulse_remote_late_check_in', 1, 600); }),
+        );
     }
 }

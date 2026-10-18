@@ -1,6 +1,6 @@
 <?php
 /**
- * Connecting the site to a SitePulse account, in the remote management settings of both dashboards.
+ * Connecting the site to a SitePulse dashboard, in the remote management settings of both dashboards.
  *
  * @package SitePulse
  *
@@ -12,43 +12,52 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $sp_connection = $sp_remote['connection'];
+$sp_waiting    = $sp_connection['available'] && $sp_connection['connectable'] && '' !== $sp_connection['key'];
 ?>
-<div class="sp-remote-connection" id="sitepulse-remote-connection" style="margin: 16px 0;">
-	<p style="font-weight: 600; margin: 0 0 4px;"><?php echo esc_html__( 'Connect this site to your SitePulse account', 'sitepulse' ); ?></p>
+<div class="sp-remote-connection" id="sitepulse-remote-connection" style="margin: 16px 0;"<?php if ( $sp_waiting ) : ?> data-poll-url="<?php echo esc_url( $sp_connection['poll']['url'] ); ?>" data-poll-action="<?php echo esc_attr( $sp_connection['poll']['action'] ); ?>" data-poll-nonce="<?php echo esc_attr( $sp_connection['poll']['nonce'] ); ?>"<?php endif; ?>>
+	<p style="font-weight: 600; margin: 0 0 4px;"><?php echo esc_html__( 'Connect this site to your SitePulse dashboard', 'sitepulse' ); ?></p>
 	<?php if ( ! $sp_connection['available'] ) : ?>
-		<p style="margin: 0;"><?php echo esc_html__( 'Turn on Cloud Services so this site can connect to your SitePulse account.', 'sitepulse' ); ?></p>
+		<p style="margin: 0;"><?php echo esc_html__( 'Turn on Cloud Services so this site can connect to your SitePulse dashboard.', 'sitepulse' ); ?></p>
 	<?php elseif ( ! $sp_connection['connectable'] ) : ?>
 		<p style="margin: 0;"><?php echo esc_html__( 'This site has a SitePulse Pro license, so it already appears in the account that owns the license.', 'sitepulse' ); ?></p>
 	<?php else : ?>
-		<?php if ( $sp_connection['connections'] ) : ?>
-			<ul style="margin: 0 0 8px;">
-				<?php foreach ( $sp_connection['connections'] as $sp_connection_entry ) : ?>
-					<li>
-						<?php
-						/* translators: 1: account email (masked) or SitePulse, 2: plan name, 3: date */
-						echo esc_html( sprintf( __( 'Connected to %1$s (%2$s plan) since %3$s.', 'sitepulse' ), $sp_connection_entry['account'], $sp_connection_entry['plan'], $sp_connection_entry['since'] ) );
-						?>
-					</li>
-				<?php endforeach; ?>
-			</ul>
-		<?php elseif ( '' !== $sp_connection['key'] ) : ?>
-			<p style="margin: 0 0 6px;"><?php echo esc_html__( 'In your SitePulse dashboard, open Remote Management, then Sites, then Connect a site, and enter this site\'s address and this connection key. A key works once.', 'sitepulse' ); ?></p>
-			<p style="margin: 0 0 8px;">
+		<?php foreach ( $sp_connection['connections'] as $sp_connection_entry ) : ?>
+			<p style="margin: 0 0 6px;">
+				<?php
+				echo esc_html(
+					null === $sp_connection_entry['account']
+						/* translators: 1: plan name, 2: date */
+						? sprintf( __( 'Connected to a SitePulse account (%1$s plan) by SitePulse since %2$s.', 'sitepulse' ), $sp_connection_entry['plan'], $sp_connection_entry['since'] )
+						/* translators: 1: account email (masked), 2: plan name, 3: date */
+						: sprintf( __( 'Connected to %1$s (%2$s plan) since %3$s.', 'sitepulse' ), $sp_connection_entry['account'], $sp_connection_entry['plan'], $sp_connection_entry['since'] )
+				);
+				?>
+			</p>
+		<?php endforeach; ?>
+		<?php if ( $sp_waiting ) : ?>
+			<ol style="margin: 0 0 8px 18px;">
+				<li><?php echo esc_html__( 'Copy this connection key.', 'sitepulse' ); ?></li>
+				<li><?php echo esc_html__( 'In your SitePulse dashboard, open Remote Management and choose Connect a site.', 'sitepulse' ); ?></li>
+				<?php /* translators: %s: this site's address, such as example.com */ ?>
+				<li><?php echo esc_html( sprintf( __( 'Enter this site\'s address (%s) and the key. SitePulse sets the site up at once; a key works once.', 'sitepulse' ), $sp_connection['domain'] ) ); ?></li>
+			</ol>
+			<p style="margin: 0 0 8px; display: flex; gap: 8px; flex-wrap: wrap;">
 				<label for="sitepulse-connection-key" class="screen-reader-text"><?php echo esc_html__( 'Connection key', 'sitepulse' ); ?></label>
 				<input type="text" id="sitepulse-connection-key" class="regular-text code" readonly value="<?php echo esc_attr( $sp_connection['key'] ); ?>" />
+				<button type="button" class="<?php echo esc_attr( $sp_connection['button'] ); ?>" data-copy="sitepulse-connection-key" data-copied="<?php echo esc_attr__( 'Copied', 'sitepulse' ); ?>"><?php echo esc_html__( 'Copy', 'sitepulse' ); ?></button>
 			</p>
-		<?php else : ?>
-			<p style="margin: 0 0 8px;"><?php echo esc_html__( 'Not connected yet. Show a connection key and enter it in your SitePulse dashboard to see and manage this site there.', 'sitepulse' ); ?></p>
+			<p class="description" style="margin: 0 0 8px;" data-poll-status data-done="<?php echo esc_attr__( 'Your SitePulse dashboard used the key. Updating…', 'sitepulse' ); ?>"><?php echo esc_html__( 'Waiting for your SitePulse dashboard. This page updates by itself once you enter the key there.', 'sitepulse' ); ?></p>
+		<?php elseif ( ! $sp_connection['managed'] ) : ?>
+			<p style="margin: 0 0 8px;"><?php echo esc_html__( 'Get a connection key and enter it in your SitePulse dashboard to manage this site from there: its updates, and its backups with UpdraftPlus or BackWPup.', 'sitepulse' ); ?></p>
 		<?php endif; ?>
 		<form method="post" action="<?php echo esc_url( $sp_remote['action'] ); ?>" style="display: flex; gap: 8px; flex-wrap: wrap;">
 			<input type="hidden" name="action" value="<?php echo esc_attr( $sp_connection['nonce_action'] ); ?>" />
 			<?php wp_nonce_field( $sp_connection['nonce_action'] ); ?>
-			<?php if ( ! $sp_connection['connections'] ) : ?>
-				<button type="submit" name="sitepulse_connection" value="key" class="button"><?php echo '' === $sp_connection['key'] ? esc_html__( 'Show connection key', 'sitepulse' ) : esc_html__( 'Create a new key', 'sitepulse' ); ?></button>
-			<?php endif; ?>
-			<button type="submit" name="sitepulse_connection" value="status" class="button"><?php echo esc_html__( 'Check connection', 'sitepulse' ); ?></button>
+			<?php // Offered on a managed site too: what the site knows about it can be up to one check-in old. ?>
+			<button type="submit" name="sitepulse_connection" value="key" class="<?php echo esc_attr( $sp_connection['button'] ); ?>"><?php echo '' === $sp_connection['key'] ? esc_html__( 'Get connection key', 'sitepulse' ) : esc_html__( 'Get a new key', 'sitepulse' ); ?></button>
+			<button type="submit" name="sitepulse_connection" value="status" class="<?php echo esc_attr( $sp_connection['button'] ); ?>"><?php echo esc_html__( 'Check connection', 'sitepulse' ); ?></button>
 			<?php if ( $sp_connection['connections'] ) : ?>
-				<button type="submit" name="sitepulse_connection" value="disconnect" class="button"><?php echo esc_html__( 'Disconnect from SitePulse accounts', 'sitepulse' ); ?></button>
+				<button type="submit" name="sitepulse_connection" value="disconnect" class="<?php echo esc_attr( $sp_connection['button'] ); ?>"><?php echo esc_html__( 'Disconnect from SitePulse accounts', 'sitepulse' ); ?></button>
 			<?php endif; ?>
 		</form>
 		<?php if ( '' !== $sp_connection['checked'] ) : ?>

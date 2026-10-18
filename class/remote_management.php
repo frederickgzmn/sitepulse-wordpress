@@ -3,11 +3,11 @@
  * SitePulse remote management
  *
  * Lets the SitePulse dashboard (api.sitepulse.me) watch, and step by step manage, the
- * site's backups and updates. The site checks in on a schedule the API sets; the API
+ * site's updates and backups. The site checks in on a schedule the API sets; the API
  * answers with the dashboard switch and the commands queued for the site. Nothing runs
- * unless the dashboard switch is on, UpdraftPlus or BackWPup is active and the site's
- * administrator has not blocked remote management. docs/remote-management.md describes
- * the contract.
+ * unless the dashboard switch is on (the site's connection key turns it on) and the site's
+ * administrator has not blocked remote management; backups also need UpdraftPlus or
+ * BackWPup. docs/remote-management.md describes the contract.
  *
  * @package SitePulse
  */
@@ -24,8 +24,17 @@ class Sitepulse_Remote_Management {
 	/** Cron hook of the check-in. */
 	const CHECK_IN_HOOK = 'sitepulse_remote_check_in';
 
-	/** Seconds since the last check-in before a wake from the API checks in again. */
+	/** Seconds since the last check-in a wake asked for before a wake from the API checks in again. */
 	const WOKEN_CHECK_IN_GAP = 60;
+
+	/** Seconds a check-in may be late before an administrator's wp-admin page checks in instead. */
+	const LATE_CHECK_IN_SECONDS = 600;
+
+	/** Held while a late check-in runs, so other pages do not check in too. */
+	const LATE_LOCK = 'sitepulse_remote_late_check_in';
+
+	/** AJAX action and nonce the settings page asks, while it shows a key, whether the key was used. */
+	const POLL_ACTION = 'sitepulse_remote_connection_poll';
 
 	/** admin-post action and nonce of the block switch. */
 	const BLOCK_ACTION = 'sitepulse_remote_management';
@@ -79,6 +88,7 @@ class Sitepulse_Remote_Management {
 		'check_in_seconds'   => 3600,
 		'inventory_seconds'  => 21600,
 		'last_check_in'      => 0,
+		'last_woken'         => 0,
 		'last_error'         => '',
 		'inventory_sent_at'  => 0,
 		'inventory_due'      => false,
@@ -95,7 +105,10 @@ class Sitepulse_Remote_Management {
 		add_action( self::CHECK_IN_HOOK, array( __CLASS__, 'check_in' ) );
 		add_action( 'admin_post_' . self::BLOCK_ACTION, array( __CLASS__, 'handle_block_form' ) );
 		add_action( 'admin_post_' . self::CONNECTION_ACTION, array( __CLASS__, 'handle_connection_form' ) );
+		add_action( 'wp_ajax_' . self::POLL_ACTION, array( __CLASS__, 'ajax_connection_poll' ) );
+		add_action( 'admin_init', array( __CLASS__, 'check_in_when_late' ) );
 		add_action( 'sitepulse_settings_after_form', array( __CLASS__, 'render_settings' ) );
+		add_filter( 'plugin_action_links_' . plugin_basename( SITEPULSE_PLUGIN_FILE ), array( __CLASS__, 'plugin_links' ) );
 		Sitepulse_Remote_Events::init();
 		Sitepulse_Remote_Backups::init();
 		Sitepulse_Remote_Updates::init();
@@ -111,8 +124,9 @@ class Sitepulse_Remote_Management {
 
 	/**
 	 * The API requests wp-cron.php?sitepulse_check_in=1 when the dashboard queued work for this
-	 * site: check in during that cron run rather than at the next scheduled check-in. Anyone can
-	 * request that address, so it only moves the scheduled check-in forward, at most once a minute.
+	 * site or just set it up: check in during that cron run rather than at the next scheduled
+	 * check-in. Anyone can request that address, so it only moves the scheduled check-in forward,
+	 * at most once a minute.
 	 */
 	private static function check_in_when_woken() {
 		// A flag that only moves a check-in forward; there is nothing to verify.
@@ -123,10 +137,41 @@ class Sitepulse_Remote_Management {
 		if ( false !== $next && $next <= time() ) {
 			return;
 		}
-		if ( time() - (int) self::state()['last_check_in'] < self::WOKEN_CHECK_IN_GAP ) {
+		$state = self::state();
+		if ( time() - (int) $state['last_woken'] < self::WOKEN_CHECK_IN_GAP ) {
 			return;
 		}
+		$state['last_woken'] = time();
+		self::save_state( $state );
 		self::schedule_next( 0 );
+	}
+
+	/**
+	 * WP-Cron runs only when the site gets visitors or a server cron job requests it. When the
+	 * scheduled check-in is 10 minutes late, an administrator's wp-admin page checks in once it
+	 * is sent, so the dashboard keeps reaching a site whose WP-Cron does not run.
+	 */
+	public static function check_in_when_late() {
+		if ( wp_doing_ajax() || wp_doing_cron() || ! current_user_can( 'manage_options' ) || ! self::can_connect() ) {
+			return;
+		}
+		$next = wp_next_scheduled( self::CHECK_IN_HOOK );
+		if ( false === $next || time() - $next < self::LATE_CHECK_IN_SECONDS || get_transient( self::LATE_LOCK ) ) {
+			return;
+		}
+
+		set_transient( self::LATE_LOCK, 1, self::LATE_CHECK_IN_SECONDS );
+		add_action( 'shutdown', array( __CLASS__, 'check_in_after_response' ) );
+	}
+
+	/**
+	 * Check in once the page is sent, so the administrator does not wait for it.
+	 */
+	public static function check_in_after_response() {
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			fastcgi_finish_request();
+		}
+		self::check_in();
 	}
 
 	/**
@@ -160,7 +205,15 @@ class Sitepulse_Remote_Management {
 	 * @return bool
 	 */
 	public static function can_connect() {
-		return ! SITEPULSE_PRO_IS_ACTIVE && ! is_multisite() && self::cloud_services_enabled() && '' !== self::license();
+		return self::can_register() && '' !== self::license();
+	}
+
+	/**
+	 * @return bool Whether the site may connect once it has a license: a single site without
+	 *              SitePulse Pro, with Cloud Services on. Asking for a connection key registers it.
+	 */
+	private static function can_register() {
+		return ! SITEPULSE_PRO_IS_ACTIVE && ! is_multisite() && self::cloud_services_enabled();
 	}
 
 	/**
@@ -367,7 +420,7 @@ class Sitepulse_Remote_Management {
 	}
 
 	/**
-	 * The connection buttons: show a connection key, check the connection, or disconnect the site
+	 * The connection buttons: get a connection key, check the connection, or disconnect the site
 	 * from its SitePulse accounts (see "Connecting a site to an account" in docs/remote-management.md).
 	 */
 	public static function handle_connection_form() {
@@ -377,29 +430,99 @@ class Sitepulse_Remote_Management {
 
 		check_admin_referer( self::CONNECTION_ACTION );
 
-		$endpoints = array(
-			'key'        => 'connection/key',
-			'status'     => 'connection',
-			'disconnect' => 'connection/disconnect',
-		);
 		$operation = isset( $_POST['sitepulse_connection'] ) ? sanitize_key( wp_unslash( $_POST['sitepulse_connection'] ) ) : '';
-		if ( isset( $endpoints[ $operation ] ) && self::can_connect() ) {
-			$response = ( new Sitepulse_Remote_Client( self::signing_key() ) )->post( $endpoints[ $operation ], array() );
-			$stored   = self::connection();
-			if ( is_wp_error( $response ) ) {
-				$stored['error'] = __( 'SitePulse could not be reached. Please try again in a moment.', 'sitepulse' );
-			} else {
-				$stored = self::connection_from( is_array( $response['data'] ?? null ) ? $response['data'] : array(), $stored );
-				if ( 'disconnect' === $operation ) {
-					self::log( __( 'This site was disconnected from its SitePulse accounts.', 'sitepulse' ) );
-				}
-			}
-			update_option( self::CONNECTION_OPTION, $stored, false );
+		// Only asking for a key registers a site; the other buttons need its license.
+		$allowed = 'key' === $operation ? self::can_register() : self::can_connect();
+		if ( in_array( $operation, array( 'key', 'status', 'disconnect' ), true ) && $allowed ) {
+			update_option( self::CONNECTION_OPTION, self::connection_request( $operation ), false );
 		}
 
 		$referer = wp_get_referer();
 		wp_safe_redirect( $referer ? $referer : admin_url( 'admin.php?page=wpsp_sitepulse_settings' ) );
 		exit;
+	}
+
+	/**
+	 * Press a connection button and return the connection to store. Asking for a key registers
+	 * a site that has no license yet and checks in first, so the API can wake the site as soon as
+	 * the key is used; the other buttons check in afterwards, so the settings show the result.
+	 *
+	 * @param string $operation key, status or disconnect.
+	 * @return array
+	 */
+	private static function connection_request( $operation ) {
+		$stored = self::connection();
+		if ( 'key' === $operation ) {
+			$license = Sitepulse_Api_Service::ensure_registered();
+			if ( empty( $license['success'] ) ) {
+				$stored['error'] = (string) $license['message'];
+				return $stored;
+			}
+			self::check_in();
+		}
+
+		$endpoints = array(
+			'key'        => 'connection/key',
+			'status'     => 'connection',
+			'disconnect' => 'connection/disconnect',
+		);
+		$response  = ( new Sitepulse_Remote_Client( self::signing_key() ) )->post( $endpoints[ $operation ], array() );
+		if ( is_wp_error( $response ) ) {
+			$stored['error'] = __( 'SitePulse could not be reached. Please try again in a moment.', 'sitepulse' );
+			return $stored;
+		}
+
+		$stored = self::connection_from( is_array( $response['data'] ?? null ) ? $response['data'] : array(), $stored );
+		if ( 'disconnect' === $operation ) {
+			self::log( __( 'This site was disconnected from its SitePulse accounts.', 'sitepulse' ) );
+		}
+		if ( 'key' !== $operation ) {
+			self::check_in();
+		}
+		return $stored;
+	}
+
+	/**
+	 * While the settings show a connection key, the page asks every few seconds whether the key
+	 * was used. Once it was, the site checks in at once, so it is set up without waiting for its
+	 * schedule, even when WP-Cron does not run or the API cannot reach the site.
+	 */
+	public static function ajax_connection_poll() {
+		if ( ! current_user_can( 'manage_options' ) || ! check_ajax_referer( self::POLL_ACTION, 'nonce', false ) ) {
+			wp_send_json_error( null, 403 );
+		}
+
+		$stored = self::connection();
+		if ( '' === $stored['key'] || ! self::can_connect() ) {
+			wp_send_json_success( array( 'used' => '' === $stored['key'] ) );
+		}
+		$response = ( new Sitepulse_Remote_Client( self::signing_key() ) )->post( 'connection', array() );
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_success( array( 'used' => false ) );
+		}
+
+		$stored = self::connection_from( is_array( $response['data'] ?? null ) ? $response['data'] : array(), $stored );
+		update_option( self::CONNECTION_OPTION, $stored, false );
+		if ( '' === $stored['key'] ) {
+			self::check_in();
+		}
+		wp_send_json_success( array( 'used' => '' === $stored['key'] ) );
+	}
+
+	/**
+	 * A "Connection key" link on the Plugins screen, as ManageWP's Worker has, to the
+	 * remote management settings.
+	 *
+	 * @param array $links The plugin's action links.
+	 * @return array
+	 */
+	public static function plugin_links( $links ) {
+		if ( ! self::can_register() || ! current_user_can( 'manage_options' ) ) {
+			return $links;
+		}
+
+		$url = admin_url( 'admin.php?page=wpsp_sitepulse_settings#sitepulse-remote-connection' );
+		return array_merge( array( 'sitepulse-connection' => '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Connection key', 'sitepulse' ) . '</a>' ), (array) $links );
 	}
 
 	/**
@@ -464,7 +587,11 @@ class Sitepulse_Remote_Management {
 			return;
 		}
 
-		$sp_remote = self::view_data();
+		$sp_remote                          = self::view_data();
+		$sp_remote['connection']['button'] = 'easy' === $context ? 'sp-btn sp-btn-outline sp-btn-sm' : 'button';
+		if ( '' !== $sp_remote['connection']['key'] ) {
+			wp_enqueue_script( 'sitepulse-remote-connection', SITEPULSE_ADMIN_ASSETS_JS_URL . 'remote-connection.js', array(), SITEPULSE_VERSION, true );
+		}
 		include SITEPULSE_PATH . ( 'easy' === $context ? 'templates/easy/partials/remote-management.php' : 'templates/backend/remote_management.php' );
 	}
 
@@ -482,10 +609,6 @@ class Sitepulse_Remote_Management {
 			'error'       => array( __( 'Connection problem', 'sitepulse' ), 'danger' ),
 			'unavailable' => array( __( 'Unavailable', 'sitepulse' ), 'neutral' ),
 		);
-		$names    = array(
-			'updraftplus' => 'UpdraftPlus',
-			'backwpup'    => 'BackWPup',
-		);
 		$format   = get_option( 'date_format', 'Y-m-d' ) . ' ' . get_option( 'time_format', 'H:i' );
 
 		return array(
@@ -493,7 +616,7 @@ class Sitepulse_Remote_Management {
 			'label'         => $badges[ $status[0] ][0],
 			'tone'          => $badges[ $status[0] ][1],
 			'message'       => $status[1],
-			'provider'      => $provider ? $names[ $provider['id'] ] . ' ' . $provider['version'] : __( 'None', 'sitepulse' ),
+			'provider'      => self::backups_text( $provider ),
 			/* translators: %s: human-readable time difference */
 			'last_check_in' => $state['last_check_in'] ? sprintf( __( '%s ago', 'sitepulse' ), human_time_diff( (int) $state['last_check_in'], time() ) ) : __( 'Never', 'sitepulse' ),
 			'blocked'       => self::is_blocked(),
@@ -513,6 +636,29 @@ class Sitepulse_Remote_Management {
 	}
 
 	/**
+	 * @param array|null $provider Active backup plugin.
+	 * @return string What the settings say about the backup plugin.
+	 */
+	private static function backups_text( $provider ) {
+		if ( null === $provider ) {
+			return __( 'None. Install UpdraftPlus or BackWPup to back this site up from your SitePulse dashboard; updates work without one.', 'sitepulse' );
+		}
+
+		$name = ( 'updraftplus' === $provider['id'] ? 'UpdraftPlus' : 'BackWPup' ) . ' ' . $provider['version'];
+		if ( $provider['supported'] ) {
+			return $name;
+		}
+		return sprintf(
+			'updraftplus' === $provider['id']
+				/* translators: %s: backup plugin and its version */
+				? __( '%s. Backups from your SitePulse dashboard need UpdraftPlus 1.26 or later.', 'sitepulse' )
+				/* translators: %s: backup plugin and its version */
+				: __( '%s. Backups from your SitePulse dashboard need BackWPup 5.', 'sitepulse' ),
+			$name
+		);
+	}
+
+	/**
 	 * What the connection box shows.
 	 *
 	 * @param string $format Date and time format.
@@ -522,14 +668,17 @@ class Sitepulse_Remote_Management {
 		$stored = self::connection();
 
 		return array(
-			'available'    => self::can_connect(),
+			'available'    => self::can_register(),
 			'connectable'  => (bool) $stored['connectable'],
 			'key'          => (string) $stored['key'],
+			'managed'      => self::is_active(),
+			'domain'       => (string) wp_parse_url( home_url(), PHP_URL_HOST ),
 			'connections'  => array_map(
 				static function ( $connection ) use ( $format ) {
 					$time = strtotime( (string) $connection['connected_at'] );
 					return array(
-						'account' => '' !== $connection['account'] ? $connection['account'] : __( 'SitePulse', 'sitepulse' ),
+						// No account: SitePulse connected the site.
+						'account' => '' !== $connection['account'] ? $connection['account'] : null,
 						'plan'    => (string) $connection['plan'],
 						'since'   => false === $time ? '' : wp_date( $format, $time ),
 					);
@@ -540,6 +689,11 @@ class Sitepulse_Remote_Management {
 			'checked'      => $stored['checked_at'] ? sprintf( __( '%s ago', 'sitepulse' ), human_time_diff( (int) $stored['checked_at'], time() ) ) : '',
 			'error'        => (string) $stored['error'],
 			'nonce_action' => self::CONNECTION_ACTION,
+			'poll'         => array(
+				'url'    => admin_url( 'admin-ajax.php' ),
+				'action' => self::POLL_ACTION,
+				'nonce'  => wp_create_nonce( self::POLL_ACTION ),
+			),
 		);
 	}
 
@@ -557,29 +711,24 @@ class Sitepulse_Remote_Management {
 		if ( ! self::cloud_services_enabled() ) {
 			return array( 'unavailable', __( 'Turn on PageSpeed & AI Reports (Cloud Services) to use remote management.', 'sitepulse' ) );
 		}
-		if ( '' === self::license() ) {
-			return array( 'unavailable', __( 'Remote management starts when this site receives its SitePulse license with its first site report.', 'sitepulse' ) );
-		}
 		if ( self::is_blocked() ) {
-			return array( 'blocked', __( 'Blocked: the SitePulse dashboard cannot see or manage the backups and updates of this site.', 'sitepulse' ) );
+			return array( 'blocked', __( 'Blocked: the SitePulse dashboard cannot see or manage the updates and backups of this site.', 'sitepulse' ) );
 		}
-		if ( null === $provider ) {
-			return array( 'off', __( 'Install and activate UpdraftPlus or BackWPup to manage this site from the SitePulse dashboard.', 'sitepulse' ) );
-		}
-		if ( ! $provider['supported'] ) {
-			return array( 'off', 'updraftplus' === $provider['id'] ? __( 'Update UpdraftPlus to version 1.26 or later to use remote management.', 'sitepulse' ) : __( 'Remote management works with BackWPup 5.', 'sitepulse' ) );
-		}
-		if ( '' !== $state['last_error'] ) {
+		// A site without a license has not connected yet, whatever it stored before.
+		$licensed = '' !== self::license();
+		if ( $licensed && '' !== $state['last_error'] ) {
 			return array( 'error', __( 'The last check-in with SitePulse failed. See the activity below.', 'sitepulse' ) );
 		}
-		if ( 0 === (int) $state['last_check_in'] ) {
-			return array( 'off', __( 'Connecting to SitePulse…', 'sitepulse' ) );
-		}
-		if ( $state['active'] ) {
-			return array( 'active', __( 'Active: the SitePulse dashboard can manage the backups and updates of this site.', 'sitepulse' ) );
+		if ( $licensed && $state['active'] ) {
+			return array(
+				'active',
+				null !== $provider && $provider['supported']
+					? __( 'Active: your SitePulse dashboard manages the updates and backups of this site.', 'sitepulse' )
+					: __( 'Active: your SitePulse dashboard manages the updates of this site.', 'sitepulse' ),
+			);
 		}
 
-		return array( 'off', $state['enabled'] ? __( 'Turning on at the next check-in.', 'sitepulse' ) : __( 'Off. Turn it on for this site in your SitePulse dashboard.', 'sitepulse' ) );
+		return array( 'off', __( 'Not managed yet. Get a connection key below and enter it in your SitePulse dashboard.', 'sitepulse' ) );
 	}
 
 	/**

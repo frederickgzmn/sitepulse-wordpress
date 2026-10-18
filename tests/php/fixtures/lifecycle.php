@@ -30,7 +30,7 @@ if ($input['mode'] === 'uninstall') {
         'sitepulse_easy_mode' => '0', 'sitepulse_easy_mode_theme' => 'light', 'sitepulse_dashboard_view' => 'basic', 'sitepulse_getting_started_dismissed' => 1, 'sitepulse_getting_started_visited' => array('api-monitor')));
     set_transient('sitepulse_activation_redirect', true, 30);
     set_transient('sitepulse_load_single_page_list', array('legacy')); set_transient('sitepulse_single_page_list', array('legacy'));
-    set_transient('sitepulse_cron_healthy', 1); set_transient('sitepulse_cron_fallback_frontend_check', 1); set_transient('sitepulse_remote_update_lock', 1);
+    set_transient('sitepulse_cron_healthy', 1); set_transient('sitepulse_cron_fallback_frontend_check', 1); set_transient('sitepulse_remote_update_lock', 1); set_transient('sitepulse_remote_late_check_in', 1);
     require $root . '/uninstall.php';
     echo json_encode(array('options' => Sitepulse_Test_WP::$options, 'user_meta' => Sitepulse_Test_WP::$user_meta, 'redirect' => get_transient('sitepulse_activation_redirect'), 'transients' => array_keys(Sitepulse_Test_WP::$transients)));
     exit;

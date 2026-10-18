@@ -103,6 +103,7 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
     }
 
     public function test_an_update_starts_in_cron_and_is_answered_when_done(): void {
+        Sitepulse_Test_Backups::updraftplus();
         $this->assertNull($this->start('update_plugins', array('plugins' => array('seo/seo.php', 'seo/seo.php', 'forms/forms.php'))));
 
         $job = $this->job();
@@ -113,7 +114,34 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
 
         delete_option(Sitepulse_Remote_Updates::JOB_OPTION);
         $this->start('update_core', array('version' => '7.1.3', 'backup_first' => false));
-        $this->assertSame('baseline', $this->job()['phase']);
+        $this->assertSame(array('baseline', null), array($this->job()['phase'], $this->job()['backup_skipped']));
+    }
+
+    /** @dataProvider unusableBackupPlugins */
+    public function test_an_update_skips_the_backup_without_a_backup_plugin_it_can_use(callable $setup): void {
+        $setup();
+        $this->plugin('seo/seo.php', '1.0');
+        $this->offer('plugin', 'seo/seo.php', '1.1');
+        Sitepulse_Test_Upgrades::$outcomes['plugin:seo/seo.php'] = function () { $this->plugin('seo/seo.php', '1.1'); return true; };
+        $this->start('update_plugins', array('plugins' => array('seo/seo.php')));
+        $this->assertSame(array(false, 'baseline', 'no_backup_plugin'), array($this->job()['backup_first'], $this->job()['phase'], $this->job()['backup_skipped']));
+        $this->api();
+
+        Sitepulse_Remote_Updates::run_job();
+
+        $this->assertSame(array('status' => 'done', 'result' => array(
+            'backup' => null,
+            'items' => array(array('id' => 'seo/seo.php', 'from' => '1.0', 'to' => '1.1', 'ok' => true, 'error' => null, 'rolled_back' => false)),
+            'backup_skipped' => 'no_backup_plugin',
+        ), 'error' => null), array_diff_key($this->results(), array('id' => 1)));
+        $this->assertSame(array(), Sitepulse_Test_WP::$scheduled, 'No backup was queued.');
+    }
+
+    public static function unusableBackupPlugins(): array {
+        return array(
+            'none' => array(static function () {}),
+            'an old UpdraftPlus' => array(static function () { Sitepulse_Test_Backups::updraftplus('1.25.8'); }),
+        );
     }
 
     /** @dataProvider unwritableSites */
@@ -432,6 +460,8 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
     public function test_nothing_is_updated_without_the_backup(callable $setup, string $error): void {
         $this->plugin('seo/seo.php', '1.0');
         $this->offer('plugin', 'seo/seo.php', '1.1');
+        // A backup plugin is active when the update starts, so it backs up first.
+        Sitepulse_Test_Backups::updraftplus();
         $this->start('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_wait' => 30));
         $setup($this);
         $this->api();
@@ -448,8 +478,8 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
     public static function failedBackups(): array {
         $job = static function (array $changes) { update_option(Sitepulse_Remote_Updates::JOB_OPTION, array_replace(get_option(Sitepulse_Remote_Updates::JOB_OPTION), $changes)); };
         return array(
-            'no backup plugin' => array(static function () {}, 'no_backup_plugin'),
-            'BackWPup did not start' => array(static function () { Sitepulse_Test_Backups::$backwpup_version = '5.7.8'; Sitepulse_Test_Backups::$destinations = array('FOLDER' => array()); Sitepulse_Test_Backups::$job_starts = false; }, 'backup_failed'),
+            'the backup plugin was deactivated since' => array(static function () { unset($GLOBALS['updraftplus']); }, 'no_backup_plugin'),
+            'BackWPup did not start' => array(static function () { unset($GLOBALS['updraftplus']); Sitepulse_Test_Backups::$backwpup_version = '5.7.8'; Sitepulse_Test_Backups::$destinations = array('FOLDER' => array()); Sitepulse_Test_Backups::$job_starts = false; }, 'backup_failed'),
             'the backup failed' => array(static function () use ($job) {
                 Sitepulse_Test_Backups::updraftplus();
                 $job(array('backup' => array('provider' => 'updraftplus', 'job' => 'x', 'requested_at' => time() - 120)));

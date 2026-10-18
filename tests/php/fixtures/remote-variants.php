@@ -44,6 +44,8 @@ if ($input['mode'] === 'api_base') {
     Sitepulse_Test_WP::$redirect_throws = false;
     $_REQUEST['_wpnonce'] = 'nonce-sitepulse_remote_connection';
     $_POST['sitepulse_connection'] = 'key';
+    // The site checks in, then asks for its key.
+    Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_response(array('success' => true, 'remote_management' => array('enabled' => false, 'active' => false), 'commands' => array()));
     Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_response(array('success' => true, 'data' => array('key' => 'spc_exit_key', 'connectable' => true, 'has_key' => true, 'connections' => array())));
     register_shutdown_function(static function () { echo json_encode(array('redirects' => Sitepulse_Test_WP::$redirects, 'key' => get_option(Sitepulse_Remote_Management::CONNECTION_OPTION)['key'])); });
     Sitepulse_Remote_Management::handle_connection_form();

@@ -145,27 +145,28 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
 
     public function test_a_wake_from_the_api_checks_in_during_that_cron_run(): void {
         $this->connect();
-        update_option('sitepulse_remote_state', array('last_check_in' => time() - 120));
+        // A check-in moments ago, such as the one that showed a connection key, does not hold a wake back.
+        update_option('sitepulse_remote_state', array('last_check_in' => time() - 5));
         wp_schedule_single_event(time() + 240, Sitepulse_Remote_Management::CHECK_IN_HOOK);
         Sitepulse_Test_WP::$doing_cron = true;
         $_GET['sitepulse_check_in'] = '1';
         try {
             Sitepulse_Remote_Management::init();
             $this->assertEqualsWithDelta(time(), $this->nextCheckIn(), 1, 'The check-in is due in this cron run.');
+            $this->assertEqualsWithDelta(time(), Sitepulse_Remote_Management::state()['last_woken'], 1);
 
             // Already due: left as it is.
             Sitepulse_Remote_Management::init();
             $this->assertEqualsWithDelta(time(), $this->nextCheckIn(), 1);
 
-            // Checked in less than a minute ago: the scheduled check-in stays.
+            // Woken less than a minute ago: the scheduled check-in stays.
             wp_clear_scheduled_hook(Sitepulse_Remote_Management::CHECK_IN_HOOK);
             wp_schedule_single_event(time() + 240, Sitepulse_Remote_Management::CHECK_IN_HOOK);
-            update_option('sitepulse_remote_state', array('last_check_in' => time() - 30));
             Sitepulse_Remote_Management::init();
             $this->assertEqualsWithDelta(time() + 240, $this->nextCheckIn(), 1);
 
             // Only cron requests that carry the flag, on a site that can connect.
-            update_option('sitepulse_remote_state', array('last_check_in' => time() - 120));
+            update_option('sitepulse_remote_state', array('last_woken' => time() - 120));
             unset($_GET['sitepulse_check_in']);
             Sitepulse_Remote_Management::init();
             $this->assertEqualsWithDelta(time() + 240, $this->nextCheckIn(), 1);
@@ -560,19 +561,21 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
     public static function statuses(): array {
         $licensed = static function () { update_option('sitepulse_license_key', SITEPULSE_TEST_LICENSE); };
         $ready = static function (array $state = array()) use ($licensed) { $licensed(); Sitepulse_Test_Backups::updraftplus(); update_option(Sitepulse_Remote_Management::STATE_OPTION, $state); };
+        $active = array('last_check_in' => 5, 'active' => true);
+        $notManaged = 'Not managed yet. Get a connection key below and enter it in your SitePulse dashboard.';
         return array(
             'multisite' => array(static function () { Sitepulse_Test_WP::$multisite = true; }, 'unavailable', 'neutral', 'Remote management is not available on multisite networks yet.'),
             'Cloud Services off' => array(static function () { update_option('sitepulse_settings', array('external_api_enabled' => false)); }, 'unavailable', 'neutral', 'Turn on PageSpeed & AI Reports (Cloud Services) to use remote management.'),
-            'no license' => array(static function () {}, 'unavailable', 'neutral', 'Remote management starts when this site receives its SitePulse license with its first site report.'),
-            'blocked' => array(static function () use ($licensed) { $licensed(); update_option('sitepulse_settings', array('remote_management_blocked' => true)); }, 'blocked', 'warning', 'Blocked: the SitePulse dashboard cannot see or manage the backups and updates of this site.'),
-            'no backup plugin' => array($licensed, 'off', 'neutral', 'Install and activate UpdraftPlus or BackWPup to manage this site from the SitePulse dashboard.'),
-            'old UpdraftPlus' => array(static function () use ($licensed) { $licensed(); Sitepulse_Test_Backups::updraftplus('1.25.8'); }, 'off', 'neutral', 'Update UpdraftPlus to version 1.26 or later to use remote management.'),
-            'BackWPup 4' => array(static function () use ($licensed) { $licensed(); Sitepulse_Test_Backups::$backwpup_version = '4.1.7'; }, 'off', 'neutral', 'Remote management works with BackWPup 5.'),
+            // Asking for a connection key registers the site.
+            'no license yet' => array(static function () {}, 'off', 'neutral', $notManaged),
+            'license removed' => array(static function () use ($active) { update_option(Sitepulse_Remote_Management::STATE_OPTION, $active + array('last_error' => 'http_403')); }, 'off', 'neutral', $notManaged),
+            'blocked' => array(static function () use ($licensed) { $licensed(); update_option('sitepulse_settings', array('remote_management_blocked' => true)); }, 'blocked', 'warning', 'Blocked: the SitePulse dashboard cannot see or manage the updates and backups of this site.'),
             'failed check-in' => array(static function () use ($ready) { $ready(array('last_error' => 'http_500', 'last_check_in' => 5, 'active' => true)); }, 'error', 'danger', 'The last check-in with SitePulse failed. See the activity below.'),
-            'never checked in' => array(static function () use ($ready) { $ready(); }, 'off', 'neutral', 'Connecting to SitePulse…'),
-            'active' => array(static function () use ($ready) { $ready(array('last_check_in' => 5, 'active' => true)); }, 'active', 'success', 'Active: the SitePulse dashboard can manage the backups and updates of this site.'),
-            'switched on, waiting' => array(static function () use ($ready) { $ready(array('last_check_in' => 5, 'enabled' => true)); }, 'off', 'neutral', 'Turning on at the next check-in.'),
-            'switched off' => array(static function () use ($ready) { $ready(array('last_check_in' => 5)); }, 'off', 'neutral', 'Off. Turn it on for this site in your SitePulse dashboard.'),
+            'not set up' => array(static function () use ($ready) { $ready(); }, 'off', 'neutral', $notManaged),
+            'switched off' => array(static function () use ($ready) { $ready(array('last_check_in' => 5)); }, 'off', 'neutral', $notManaged),
+            'active, with backups' => array(static function () use ($ready, $active) { $ready($active); }, 'active', 'success', 'Active: your SitePulse dashboard manages the updates and backups of this site.'),
+            'active, no backup plugin' => array(static function () use ($licensed, $active) { $licensed(); update_option(Sitepulse_Remote_Management::STATE_OPTION, $active); }, 'active', 'success', 'Active: your SitePulse dashboard manages the updates of this site.'),
+            'active, old UpdraftPlus' => array(static function () use ($licensed, $active) { $licensed(); Sitepulse_Test_Backups::updraftplus('1.25.8'); update_option(Sitepulse_Remote_Management::STATE_OPTION, $active); }, 'active', 'success', 'Active: your SitePulse dashboard manages the updates of this site.'),
         );
     }
 
@@ -597,7 +600,14 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         update_option(Sitepulse_Remote_Management::STATE_OPTION, array());
         Sitepulse_Test_Backups::$backwpup_version = '';
         $view = Sitepulse_Remote_Management::view_data();
-        $this->assertSame(array('None', 'Never'), array($view['provider'], $view['last_check_in']));
+        $this->assertSame(array('None. Install UpdraftPlus or BackWPup to back this site up from your SitePulse dashboard; updates work without one.', 'Never'), array($view['provider'], $view['last_check_in']));
+
+        // A version remote management cannot back up with.
+        Sitepulse_Test_Backups::$backwpup_version = '4.1.7';
+        $this->assertSame('BackWPup 4.1.7. Backups from your SitePulse dashboard need BackWPup 5.', Sitepulse_Remote_Management::view_data()['provider']);
+        Sitepulse_Test_Backups::$backwpup_version = '';
+        Sitepulse_Test_Backups::updraftplus('1.25.8');
+        $this->assertSame('UpdraftPlus 1.25.8. Backups from your SitePulse dashboard need UpdraftPlus 1.26 or later.', Sitepulse_Remote_Management::view_data()['provider']);
     }
 
     /** @dataProvider dashboards */
@@ -639,7 +649,8 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         foreach (array('advanced', 'easy') as $context) {
             ob_start(); Sitepulse_Remote_Management::render_settings($context); $html = ob_get_clean();
             $this->assertStringNotContainsString('<details', $html);
-            $this->assertStringContainsString('Unavailable', $html);
+            $this->assertStringContainsString('Off', $html);
+            $this->assertStringContainsString('Get connection key', $html);
             $this->assertDoesNotMatchRegularExpression('/name="sitepulse_remote_blocked"[^>]*checked/', $html);
         }
 
