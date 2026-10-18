@@ -257,8 +257,8 @@ The dashboard calls these with signed portal requests (see "Dashboard (portal) e
 | `backup_now` | `what`: `full` (default), `database`, `files`, or `plugins` or `themes` (that folder and the database) | 2 |
 | `cancel_backup` | none | 2 |
 | `apply_backup_preset` | `preset_id`, `name`, `preset` (the API fills these from a saved preset) | 2 |
-| `update_plugins` | `plugins` (1–50 plugin files), `backup_first` (default `true`), `backup_wait` (minutes, 5–240, default 60); from a safe update also `backup_parts` (`["plugins"]`) and `safe_update` (its id) | 3, 5 |
-| `update_themes` | `themes` (1–50 stylesheets), `backup_first`, `backup_wait`; from a safe update also `backup_parts` (`["themes"]`) and `safe_update` | 3, 5 |
+| `update_plugins` | `plugins` (1–50 plugin files), `backup_first` (default `true`), `backup_wait` (minutes, 5–240, default 60); from a safe update also `backup_parts` (`["plugins"]`) and `safe_update` (its id); after waiting for a safe update that backed up the plugins, `backup_first: false` and `backup_reused` (see "Safe updates") | 3, 5 |
+| `update_themes` | `themes` (1–50 stylesheets), `backup_first`, `backup_wait`; from a safe update also `backup_parts` (`["themes"]`) and `safe_update`; after waiting for a safe update that backed up the themes, `backup_first: false` and `backup_reused` | 3, 5 |
 | `update_core` | `version`, `backup_first`, `backup_wait` | 3 |
 | `set_auto_updates` | `kind` (`plugin` or `theme`), `items` (1–200), `enabled` | 3 |
 | `restore_backup` | `safe_update`, `provider` (`updraftplus`), `job` (the backup's nonce), `kind` (`plugin` or `theme`), `item` | 5 |
@@ -318,7 +318,7 @@ Result: `done` when every item is up to date afterwards, otherwise `failed` with
 - **Redelivery:** a command that was never delivered is queued again for another 15 minutes, up to 3 attempts (`attempts`), within 45 minutes of its creation. After that, it expires, so an old request never comes back to life.
 - **No answer:** a delivered command without a result expires with `no_result` after 1 hour, or 6 hours for update and recovery (`restore_backup`, `rollback_item`) commands. Such a command is never resent automatically, because the site may have run it.
 - **Retry:** `commands/retry` queues a copy of a `failed`, `expired` or `cancelled` command as a new command with `retry_of` set to the original.
-- **One update at a time:** a site runs one update or recovery command at a time (the plugin answers `update_running` to another), so a check-in delivers at most one of them, and none while another is `sent` or `running`. Update commands waiting their turn stay `queued`, oldest first, and their 15 minutes start again at each check-in, so they wait as long as the update before them takes; they expire only when the site stops checking in. Other commands are delivered as usual.
+- **One update at a time:** a site runs one update or recovery command at a time (the plugin answers `update_running` to another), so a check-in delivers at most one of them, and none while another is `sent` or `running`. Update commands waiting their turn stay `queued`, oldest first, and their 15 minutes start again at each check-in, so they wait as long as the update before them takes; they expire only when the site stops checking in. A safe update that runs or waits for a choice holds the other update and recovery commands the same way (see "Safe updates"). Other commands are delivered as usual.
 
 A command expires 15 minutes after it is created unless it was delivered. The plugin runs up to 20 commands per check-in, in WordPress's background (cron) request. It remembers the ids of the last 50 commands so it never runs one twice, answers `expired` for a command whose `expires_at` has passed, and answers `unsupported_command` for types it does not know.
 
@@ -346,7 +346,7 @@ A safe update updates one plugin or theme between two visual scans of the site, 
 | `after_check_failed` | The scan after the update did not finish within 30 minutes, or the site updated without waiting for the scan before it; the update stays, and can still be undone |
 | `not_queued` | The update command could not be queued |
 
-A site runs one safe update at a time, and the API queues no automatic update while one runs. The API gives up on a scan that has not finished after 30 minutes and on a command that expired, in its 15-minute check.
+A site runs one safe update at a time, and a new one waits until the last one is no longer waiting for a choice. While a safe update runs or waits for the user's choice, it holds the site's other updates and recoveries: they stay `queued` (their 15 minutes start again at each check-in) until it is done, so its scans compare only its own update, and restoring its backup never puts the database back under an update made since; the API also queues no automatic update meanwhile. A plugin or theme update that waited for a safe update which backed up the same folder (and the database) before it makes no backup of its own: the API delivers it with `backup_first: false` and `backup_reused: { "provider", "job", "safe_update" }`, the safe update's backup. The API gives up on a scan that has not finished after 30 minutes and on a command that expired, in its 15-minute check.
 
 **Recovery commands.** The plugin runs them in WordPress cron, like updates, reports them `running`, then `done` or `failed`. Both answer `invalid_arguments`, `update_running` (an update or another recovery runs), `cannot_update` (WordPress may not write files without FTP credentials) and `interrupted` (the request running it stopped before it finished, for example at a PHP time limit; it is not run again):
 
@@ -381,7 +381,7 @@ The SitePulse dashboard calls these from trusted IPs with the existing portal au
 | `POST /api/portal/remote-management/update-policy` | — | The site's update policy (defaults until it is changed) |
 | `POST /api/portal/remote-management/update-policy/save` | `policy` (the update policy format), `requested_by` | Change the site's update policy |
 | `POST /api/portal/remote-management/events` | `limit` (≤ 100), `before` (event time) | Event history, newest first |
-| `POST /api/portal/remote-management/commands` | `limit` (≤ 100) | Recent commands and their results, with `progress` and `progress_at` as the site last reported them (see `command-progress`) |
+| `POST /api/portal/remote-management/commands` | `limit` (≤ 100) | Recent commands and their results, with `progress` and `progress_at` as the site last reported them (see `command-progress`), and `held_by` (`{ "id", "name", "status" }` of the safe update a queued update or recovery waits for, or `null`) |
 | `POST /api/portal/remote-management/commands/create` | `type`, `args`, `requested_by` | Queue a command (requires `active`); `apply_backup_preset` takes `args.preset_id`, a preset owned by `requested_by` |
 | `POST /api/portal/remote-management/commands/cancel` | `id`, `requested_by` | Cancel a command that was not delivered yet |
 | `POST /api/portal/remote-management/commands/retry` | `id`, `requested_by` | Queue a copy of a `failed`, `expired` or `cancelled` command (requires `active`) |
@@ -396,7 +396,7 @@ The SitePulse dashboard calls these from trusted IPs with the existing portal au
 | `POST /api/portal/remote-management/updates/overview` | `sites` (1–100 `{ "domain", "license_key" }`) | The updates each site offers, see "Updates across sites" |
 | `POST /api/portal/remote-management/updates/queue` | `sites`, `requested_by`, `plugins` (files), `themes` (stylesheets), `core` (boolean) | Queue the chosen updates on every site that offers them, see "Updates across sites" |
 | `POST /api/portal/remote-management/safe-updates` | `limit` (≤ 50, default 10) | The site's safe updates, newest first |
-| `POST /api/portal/remote-management/safe-updates/create` | `kind` (`plugin` or `theme`), `item` (file or stylesheet), `requested_by` | Start a safe update (see "Safe updates"); 409 with a message when the site is not active, its SitePulse plugin does not run safe updates yet (no `safe_update` in its check-in `features`), runs one already, or offers no installable update for the item |
+| `POST /api/portal/remote-management/safe-updates/create` | `kind` (`plugin` or `theme`), `item` (file or stylesheet), `requested_by` | Start a safe update (see "Safe updates"); 409 with a message when the site is not active, its SitePulse plugin does not run safe updates yet (no `safe_update` in its check-in `features`), runs one already or has one waiting for a choice, or offers no installable update for the item |
 | `POST /api/portal/remote-management/safe-updates/show` | `id` | A safe update with `pages`: each page of its scan after the update, the big changes first, with `url`, `status`, `diff_percent`, `big`, `error`, and `images` (`before`, `after`, `diff`: public URLs, `null` when missing or expired) |
 | `POST /api/portal/remote-management/safe-updates/keep` | `id`, `requested_by` | Keep the update after a big change |
 | `POST /api/portal/remote-management/safe-updates/recover` | `id`, `requested_by` | Restore the backup taken before the update, or roll it back (`recovery` says which) |
