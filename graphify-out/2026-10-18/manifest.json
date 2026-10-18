@@ -1116,9 +1116,9 @@
     "semantic_hash": ""
   },
   "tests/php/RemoteUpdatesTest.php": {
-    "mtime": 1792360176.436375,
-    "seen": 1792361201.8177752,
-    "ast_hash": "fdf83c07339c8dcf360b39c472b6d842",
+    "mtime": 1792362403.5707517,
+    "seen": 1792362430.9682395,
+    "ast_hash": "76ce404b8612ab108590fdaf29c731a7",
     "semantic_hash": ""
   },
   "class/remote_activity.php": {
