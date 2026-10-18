@@ -96,12 +96,12 @@ final class RemoteBackupCommandsTest extends Sitepulse_Test_Case {
     }
 
     /** @dataProvider updraftplusBackups */
-    public function test_updraftplus_backup_now_queues_its_own_backup_in_cron(array $args, string $hook, string $what): void {
+    public function test_updraftplus_backup_now_queues_its_own_backup_in_cron(array $args, string $hook, string $what, array $options = array()): void {
         $this->updraftplus();
 
         $this->assertSame(array('status' => 'done', 'result' => array('provider' => 'updraftplus', 'what' => $what, 'job' => 'abc123def456'), 'error' => null), $this->run_command('backup_now', $args));
 
-        $this->assertEquals(array((object) array('timestamp' => Sitepulse_Test_WP::$scheduled[0]->timestamp, 'schedule' => false, 'hook' => $hook, 'args' => array(array('nocloud' => false, 'use_nonce' => 'abc123def456', 'label' => 'SitePulse', 'always_keep' => false)))), Sitepulse_Test_WP::$scheduled);
+        $this->assertEquals(array((object) array('timestamp' => Sitepulse_Test_WP::$scheduled[0]->timestamp, 'schedule' => false, 'hook' => $hook, 'args' => array(array('nocloud' => false, 'use_nonce' => 'abc123def456', 'label' => 'SitePulse', 'always_keep' => false) + $options))), Sitepulse_Test_WP::$scheduled);
         $this->assertEqualsWithDelta(time(), Sitepulse_Test_WP::$scheduled[0]->timestamp, 2);
     }
 
@@ -110,6 +110,8 @@ final class RemoteBackupCommandsTest extends Sitepulse_Test_Case {
             'full by default' => array(array(), 'updraft_backupnow_backup_all', 'full'),
             'database' => array(array('what' => 'database'), 'updraft_backupnow_backup_database', 'database'),
             'files' => array(array('what' => 'files'), 'updraft_backupnow_backup', 'files'),
+            'the plugins and the database' => array(array('what' => 'plugins'), 'updraft_backupnow_backup_all', 'plugins', array('restrict_files_to_override' => array('plugins'))),
+            'the themes and the database' => array(array('what' => 'themes'), 'updraft_backupnow_backup_all', 'themes', array('restrict_files_to_override' => array('themes'))),
         );
     }
 
@@ -234,6 +236,23 @@ final class RemoteBackupCommandsTest extends Sitepulse_Test_Case {
 
         $this->assertSame(4, $this->run_command('backup_now')['result']['job'], 'The same job is reused.');
         $this->assertSame(array('FILE', 'DBDUMP', 'WPPLUGIN'), Sitepulse_Test_Backups::$jobs[4]['type']);
+    }
+
+    public function test_backwpup_backs_up_one_folder_with_the_database(): void {
+        $this->backwpup();
+        $folders = static function (): array {
+            return array_intersect_key(Sitepulse_Test_Backups::$jobs[1], array_flip(Sitepulse_Remote_Backups::BACKWPUP_FOLDERS));
+        };
+
+        $this->assertSame(array('provider' => 'backwpup', 'what' => 'themes', 'job' => 1), $this->run_command('backup_now', array('what' => 'themes'))['result']);
+        $this->assertSame(array('FILE', 'DBDUMP', 'WPPLUGIN'), Sitepulse_Test_Backups::$jobs[1]['type']);
+        $this->assertSame(array('backuproot' => false, 'backupcontent' => false, 'backupplugins' => false, 'backupthemes' => true, 'backupuploads' => false, 'backupspecialfiles' => false), $folders());
+
+        $this->run_command('backup_now', array('what' => 'plugins'));
+        $this->assertSame(array('backupplugins' => true, 'backupthemes' => false), array_intersect_key($folders(), array_flip(array('backupplugins', 'backupthemes'))));
+
+        $this->run_command('backup_now');
+        $this->assertSame(array_fill_keys(Sitepulse_Remote_Backups::BACKWPUP_FOLDERS, true), $folders(), 'A full backup saves every folder again.');
     }
 
     public function test_backwpup_backup_now_reports_a_job_that_did_not_start(): void {

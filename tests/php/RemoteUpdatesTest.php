@@ -95,6 +95,11 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
             'too many themes' => array('update_themes', array('themes' => array_map(static function ($i) { return "t$i"; }, range(1, 51)))),
             'backup wait too short' => array('update_themes', array('themes' => array('astra'), 'backup_wait' => 4)),
             'backup wait as text' => array('update_themes', array('themes' => array('astra'), 'backup_wait' => '60')),
+            'backup of the uploads' => array('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_parts' => array('uploads'))),
+            'backup of two folders' => array('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_parts' => array('plugins', 'themes'))),
+            'backup parts as text' => array('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_parts' => 'plugins')),
+            'empty safe update' => array('update_plugins', array('plugins' => array('seo/seo.php'), 'safe_update' => '')),
+            'safe update not text' => array('update_themes', array('themes' => array('astra'), 'safe_update' => 7)),
             'no version' => array('update_core', array()),
             'unknown kind' => array('set_auto_updates', array('kind' => 'core', 'items' => array('x'), 'enabled' => true)),
             'no items' => array('set_auto_updates', array('kind' => 'plugin', 'items' => array(), 'enabled' => true)),
@@ -508,6 +513,99 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
 
         $this->assertNull($this->job()['backup']);
         $this->assertEqualsWithDelta(time() + 60, wp_next_scheduled(Sitepulse_Remote_Updates::JOB_HOOK), 2);
+    }
+
+    private function safeUpdate(array $args = array()): void {
+        $this->plugin('seo/seo.php', '1.0');
+        $this->offer('plugin', 'seo/seo.php', '1.1');
+        Sitepulse_Test_Upgrades::$outcomes['plugin:seo/seo.php'] = function () { $this->plugin('seo/seo.php', '1.1'); return true; };
+        $this->start('update_plugins', $args + array('plugins' => array('seo/seo.php'), 'backup_parts' => array('plugins'), 'safe_update' => '01JSAFE0000000000000000000'));
+    }
+
+    /** The API's answer while it scans the site before a safe update. */
+    private function gate(bool $proceed, bool $stop = false): void {
+        Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_response(array('success' => true, 'proceed' => $proceed, 'stop' => $stop));
+    }
+
+    public function test_a_safe_update_backs_up_its_folder_then_waits_for_the_visual_check(): void {
+        Sitepulse_Test_Backups::updraftplus();
+        $this->safeUpdate();
+        $this->assertSame(array('plugins', '01JSAFE0000000000000000000', 'backup'), array($this->job()['backup_what'], $this->job()['safe_update'], $this->job()['phase']));
+
+        Sitepulse_Remote_Updates::run_job();
+        $this->assertSame(array('updraft_backupnow_backup_all', array('plugins')), array(Sitepulse_Test_WP::$scheduled[0]->hook, Sitepulse_Test_WP::$scheduled[0]->args[0]['restrict_files_to_override']), 'The plugins and the database.');
+
+        update_option('updraft_last_backup', array('backup_time' => time() + 1, 'success' => 1));
+        $this->gate(false);
+        Sitepulse_Remote_Updates::run_job();
+
+        $this->assertSame('visual', $this->job()['phase']);
+        $this->assertSame(array('safe-update', array('command' => '01JUPDATE00000000000000000')), array(sitepulse_test_remote_endpoint(0), sitepulse_test_remote_request_body(0)));
+        $this->assertEqualsWithDelta(time() + 30, wp_next_scheduled(Sitepulse_Remote_Updates::JOB_HOOK), 2, 'The API is asked again in 30 seconds.');
+        $this->assertSame(array(), $this->upgrades());
+        $this->assertSame('visual', Sitepulse_Remote_Updates::job_status()['phase']);
+
+        $this->gate(true);
+        $this->api();
+        Sitepulse_Remote_Updates::run_job();
+
+        $result = $this->results();
+        $this->assertSame(array('done', array('provider' => 'updraftplus', 'job' => 'abc123def456'), true), array($result['status'], $result['result']['backup'], $result['result']['items'][0]['ok']));
+        $this->assertSame(array('safe-update', 'safe-update', 'command-result'), array_map('sitepulse_test_remote_endpoint', array_keys(array_filter(Sitepulse_Test_WP::$http_requests, static function ($request) { return false !== strpos($request['url'], '/remote/'); }))));
+    }
+
+    public function test_a_safe_update_without_a_backup_plugin_starts_with_the_visual_check(): void {
+        $this->safeUpdate();
+        $this->assertSame(array('visual', 'no_backup_plugin'), array($this->job()['phase'], $this->job()['backup_skipped']));
+        $this->gate(true);
+        $this->api();
+
+        Sitepulse_Remote_Updates::run_job();
+
+        $this->assertSame(array('done', null, 'no_backup_plugin'), array($this->results()['status'], $this->results()['result']['backup'], $this->results()['result']['backup_skipped']));
+    }
+
+    /** @dataProvider stoppedVisualChecks */
+    public function test_nothing_is_updated_when_the_visual_check_stops_it(callable $setup, string $error): void {
+        $this->safeUpdate(array('backup_first' => false));
+        $setup($this);
+        $this->api();
+
+        Sitepulse_Remote_Updates::run_job();
+
+        $result = $this->results();
+        $this->assertSame(array('failed', $error, 'skipped'), array($result['status'], $result['error'], $result['result']['items'][0]['error']));
+        $this->assertSame(array(), $this->upgrades());
+        $this->assertSame(array(), $this->pageChecks(), 'Not even the baseline.');
+    }
+
+    public static function stoppedVisualChecks(): array {
+        $since = static function (int $seconds) { update_option(Sitepulse_Remote_Updates::JOB_OPTION, array_replace(get_option(Sitepulse_Remote_Updates::JOB_OPTION), array('visual_since' => time() - $seconds))); };
+        return array(
+            'the scan failed' => array(static function (self $test) { $test->gate(false, true); }, 'visual_check_failed'),
+            'the scan took too long' => array(static function (self $test) use ($since) { $since(1800); $test->gate(false); }, 'visual_check_timeout'),
+            'the API was unreachable all along' => array(static function () use ($since) { $since(1800); Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_response(array('success' => false), 503); }, 'visual_check_timeout'),
+        );
+    }
+
+    public function test_the_visual_check_waits_while_the_api_cannot_be_asked(): void {
+        $this->safeUpdate(array('backup_first' => false));
+        Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_response(array('success' => false), 503);
+        Sitepulse_Remote_Updates::run_job();
+        $this->assertSame('visual', $this->job()['phase']);
+
+        delete_option('sitepulse_license_key');
+        Sitepulse_Remote_Updates::run_job();
+
+        $this->assertSame('visual', $this->job()['phase']);
+        $this->assertCount(1, Sitepulse_Test_WP::$http_requests, 'A site that cannot connect does not ask.');
+        $this->assertEqualsWithDelta(time() + 30, wp_next_scheduled(Sitepulse_Remote_Updates::JOB_HOOK), 2);
+    }
+
+    public function test_an_update_waits_for_a_running_recovery(): void {
+        update_option(Sitepulse_Remote_Recovery::JOB_OPTION, array('command' => '01JRESTORE0000000000000000', 'type' => 'rollback_item', 'args' => array(), 'started' => true));
+        $this->assertSame('update_running', $this->start('update_plugins', array('plugins' => array('seo/seo.php')))['error']);
+        $this->assertNull($this->job());
     }
 
     public function test_an_interrupted_update_is_restored_and_the_site_leaves_maintenance_mode(): void {

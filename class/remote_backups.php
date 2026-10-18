@@ -47,7 +47,12 @@ class Sitepulse_Remote_Backups {
 		'full'     => 'updraft_backupnow_backup_all',
 		'files'    => 'updraft_backupnow_backup',
 		'database' => 'updraft_backupnow_backup_database',
+		'plugins'  => 'updraft_backupnow_backup_all',
+		'themes'   => 'updraft_backupnow_backup_all',
 	);
+
+	/** Backups of one folder, which also save the database (a safe update backs up what it updates). */
+	const FOLDER_BACKUPS = array( 'plugins', 'themes' );
 
 	/** UpdraftPlus settings of the parts a files backup includes. */
 	const UPDRAFTPLUS_PARTS = array(
@@ -64,6 +69,9 @@ class Sitepulse_Remote_Backups {
 		'uploads' => 'backupuploads',
 		'other'   => 'backupcontent',
 	);
+
+	/** BackWPup job settings of every folder a files backup can save. */
+	const BACKWPUP_FOLDERS = array( 'backuproot', 'backupcontent', 'backupplugins', 'backupthemes', 'backupuploads', 'backupspecialfiles' );
 
 	/** Preset frequencies from least to most frequent; manual turns a schedule off. */
 	const PRESET_FREQUENCIES = array( 'manual', 'monthly', 'weekly', 'daily' );
@@ -366,7 +374,7 @@ class Sitepulse_Remote_Backups {
 	private static function updraftplus_queued() {
 		$queued = array();
 		foreach ( (array) _get_cron_array() as $timestamp => $hooks ) {
-			foreach ( self::UPDRAFTPLUS_BACKUP_NOW as $hook ) {
+			foreach ( array_unique( self::UPDRAFTPLUS_BACKUP_NOW ) as $hook ) {
 				foreach ( (array) ( $hooks[ $hook ] ?? array() ) as $event ) {
 					$queued[] = array( $timestamp, $hook, $event['args'] ?? array() );
 				}
@@ -380,7 +388,7 @@ class Sitepulse_Remote_Backups {
 	 * Queue UpdraftPlus's own "Backup Now" in WordPress cron, so the check-in is not held up
 	 * while the backup runs. It uses the storage set up in UpdraftPlus.
 	 *
-	 * @param string $what full, files or database.
+	 * @param string $what full, files, database, plugins or themes.
 	 * @return array|string Result, or an error code.
 	 */
 	private static function updraftplus_backup_now( $what ) {
@@ -388,19 +396,18 @@ class Sitepulse_Remote_Backups {
 			return 'backup_running';
 		}
 
-		$nonce = $GLOBALS['updraftplus']->backup_time_nonce();
-		wp_schedule_single_event(
-			time(),
-			self::UPDRAFTPLUS_BACKUP_NOW[ $what ],
-			array(
-				array(
-					'nocloud'     => false,
-					'use_nonce'   => $nonce,
-					'label'       => 'SitePulse',
-					'always_keep' => false,
-				),
-			)
+		$nonce   = $GLOBALS['updraftplus']->backup_time_nonce();
+		$options = array(
+			'nocloud'     => false,
+			'use_nonce'   => $nonce,
+			'label'       => 'SitePulse',
+			'always_keep' => false,
 		);
+		// Like UpdraftPlus's "Backup Now" with only that folder ticked, with the database.
+		if ( in_array( $what, self::FOLDER_BACKUPS, true ) ) {
+			$options['restrict_files_to_override'] = array( $what );
+		}
+		wp_schedule_single_event( time(), self::UPDRAFTPLUS_BACKUP_NOW[ $what ], array( $options ) );
 
 		return array(
 			'what' => $what,
@@ -734,7 +741,7 @@ class Sitepulse_Remote_Backups {
 	/**
 	 * Run BackWPup's own "Backup Now" job, which keeps the archive on this server like its button.
 	 *
-	 * @param string $what full, files or database.
+	 * @param string $what full, files, database, plugins or themes.
 	 * @return array|string Result, or an error code.
 	 */
 	private static function backwpup_backup_now( $what ) {
@@ -767,7 +774,7 @@ class Sitepulse_Remote_Backups {
 	/**
 	 * Prepare BackWPup's "Backup Now" job with the settings its own button uses.
 	 *
-	 * @param string $what full, files or database.
+	 * @param string $what full, files, database, plugins or themes.
 	 * @return int Job id.
 	 */
 	private static function backwpup_backup_now_job( $what ) {
@@ -781,6 +788,8 @@ class Sitepulse_Remote_Backups {
 			'full'     => BackWPup_JobTypes::$type_job_both,
 			'files'    => BackWPup_JobTypes::$type_job_files,
 			'database' => BackWPup_JobTypes::$type_job_database,
+			'plugins'  => BackWPup_JobTypes::$type_job_both,
+			'themes'   => BackWPup_JobTypes::$type_job_both,
 		);
 		$settings = array_merge(
 			BackWPup_Option::defaults_job(),
@@ -796,6 +805,10 @@ class Sitepulse_Remote_Backups {
 				'backup_now'         => true,
 			)
 		);
+		// A folder backup saves only that folder with the database; the others save every folder.
+		foreach ( self::BACKWPUP_FOLDERS as $option ) {
+			$settings[ $option ] = ! in_array( $what, self::FOLDER_BACKUPS, true ) || self::BACKWPUP_PARTS[ $what ] === $option;
+		}
 		foreach ( $settings as $key => $value ) {
 			BackWPup_Option::update( $job_id, $key, $value );
 		}

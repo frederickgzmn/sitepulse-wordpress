@@ -311,6 +311,7 @@ function add_menu_page($page_title, $menu_title, $capability, $menu_slug, $callb
 function WP_Filesystem($args = false, $context = false, $allow_relaxed_file_ownership = false) { $GLOBALS['wp_filesystem'] = Sitepulse_Test_WP::$filesystem_factory ? call_user_func(Sitepulse_Test_WP::$filesystem_factory) : new Sitepulse_Test_Filesystem(); return (bool) $GLOBALS['wp_filesystem']; }
 function maybe_unserialize($data) { return is_string($data) && preg_match('/^(a|O|s|i|d|b):|^N;/', $data) ? unserialize($data) : $data; }
 function wp_cache_delete($key, $group = '') { Sitepulse_Test_WP::$cache_deletes[] = array($key, $group); return true; }
+function wp_cache_flush() { Sitepulse_Test_WP::$cache_deletes[] = array('*', 'flush'); return true; }
 
 function is_email($email) { return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : false; }
 function delete_metadata($meta_type, $object_id, $meta_key, $meta_value = '', $delete_all = false) {

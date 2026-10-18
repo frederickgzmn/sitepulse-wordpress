@@ -214,6 +214,7 @@ require_once SITEPULSE_CLASS_PATH . 'remote_events.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_health.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_activity.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_updates.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_recovery.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_management.php';
 
 class Sitepulse_Loader {
@@ -333,6 +334,7 @@ class Sitepulse_Loader {
 		// Stop checking in with the SitePulse dashboard and running its updates
 		Sitepulse_Remote_Management::unschedule();
 		Sitepulse_Remote_Updates::unschedule();
+		Sitepulse_Remote_Recovery::unschedule();
 	}
 
 	/**
