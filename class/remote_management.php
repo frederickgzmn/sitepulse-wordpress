@@ -60,6 +60,9 @@ class Sitepulse_Remote_Management {
 	/** Version of the request bodies. */
 	const SCHEMA = 1;
 
+	/** What this version runs beyond the base commands, reported at check-in: the API offers safe updates only to sites that report safe_update. */
+	const FEATURES = array( 'safe_update' );
+
 	/** Seconds until the first check-in once the site can connect. */
 	const FIRST_CHECK_IN_DELAY = 60;
 
@@ -290,6 +293,7 @@ class Sitepulse_Remote_Management {
 				'backup_provider'  => $provider,
 				'backup_providers' => Sitepulse_Remote_Backups::providers(),
 				'cron'             => self::cron_health(),
+				'features'         => self::FEATURES,
 			)
 		);
 

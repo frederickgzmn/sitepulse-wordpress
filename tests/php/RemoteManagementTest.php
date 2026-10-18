@@ -107,7 +107,7 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         Sitepulse_Remote_Management::check_in();
 
         $this->assertSame(array('check-in'), $this->endpoints());
-        $this->assertSame(array('schema' => 1, 'plugin_version' => SITEPULSE_VERSION, 'wp_version' => '6.8', 'blocked' => false, 'backup_provider' => null, 'backup_providers' => array(), 'cron' => array('url' => site_url('wp-cron.php'), 'disabled' => false, 'late' => 0)), sitepulse_test_remote_request_body(0));
+        $this->assertSame(array('schema' => 1, 'plugin_version' => SITEPULSE_VERSION, 'wp_version' => '6.8', 'blocked' => false, 'backup_provider' => null, 'backup_providers' => array(), 'cron' => array('url' => site_url('wp-cron.php'), 'disabled' => false, 'late' => 0), 'features' => array('safe_update')), sitepulse_test_remote_request_body(0));
         $state = Sitepulse_Remote_Management::state();
         $this->assertFalse($state['enabled']);
         $this->assertFalse($state['active']);
