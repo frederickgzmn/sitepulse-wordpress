@@ -253,13 +253,17 @@ The dashboard calls these with signed portal requests (see "Dashboard (portal) e
 | Type | `args` | Phase |
 |---|---|---|
 | `refresh_inventory` | none | 1 |
-| `backup_now` | `what`: `full` (default), `database` or `files` | 2 |
+| `backup_now` | `what`: `full` (default), `database`, `files`, or `plugins` or `themes` (that folder and the database) | 2 |
 | `cancel_backup` | none | 2 |
 | `apply_backup_preset` | `preset_id`, `name`, `preset` (the API fills these from a saved preset) | 2 |
-| `update_plugins` | `plugins` (1–50 plugin files), `backup_first` (default `true`), `backup_wait` (minutes, 5–240, default 60) | 3 |
-| `update_themes` | `themes` (1–50 stylesheets), `backup_first`, `backup_wait` | 3 |
+| `update_plugins` | `plugins` (1–50 plugin files), `backup_first` (default `true`), `backup_wait` (minutes, 5–240, default 60); from a safe update also `backup_parts` (`["plugins"]`) and `safe_update` (its id) | 3, 5 |
+| `update_themes` | `themes` (1–50 stylesheets), `backup_first`, `backup_wait`; from a safe update also `backup_parts` (`["themes"]`) and `safe_update` | 3, 5 |
 | `update_core` | `version`, `backup_first`, `backup_wait` | 3 |
 | `set_auto_updates` | `kind` (`plugin` or `theme`), `items` (1–200), `enabled` | 3 |
+| `restore_backup` | `safe_update`, `provider` (`updraftplus`), `job` (the backup's nonce), `kind` (`plugin` or `theme`), `item` | 5 |
+| `rollback_item` | `safe_update`, `kind`, `item`, `version` (the version installed before the safe update) | 5 |
+
+Only a safe update queues `restore_backup` and `rollback_item` (see "Safe updates"); `commands/create` does not accept them.
 
 ### Backup commands
 
@@ -271,8 +275,8 @@ All three answer `no_backup_plugin` when no supported backup plugin is active (t
 | `cancel_backup` | `cancelled`: how many running or queued backups were stopped (0 when none) | |
 | `apply_backup_preset` | `preset`: its name, `schedules`: the backup schedules afterwards (as in the inventory), `created`: BackWPup jobs created | `invalid_preset` |
 
-- **UpdraftPlus** `backup_now` queues UpdraftPlus's own "Backup Now" (labelled "SitePulse") as a one-off WordPress cron event, so it starts at the next cron run and uses the storage set up in UpdraftPlus. `cancel_backup` stops running jobs the way UpdraftPlus's "Delete" link does and removes backups SitePulse queued that have not started.
-- **BackWPup** `backup_now` runs BackWPup's own "Backup Now" job, which, like its button, keeps the archive on this server. `cancel_backup` aborts the running job.
+- **UpdraftPlus** `backup_now` queues UpdraftPlus's own "Backup Now" (labelled "SitePulse") as a one-off WordPress cron event, so it starts at the next cron run and uses the storage set up in UpdraftPlus. `plugins` and `themes` back up the database and only that folder. `cancel_backup` stops running jobs the way UpdraftPlus's "Delete" link does and removes backups SitePulse queued that have not started.
+- **BackWPup** `backup_now` runs BackWPup's own "Backup Now" job, which, like its button, keeps the archive on this server; for `plugins` and `themes` the job saves the database and only that folder. `cancel_backup` aborts the running job.
 
 ### Backup preset format
 
@@ -293,10 +297,11 @@ All three answer `no_backup_plugin` when no supported backup plugin is active (t
 Updates always run through WordPress's own upgrader, so packages come from WordPress.org or a premium plugin's own updater, exactly as in wp-admin; api.sitepulse.me never sends code. An update command is answered when the whole update is done or has failed, usually within minutes; the API waits up to 6 hours for the result of an update command (1 hour for other commands), and the inventory's `updates.job` shows its progress meanwhile. The plugin runs one update at a time, in WordPress cron requests:
 
 1. **Checks.** WordPress may change files without FTP credentials (`cannot_update`), `wp-content` has at least 100 MB free (`not_enough_disk`), no other SitePulse update is running (`update_running`), and the arguments are valid (`invalid_arguments`).
-2. **Backup first** (when `backup_first`): a full backup with the managed backup plugin, as `backup_now` makes it. Nothing is updated when the backup fails (`backup_failed`) or takes longer than `backup_wait` minutes (`backup_timeout`). Updates do not need a backup plugin: the API queues `backup_first: false` for a site that reported no supported one, and the plugin skips the backup when none is active as the update starts (`backup_skipped` in the result).
-3. **Health baseline.** The plugin loads the home page, wp-admin and, with WooCommerce, the cart and checkout pages, using WordPress's own fatal-error check (the "scrape" request the plugin editor uses). A site that already fails is not updated (`site_unhealthy`), nor a site that cannot load its own home page, because its updates could not be checked (`health_check_unavailable`, typically a host that blocks such "loopback" requests).
-4. **One item at a time.** WordPress's upgrader installs the update offered for the item, with maintenance mode only while files are replaced. Then the same pages are loaded again. The update fails its health check when a page shows a PHP fatal error (in any code, such as another plugin that relied on the updated one), answers with a 5xx status it did not have before, stops answering, ends before WordPress's error check can report (where it reported before; a PHP fatal error can end a page that way), or SitePulse's error log records a fatal error in the updated plugin's, theme's or WordPress's files. A plugin or theme that fails is rolled back to its previous version (WordPress 6.3 and later keep a copy during the update) and the remaining items are skipped. WordPress core cannot be rolled back automatically. When the site administrator blocks remote management while an update runs, the items not updated yet are skipped (`blocked`).
-5. **Interrupted updates.** When the request updating an item stops before it finishes (a PHP time limit or a fatal error), WordPress still runs its shutdown actions, and SitePulse uses them first:
+2. **Backup first** (when `backup_first`): a full backup with the managed backup plugin, as `backup_now` makes it, or with `backup_parts` the database and those folders (`plugins` or `themes`). Nothing is updated when the backup fails (`backup_failed`) or takes longer than `backup_wait` minutes (`backup_timeout`). Updates do not need a backup plugin: the API queues `backup_first: false` for a site that reported no supported one, and the plugin skips the backup when none is active as the update starts (`backup_skipped` in the result).
+3. **Visual check first** (a safe update's command, with `safe_update`): the plugin asks `POST /api/website/remote/safe-update` whether it may update, every 30 seconds for up to 30 minutes, until the API's visual scan before the update has finished. It asks again while the API cannot be reached. Nothing is updated when the API says to stop (`visual_check_failed`) or the wait runs out (`visual_check_timeout`).
+4. **Health baseline.** The plugin loads the home page, wp-admin and, with WooCommerce, the cart and checkout pages, using WordPress's own fatal-error check (the "scrape" request the plugin editor uses). A site that already fails is not updated (`site_unhealthy`), nor a site that cannot load its own home page, because its updates could not be checked (`health_check_unavailable`, typically a host that blocks such "loopback" requests).
+5. **One item at a time.** WordPress's upgrader installs the update offered for the item, with maintenance mode only while files are replaced. Then the same pages are loaded again. The update fails its health check when a page shows a PHP fatal error (in any code, such as another plugin that relied on the updated one), answers with a 5xx status it did not have before, stops answering, ends before WordPress's error check can report (where it reported before; a PHP fatal error can end a page that way), or SitePulse's error log records a fatal error in the updated plugin's, theme's or WordPress's files. A plugin or theme that fails is rolled back to its previous version (WordPress 6.3 and later keep a copy during the update) and the remaining items are skipped. WordPress core cannot be rolled back automatically. When the site administrator blocks remote management while an update runs, the items not updated yet are skipped (`blocked`).
+6. **Interrupted updates.** When the request updating an item stops before it finishes (a PHP time limit or a fatal error), WordPress still runs its shutdown actions, and SitePulse uses them first:
    - it leaves maintenance mode;
    - it restores the item from WordPress's temporary backup before WordPress deletes that backup;
    - it frees the update for its next step.
@@ -310,11 +315,46 @@ Result: `done` when every item is up to date afterwards, otherwise `failed` with
 **Command states.** `queued` → `sent` (delivered at a check-in) → `running` (started; update commands only) → `done` or `failed`; or `expired` and `cancelled`. Each command records `requested_by`, `attempts`, `started_at` and `retry_of`.
 
 - **Redelivery:** a command that was never delivered is queued again for another 15 minutes, up to 3 attempts (`attempts`), within 45 minutes of its creation. After that, it expires, so an old request never comes back to life.
-- **No answer:** a delivered command without a result expires with `no_result` after 1 hour, or 6 hours for update commands. Such a command is never resent automatically, because the site may have run it.
+- **No answer:** a delivered command without a result expires with `no_result` after 1 hour, or 6 hours for update and recovery (`restore_backup`, `rollback_item`) commands. Such a command is never resent automatically, because the site may have run it.
 - **Retry:** `commands/retry` queues a copy of a `failed`, `expired` or `cancelled` command as a new command with `retry_of` set to the original.
-- **One update at a time:** a site runs one update command at a time (the plugin answers `update_running` to another), so a check-in delivers at most one update command, and none while another is `sent` or `running`. Update commands waiting their turn stay `queued`, oldest first, and their 15 minutes start again at each check-in, so they wait as long as the update before them takes; they expire only when the site stops checking in. Other commands are delivered as usual.
+- **One update at a time:** a site runs one update or recovery command at a time (the plugin answers `update_running` to another), so a check-in delivers at most one of them, and none while another is `sent` or `running`. Update commands waiting their turn stay `queued`, oldest first, and their 15 minutes start again at each check-in, so they wait as long as the update before them takes; they expire only when the site stops checking in. Other commands are delivered as usual.
 
 A command expires 15 minutes after it is created unless it was delivered. The plugin runs up to 20 commands per check-in, in WordPress's background (cron) request. It remembers the ids of the last 50 commands so it never runs one twice, answers `expired` for a command whose `expires_at` has passed, and answers `unsupported_command` for types it does not know.
+
+### Safe updates
+
+A safe update updates one plugin or theme between two visual scans of the site, after a backup, so the dashboard can show what the update changed and undo it:
+
+1. **Before.** The dashboard asks for it (`safe-updates/create`). At the same time:
+   - the API scans the site's visual monitoring pages (the home page when it monitors none yet, even while its scheduled scans are off) on a comparison branch of the safe update's own, so that branch's baselines are the site right before the update;
+   - the API queues the update command, with `backup_parts` (`plugins` or `themes`) and `safe_update`, so the site backs up that folder and the database while the scan runs. A site without a supported backup plugin updates without a backup.
+2. **Update.** Once its backup is done, the site waits for the scan (see "Update commands", step 3), then updates as any update command does, with the health checks and the rollback of a plugin or theme that breaks a page.
+3. **After.** When the update command is done, the API scans the same pages on the same branch, so each page is compared with its capture before the update.
+4. **Verdict.** `passed` when no page changed by 20% or more of its pixels. Otherwise `changed`: a page changed by 20% or more, or a page that loaded before no longer does. The API sends the `visual_change` notification, and the dashboard shows each page before and after the update, with its differences, and offers:
+   - **Keep the update** (`safe-updates/keep`);
+   - **Restore** (`safe-updates/recover`): with a backup UpdraftPlus made, the API queues `restore_backup`, which restores the item's folder and the database from the backup taken before the update. Without one (no backup plugin, or BackWPup), it queues `rollback_item`, which reinstalls the version that was installed. Afterwards the API scans the pages once more and records how far they still are from the captures before the update (`check`).
+
+**Statuses:** `preparing` (the scan before and the backup run) → `updating` → `checking` → `passed` or `changed` → `kept`, or `restoring` → `restored` or `restore_failed` (which may be retried); or `failed`, with `error`:
+
+| Error | Meaning |
+|---|---|
+| `visual_check_failed` | The scan before the update failed; nothing was updated |
+| `visual_check_timeout` | The scan before the update took more than 30 minutes; nothing was updated |
+| `update_failed`, `backup_failed`, `backup_timeout`, … | The update command's error; a plugin or theme that broke a page was rolled back |
+| `update_expired`, `update_cancelled` | The update command was never run |
+| `after_check_failed` | The scan after the update did not finish within 30 minutes, or the site updated without waiting for the scan before it; the update stays, and can still be undone |
+| `not_queued` | The update command could not be queued |
+
+A site runs one safe update at a time, and the API queues no automatic update while one runs. The API gives up on a scan that has not finished after 30 minutes and on a command that expired, in its 15-minute check.
+
+**Recovery commands.** The plugin runs them in WordPress cron, like updates, reports them `running`, then `done` or `failed`. Both answer `invalid_arguments`, `update_running` (an update or another recovery runs), `cannot_update` (WordPress may not write files without FTP credentials) and `interrupted` (the request running it stopped before it finished, for example at a PHP time limit; it is not run again):
+
+- `restore_backup` restores, through UpdraftPlus's own restorer, the item's folder and every database table from the backup whose nonce is `job`. SitePulse keeps its own settings (its settings and license, remote management state, signing key, connection, queued events, activity log and update measurements) as they were before the restore, also when the request stops mid-restore. When the backup is not in UpdraftPlus's history (a database restored since forgets the backups made after it), UpdraftPlus rebuilds the history from its backup folder first. Errors: `backup_not_found` (UpdraftPlus no longer has that backup, or it lacks the folder or the database), `restore_unsupported` (UpdraftPlus 1.26 or later is not active) and `restore_failed` (UpdraftPlus's error, or a pointer to its restore log, in `result.message`). `result` is `{ "restored": [ "plugins", "db" ] }`.
+- `rollback_item` installs the version `version` of the plugin or theme from WordPress.org through WordPress's own upgrader, over the current one, in maintenance mode. Errors: `not_installed`, `no_package` (WordPress's update check does not list the item with a WordPress.org package, as for a premium plugin; a plugin of a single file; or WordPress.org has no such version) and `install_failed` (`result` still says which version is installed). `result` is `{ "kind", "id", "from", "to" }`.
+
+### `POST /api/website/remote/safe-update`
+
+During a safe update, once its backup is done, the plugin asks whether it may update: `{ "command": "<the update command's id>" }`. Response: `{ "success": true, "proceed": bool, "stop": bool }`. `proceed` once the scan before the update has finished; `stop` when it failed, took more than 30 minutes, or the command is not a safe update's.
 
 ## Dashboard (portal) endpoints
 
@@ -343,6 +383,12 @@ The SitePulse dashboard calls these from trusted IPs with the existing portal au
 | `POST /api/portal/remote-management/notifications/test` | `requested_by` | Send a test message to every configured channel |
 | `POST /api/portal/remote-management/updates/overview` | `sites` (1–100 `{ "domain", "license_key" }`) | The updates each site offers, see "Updates across sites" |
 | `POST /api/portal/remote-management/updates/queue` | `sites`, `requested_by`, `plugins` (files), `themes` (stylesheets), `core` (boolean) | Queue the chosen updates on every site that offers them, see "Updates across sites" |
+| `POST /api/portal/remote-management/safe-updates` | `limit` (≤ 50, default 10) | The site's safe updates, newest first |
+| `POST /api/portal/remote-management/safe-updates/create` | `kind` (`plugin` or `theme`), `item` (file or stylesheet), `requested_by` | Start a safe update (see "Safe updates"); 409 with a message when the site is not active, runs one already, or offers no installable update for the item |
+| `POST /api/portal/remote-management/safe-updates/show` | `id` | A safe update with `pages`: each page of its scan after the update, the big changes first, with `url`, `status`, `diff_percent`, `big`, `error`, and `images` (`before`, `after`, `diff`: public URLs, `null` when missing or expired) |
+| `POST /api/portal/remote-management/safe-updates/keep` | `id`, `requested_by` | Keep the update after a big change |
+| `POST /api/portal/remote-management/safe-updates/recover` | `id`, `requested_by` | Restore the backup taken before the update, or roll it back (`recovery` says which) |
+| `POST /api/portal/remote-management/safe-updates/waiting` | `sites` (1–100 `{ "domain", "license_key" }`, instead of `domain` and `license_key`) | Safe updates of those sites waiting for a choice after a big change: `{ "safe_updates": [ { "domain", … } ], "unknown_sites": [...] }` |
 | `POST /api/portal/remote-management/activity` | `sites`, `limit` (≤ 100, default 50), `before` (time), `categories` (optional list) | The activity of all these sites in one list, newest first, see "Updates across sites" |
 | `POST /api/portal/remote-management/alerts` | `sites` (1–100 `{ "domain", "license_key" }`, instead of `domain` and `license_key`), `after` (the id of the last alert read), `limit` (≤ 200, default 100) | Alerts of those sites after `after`, oldest first: `{ "alerts": [ { "id", "domain", "trigger", "subject", "message", "data", "created_at" } ], "unknown_sites": [...] }` |
 | `POST /api/portal/remote-management/roles` | — | Who may view or manage the site |
@@ -431,6 +477,8 @@ The dashboard shows what all of a user's sites can update, and updates chosen it
 `updates/queue` queues, on each site, the chosen items it offers and can install, leaving out the ones already `pending` and the ones its update policy excludes, and answers `{ "sites": [ { "domain", "status", "reason", "commands", "items" } ], "unknown_sites": [...] }`. `status` is `queued` (with the new command ids and the number of items) or `skipped` with `reason`: `not_active`, `not_allowed` (the user's role on the site is below manager), `no_inventory`, `cannot_update` (`can_update` is `false`), `already_updating` (what it offers of the choice is already `pending`), `excluded` (its update policy excludes the rest) or `nothing_to_update`. A site gets one `update_plugins` command per 50 plugins, one `update_themes` command and one `update_core` command for the newest release, with the site's `backup_wait`; only its first command backs up first (when its policy says so and the site has a supported backup plugin), since the commands run one after the other (see "One update at a time"). At least one item or `core` must be chosen.
 
 `updates/overview` also gives each site's `cron` (see "WP-Cron").
+
+A safe update answers `{ "id", "kind", "item", "name", "from", "to", "status", "error", "requested_by", "backup": { "provider", "job" } | null, "recovery": "restore_backup" | "rollback_item" | null, "threshold_percent": 20, "pages_changed", "max_diff_percent", "check": { "status", "pages_changed", "max_diff_percent" } | null, "decided_by", "decided_at", "created_at", "finished_at" }`.
 
 `activity` answers `{ "activity": [ { "domain", "time", "category", "type", "summary", "data" } ], "unknown_sites": [...] }`: the entries of each site's timeline (see "Timeline", same `limit`, `before` and `categories`) merged, newest first, each with its site's `domain`.
 
@@ -584,13 +632,14 @@ Each site has its notification settings. Until the dashboard saves them, there a
 
 | Trigger | When | Sent |
 |---|---|---|
-| `update_failed` | An update command (`update_plugins`, `update_themes`, `update_core`) finishes `failed`, including rolled-back updates | Once per command |
+| `update_failed` | An update command (`update_plugins`, `update_themes`, `update_core`) finishes `failed`, including rolled-back updates, or undoing a safe update failed (`restore_backup`, `rollback_item`) | Once per command |
 | `backup_failed` | A `backup.completed` event with `ok: false`, or a `backup_now` command that failed | Once per event or command |
 | `backup_overdue` | The `overdue` or `no_backup` backup warning appears | Once until the warning clears |
 | `check_ins_stopped` | An active site has not checked in for 2 hours: the site may be down, or WP-Cron is not running | Once, plus a second message when check-ins resume, whose `data` has `"resolved": true` |
 | `fatal_error` | `error.fatal` events arrive | At most once an hour per site, summarizing them |
 | `update_slowdown` | An update slowdown | Once per measurement |
 | `site_slowdown` | A site slowdown | Once per day |
+| `visual_change` | A safe update changed a page by 20% or more, or a page no longer loads (see "Safe updates"); `data` holds `safe_update`, `kind`, `item`, `from`, `to` and the changed `pages` | Once per safe update |
 
 The API checks `backup_overdue` and `check_ins_stopped` every 15 minutes, only for sites with remote management switched on. Deliveries are queued and tried up to 3 times per channel.
 
@@ -606,7 +655,7 @@ The notifications log keeps `id`, `trigger`, `subject`, `message`, `status` (`pe
 
 ## Retention
 
-The API keeps events, finished commands, notifications and finished rollouts for 90 days, monthly reports for 13 months (their PDF links expire after 24 hours), and only the latest inventory per site. The plugin keeps up to 200 undelivered events (the oldest are dropped first), the last 100 remote-management activity entries and up to 50 pending update measurements; it sends events only while remote management is active, up to 50 per request. Uninstalling the plugin deletes all of them.
+The API keeps events, finished commands, notifications, finished rollouts and finished safe updates for 90 days, monthly reports for 13 months (their PDF links expire after 24 hours), and only the latest inventory per site. The plugin keeps up to 200 undelivered events (the oldest are dropped first), the last 100 remote-management activity entries and up to 50 pending update measurements; it sends events only while remote management is active, up to 50 per request. Uninstalling the plugin deletes all of them.
 
 ## Development
 
@@ -625,3 +674,4 @@ It is not shipped with the plugin.
 2. **Backups:** `backup_now`, `cancel_backup`, backup presets, warnings for backups kept only on the same server, unusually small backups and overdue backups.
 3. **Updates:** `update_plugins`, `update_themes`, `update_core` and `set_auto_updates`; update policies (security and minor updates automatic, major updates manual, 3-day wait, 1–5 am window) with automatic updates; pre-checks, a backup first, one update at a time with health checks and rollback; a visual check after updates; warnings about security updates and other management tools.
 4. **Extras:** performance impact of each update, daily performance and fatal errors, site activity timeline, monthly client reports, failure notifications by email, Slack and webhook.
+5. **Safe updates:** a plugin or theme updated between two visual scans after a backup of that folder and the database, the `visual_change` notification, and restoring that backup (UpdraftPlus) or rolling the item back.

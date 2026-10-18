@@ -36,6 +36,7 @@ delete_option('sitepulse_remote_state');
 delete_option('sitepulse_remote_events');
 delete_option('sitepulse_remote_log');
 delete_option('sitepulse_remote_update_job');
+delete_option('sitepulse_remote_recovery_job');
 delete_option('sitepulse_remote_activity');
 delete_option('sitepulse_remote_key');
 delete_option('sitepulse_remote_connection');
@@ -56,6 +57,7 @@ delete_transient('sitepulse_single_page_list');
 delete_transient('sitepulse_cron_healthy');
 delete_transient('sitepulse_cron_fallback_frontend_check');
 delete_transient('sitepulse_remote_update_lock');
+delete_transient('sitepulse_remote_recovery_lock');
 delete_transient('sitepulse_remote_late_check_in');
 
 

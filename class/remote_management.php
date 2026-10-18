@@ -112,6 +112,7 @@ class Sitepulse_Remote_Management {
 		Sitepulse_Remote_Events::init();
 		Sitepulse_Remote_Backups::init();
 		Sitepulse_Remote_Updates::init();
+		Sitepulse_Remote_Recovery::init();
 
 		// Keep the check-in scheduled from dashboard and cron requests; page views skip the check.
 		if ( is_admin() || wp_doing_cron() ) {
@@ -842,6 +843,13 @@ class Sitepulse_Remote_Management {
 	}
 
 	/**
+	 * @return Sitepulse_Remote_Client|null A client for the API, null when the site cannot connect.
+	 */
+	public static function client() {
+		return self::can_connect() ? new Sitepulse_Remote_Client( self::signing_key() ) : null;
+	}
+
+	/**
 	 * @return string The key remote management requests are signed with: the rotated one, or the license.
 	 */
 	private static function signing_key() {
@@ -860,7 +868,8 @@ class Sitepulse_Remote_Management {
 	 */
 	public static function finish_command( $id, $type, array $args, array $result ) {
 		$outcome = array( 'id' => $id ) + $result;
-		if ( ! self::can_connect() || is_wp_error( ( new Sitepulse_Remote_Client( self::signing_key() ) )->post( 'command-result', $outcome ) ) ) {
+		$client  = self::client();
+		if ( null === $client || is_wp_error( $client->post( 'command-result', $outcome ) ) ) {
 			$state                      = self::state();
 			$state['pending_results'][] = $outcome;
 			self::save_state( $state );
@@ -906,7 +915,7 @@ class Sitepulse_Remote_Management {
 	 * @param string                  $type    Command type.
 	 * @param array                   $command The command.
 	 * @param array                   $args    Its arguments.
-	 * @return array|null status, result and error for the API; null for an update, answered when it is done.
+	 * @return array|null status, result and error for the API; null for an update or a recovery, answered when it is done.
 	 */
 	private static function run_command( Sitepulse_Remote_Client $client, array &$state, $id, $type, array $command, array $args ) {
 		$expires = strtotime( (string) ( $command['expires_at'] ?? '' ) );
@@ -932,6 +941,10 @@ class Sitepulse_Remote_Management {
 			// The inventory shows a started update's progress and changed auto-update settings.
 			$state['inventory_due'] = $state['inventory_due'] || null === $result || 'done' === $result['status'];
 			return $result;
+		}
+
+		if ( in_array( $type, Sitepulse_Remote_Recovery::COMMANDS, true ) ) {
+			return Sitepulse_Remote_Recovery::run_command( $id, $type, $args );
 		}
 
 		return self::command_result( 'failed', null, 'unsupported_command' );
@@ -971,6 +984,10 @@ class Sitepulse_Remote_Management {
 			/* translators: %s: WordPress version */
 			'update_core'         => sprintf( __( 'update WordPress to %s', 'sitepulse' ), is_string( $args['version'] ?? null ) ? $args['version'] : '' ),
 			'set_auto_updates'    => empty( $args['enabled'] ) ? __( 'turn off WordPress auto-updates', 'sitepulse' ) : __( 'turn on WordPress auto-updates', 'sitepulse' ),
+			/* translators: %s: plugin file or theme folder */
+			'restore_backup'      => sprintf( __( 'restore %s and the database from the backup taken before its update', 'sitepulse' ), is_string( $args['item'] ?? null ) ? $args['item'] : '' ),
+			/* translators: 1: plugin file or theme folder, 2: version */
+			'rollback_item'       => sprintf( __( 'roll %1$s back to %2$s', 'sitepulse' ), is_string( $args['item'] ?? null ) ? $args['item'] : '', is_string( $args['version'] ?? null ) ? $args['version'] : '' ),
 		);
 
 		return $labels[ $type ] ?? $type;

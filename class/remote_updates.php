@@ -3,9 +3,10 @@
  * SitePulse remote management updates
  *
  * Runs the dashboard's plugin, theme and WordPress updates through WordPress's own
- * upgrader: a backup first (with UpdraftPlus or BackWPup), a health baseline, then one
- * item at a time, each checked and rolled back when it breaks the site. An update runs
- * across WordPress cron requests and is answered to the API when it is done.
+ * upgrader: a backup first (with UpdraftPlus or BackWPup), for a safe update the API's
+ * visual scan of the site, a health baseline, then one item at a time, each checked and
+ * rolled back when it breaks the site. An update runs across WordPress cron requests and
+ * is answered to the API when it is done.
  *
  * @package SitePulse
  */
@@ -46,6 +47,12 @@ class Sitepulse_Remote_Updates {
 
 	/** Seconds between checks while a backup runs. */
 	const POLL_SECONDS = 60;
+
+	/** Seconds between the questions to the API while it scans the site before a safe update. */
+	const VISUAL_POLL_SECONDS = 30;
+
+	/** Seconds a safe update waits for that scan. */
+	const VISUAL_WAIT_SECONDS = 1800;
 
 	/** Most items per command. */
 	const MAX_ITEMS = 50;
@@ -90,10 +97,12 @@ class Sitepulse_Remote_Updates {
 		$kind  = self::KINDS[ $type ][0];
 		$items = 'core' === $kind ? self::strings( array( $args['version'] ?? null ) ) : self::strings( $args[ self::KINDS[ $type ][1] ] ?? null );
 		$wait  = $args['backup_wait'] ?? 60;
-		if ( ! $items || count( $items ) > self::MAX_ITEMS || ! is_int( $wait ) || $wait < 5 || $wait > 240 ) {
+		$what  = self::backup_what( $args['backup_parts'] ?? null );
+		$safe  = $args['safe_update'] ?? null;
+		if ( ! $items || count( $items ) > self::MAX_ITEMS || ! is_int( $wait ) || $wait < 5 || $wait > 240 || null === $what || ! ( null === $safe || ( is_string( $safe ) && '' !== $safe ) ) ) {
 			return self::failed( 'invalid_arguments' );
 		}
-		if ( null !== self::job() ) {
+		if ( self::running() || Sitepulse_Remote_Recovery::running() ) {
 			return self::failed( 'update_running' );
 		}
 
@@ -120,9 +129,12 @@ class Sitepulse_Remote_Updates {
 				'items'          => $items,
 				'backup_first'   => $backup_first,
 				'backup_wait'    => $wait,
-				'phase'          => $backup_first ? 'backup' : 'baseline',
+				'backup_what'    => $what,
+				'safe_update'    => $safe,
+				'phase'          => $backup_first ? 'backup' : self::after_backup( $safe ),
 				'backup'         => null,
 				'backup_skipped' => $skipped,
+				'visual_since'   => null,
 				'baseline'       => null,
 				'current'        => null,
 				'results'        => array(),
@@ -171,6 +183,13 @@ class Sitepulse_Remote_Updates {
 	}
 
 	/**
+	 * @return bool Whether an update is being run.
+	 */
+	public static function running() {
+		return null !== self::job();
+	}
+
+	/**
 	 * @return array|null Progress of the update for the inventory.
 	 */
 	public static function job_status() {
@@ -208,6 +227,9 @@ class Sitepulse_Remote_Updates {
 		if ( 'backup' === $job['phase'] ) {
 			return self::backup_step( $job );
 		}
+		if ( 'visual' === $job['phase'] ) {
+			return self::visual_step( $job );
+		}
 		if ( 'baseline' === $job['phase'] ) {
 			$job['baseline'] = Sitepulse_Remote_Health::check();
 			$error           = Sitepulse_Remote_Health::baseline_error( $job['baseline'] );
@@ -219,7 +241,8 @@ class Sitepulse_Remote_Updates {
 	}
 
 	/**
-	 * Start a full backup with the managed backup plugin and wait until it is done.
+	 * Start a backup with the managed backup plugin and wait until it is done: a full one, or
+	 * for a safe update the folder it updates and the database.
 	 *
 	 * @param array $job The update.
 	 * @return array
@@ -227,7 +250,8 @@ class Sitepulse_Remote_Updates {
 	private static function backup_step( array $job ) {
 		if ( null === $job['backup'] ) {
 			$requested = time();
-			$result    = Sitepulse_Remote_Backups::run_command( 'backup_now', array( 'what' => 'full' ) );
+			// An update started by an older version of the plugin has no backup_what.
+			$result = Sitepulse_Remote_Backups::run_command( 'backup_now', array( 'what' => $job['backup_what'] ?? 'full' ) );
 			if ( 'done' === $result['status'] ) {
 				$job['backup'] = array(
 					'provider'     => $result['result']['provider'],
@@ -249,7 +273,7 @@ class Sitepulse_Remote_Updates {
 		$last     = is_array( $status['last'] ?? null ) ? $status['last'] : null;
 		$finished = empty( $status['running'] ) && null !== $last && strtotime( (string) $last['time'] ) >= $job['backup']['requested_at'];
 		if ( $finished ) {
-			$job['phase'] = 'baseline';
+			$job['phase'] = self::after_backup( $job['safe_update'] ?? null );
 			return true === $last['ok'] ? $job : self::stop( $job, 'backup_failed' );
 		}
 		if ( time() - $job['backup']['requested_at'] > $job['backup_wait'] * MINUTE_IN_SECONDS ) {
@@ -258,6 +282,56 @@ class Sitepulse_Remote_Updates {
 
 		$job['wait'] = self::POLL_SECONDS;
 		return $job;
+	}
+
+	/**
+	 * A safe update updates once the API has scanned the site's pages as they are before the
+	 * update, which it does while the backup runs: ask the API until it says to go on or stop.
+	 *
+	 * @param array $job The update.
+	 * @return array
+	 */
+	private static function visual_step( array $job ) {
+		if ( empty( $job['visual_since'] ) ) {
+			$job['visual_since'] = time();
+		}
+
+		$client = Sitepulse_Remote_Management::client();
+		$answer = null === $client ? null : $client->post( 'safe-update', array( 'command' => $job['command'] ) );
+		if ( is_array( $answer ) && true === ( $answer['stop'] ?? null ) ) {
+			return self::stop( $job, 'visual_check_failed' );
+		}
+		if ( is_array( $answer ) && true === ( $answer['proceed'] ?? null ) ) {
+			$job['phase'] = 'baseline';
+			return $job;
+		}
+		// An API that cannot be reached is asked again, until the scan's time is up.
+		if ( time() - $job['visual_since'] >= self::VISUAL_WAIT_SECONDS ) {
+			return self::stop( $job, 'visual_check_timeout' );
+		}
+
+		$job['wait'] = self::VISUAL_POLL_SECONDS;
+		return $job;
+	}
+
+	/**
+	 * @param string|null $safe_update The safe update the command belongs to, if any.
+	 * @return string The phase after the backup: the visual check of a safe update, or the baseline.
+	 */
+	private static function after_backup( $safe_update ) {
+		return null === $safe_update ? 'baseline' : 'visual';
+	}
+
+	/**
+	 * @param mixed $parts The command's backup_parts: none, or the one folder a safe update backs up.
+	 * @return string|null What the backup saves: full, plugins or themes; null when not valid.
+	 */
+	private static function backup_what( $parts ) {
+		if ( null === $parts ) {
+			return 'full';
+		}
+
+		return is_array( $parts ) && 1 === count( $parts ) && in_array( reset( $parts ), Sitepulse_Remote_Backups::FOLDER_BACKUPS, true ) ? reset( $parts ) : null;
 	}
 
 	/**
@@ -682,7 +756,7 @@ class Sitepulse_Remote_Updates {
 	/**
 	 * Cron requests do not load WordPress's admin API or its upgrader.
 	 */
-	private static function load_admin_api() {
+	public static function load_admin_api() {
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/misc.php';
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';

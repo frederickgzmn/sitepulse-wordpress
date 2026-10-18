@@ -77,6 +77,20 @@ class Sitepulse_Remote_Activity {
 	}
 
 	/**
+	 * Stop measuring an update that was undone.
+	 *
+	 * @param string $kind plugin or theme.
+	 * @param string $id   Plugin file or theme stylesheet.
+	 */
+	public static function unwatch( $kind, $id ) {
+		$state = self::state();
+		if ( isset( $state['watches'][ $kind . ':' . $id ] ) ) {
+			unset( $state['watches'][ $kind . ':' . $id ] );
+			self::save( $state );
+		}
+	}
+
+	/**
 	 * Events due at this check-in: finished update measurements, yesterday's figures and new fatal errors.
 	 *
 	 * @return array Events, each an array of its type and data.

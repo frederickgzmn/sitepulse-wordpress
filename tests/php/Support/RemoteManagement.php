@@ -27,11 +27,15 @@ final class Sitepulse_Test_Backups {
     public static $job_starts = true;
     /** Default settings of BackWPup storages: KEY => settings. */
     public static $destination_defaults = array('FOLDER' => array('maxbackups' => 15, 'backupdir' => 'uploads/backwpup'), 'S3' => array('s3maxbackups' => 15, 's3region' => 'us-east-1'));
+    /** What UpdraftPlus's restorer does: a callable returning its result; null restores. */
+    public static $restore = null;
+    /** Backups UpdraftPlus finds in its folder when it rebuilds its history: time => backup. */
+    public static $found = array();
     /** Calls the backup plugins received, in order. */
     public static $calls = array();
     public static function reset() {
         foreach (Sitepulse_Test_WP::rememberClassDefaults(__CLASS__) as $name => $value) { self::${$name} = $value; }
-        unset($GLOBALS['updraftplus'], $GLOBALS['updraftplus_admin']);
+        unset($GLOBALS['updraftplus'], $GLOBALS['updraftplus_admin'], $GLOBALS['updraftplus_restorer']);
         wp_delete_file(self::backwpup_started());
     }
     /** The file BackWPup's job writes once it runs. */
@@ -48,8 +52,14 @@ class UpdraftPlus {
     public $newresumption_scheduled = false;
     public $current_resumption = 0;
     public $jobdata = array();
+    /** The job being run, and the errors it logged. */
+    public $nonce = '';
+    public $errors = array();
     public function __construct($version) { $this->version = $version; }
     public function jobdata_get($key, $default = null) { return $this->jobdata[$key] ?? $default; }
+    public function jobdata_set_multi() { Sitepulse_Test_Backups::$calls[] = array('jobdata_set_multi', func_get_args()); }
+    public function initiate_restore_job($nonce = false) { Sitepulse_Test_Backups::$calls[] = array('initiate_restore_job'); $this->nonce = 'restore00001'; }
+    public function php_error($errno, $errstr, $errfile, $errline) { return false; }
     public function backup_time_nonce() { Sitepulse_Test_Backups::$calls[] = array('backup_time_nonce'); return Sitepulse_Test_Backups::$nonce; }
     public function schedule_backup($interval) { Sitepulse_Test_Backups::$calls[] = array('schedule_backup', $interval, get_option('updraft_interval')); return $interval; }
     public function schedule_backup_database($interval) { Sitepulse_Test_Backups::$calls[] = array('schedule_backup_database', $interval, get_option('updraft_interval_database')); return $interval; }
@@ -60,6 +70,30 @@ class UpdraftPlus_Options {
         return get_option($option, $default);
     }
     public static function update_updraft_option($option, $value, $use_cache = true, $autoload = 'yes') { return update_option($option, $value, $autoload); }
+}
+/** UpdraftPlus's history of backups, keyed by time. */
+final class UpdraftPlus_Backup_History {
+    public static function get_history($timestamp = false) { $history = (array) get_option('updraft_backup_history', array()); krsort($history); return $history; }
+    public static function rebuild($remote_scan = false, $only_add_this_file = false, $debug = false) {
+        Sitepulse_Test_Backups::$calls[] = array('rebuild');
+        update_option('updraft_backup_history', Sitepulse_Test_Backups::$found + (array) get_option('updraft_backup_history', array()));
+    }
+}
+class Updraft_Restorer_Skin {}
+/** UpdraftPlus's restorer prints its progress; its clean-up restores the error handler UpdraftPlus set. */
+class Updraft_Restorer {
+    public function __construct($skin = null, $backup_set = null, $short_init = false, $restore_options = array(), $continuation_data = null) {
+        Sitepulse_Test_Backups::$calls[] = array('restorer', get_class($skin), $backup_set, $restore_options, $continuation_data);
+    }
+    public function perform_restore($entities_to_restore, $restore_options) {
+        Sitepulse_Test_Backups::$calls[] = array('perform_restore', $entities_to_restore);
+        echo '<h2>Database</h2>';
+        return Sitepulse_Test_Backups::$restore ? (Sitepulse_Test_Backups::$restore)() : true;
+    }
+    public function post_restore_clean_up($successful = true, $browser_context = true) {
+        Sitepulse_Test_Backups::$calls[] = array('post_restore_clean_up', is_wp_error($successful) ? $successful->get_error_code() : $successful, $browser_context);
+        restore_error_handler();
+    }
 }
 /** UpdraftPlus loads its admin code, which creates the global $updraftplus_admin. */
 function updraft_try_include_file($path, $method = 'include') { Sitepulse_Test_Backups::$calls[] = array('include', $path, $method); $GLOBALS['updraftplus_admin'] = new Sitepulse_Test_Updraft_Admin(); }
@@ -175,6 +209,12 @@ abstract class Sitepulse_Test_Upgrader {
         return Sitepulse_Test_Upgrades::$restore;
     }
     public function delete_temp_backup(array $temp_backups = array()) { Sitepulse_Test_Upgrades::$calls[] = array('delete_temp_backup', $temp_backups); return true; }
+    /** Installing a package: what Sitepulse_Test_Upgrades::$outcomes["install:<package>"] does, or a download WordPress.org refuses. */
+    public function install($package, $args = array()) {
+        Sitepulse_Test_Upgrades::$calls[] = array('install', $package, $args);
+        $outcome = Sitepulse_Test_Upgrades::$outcomes['install:' . $package] ?? null;
+        return $outcome ? $outcome() : new WP_Error('download_failed', 'Not Found');
+    }
     protected function run($kind, $id, array $args = array()) {
         Sitepulse_Test_Upgrades::$calls[] = array('upgrade', $kind, $id);
         $outcome = Sitepulse_Test_Upgrades::$outcomes[$kind . ':' . $id] ?? null;
