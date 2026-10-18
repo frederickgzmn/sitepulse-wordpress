@@ -354,6 +354,9 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 ---
 
 == Upgrade Notice ==
+= 1.5.0 =
+Adds optional remote management from your SitePulse dashboard: updates, backups, connection keys and safe updates with visual checks and one-click undo. Nothing changes on this site until you connect it with its key. Warnings and rankings now use the last 24 hours.
+
 = 1.1.1 =
 Adds admin notices to surface important updates and status messages, automatically enables Tracker mode on activation so performance tracking starts immediately, and confirms compatibility with WordPress 6.8.
 
