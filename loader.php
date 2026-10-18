@@ -74,6 +74,9 @@ define( 'SITEPULSE_CURL_API_ENABLED',       	  'sitepulse_curl_api_enabled' );
 define( 'SITEPULSE_CURL_API_SLUG',          	  'curl_api' );
 define( 'SITEPULSE_CURL_API_DEFAULT_THRESHOLD', 1 );
 
+// wp-admin reachability: the last check, and the one before it that found the opposite
+define( 'SITEPULSE_ADMIN_ACCESS_OPTION',        'sitepulse_admin_access' );
+
 // Load error handler FIRST to catch any errors during plugin loading
 require_once SITEPULSE_CLASS_PATH . 'error_handler.php';
 
@@ -216,6 +219,8 @@ require_once SITEPULSE_CLASS_PATH . 'remote_activity.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_updates.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_recovery.php';
 require_once SITEPULSE_CLASS_PATH . 'remote_management.php';
+// Whether the site's own server can reach its wp-admin.
+require_once SITEPULSE_CLASS_PATH . 'admin_access.php';
 
 class Sitepulse_Loader {
 	/**
@@ -269,6 +274,9 @@ class Sitepulse_Loader {
 
 		// Backups and updates managed from the SitePulse dashboard
 		Sitepulse_Remote_Management::init();
+
+		// Hourly check that the site's own server can reach its wp-admin
+		Sitepulse_Admin_Access::init();
 
 		// Initialize Easy Mode (toggleable dashboard experience)
 		if ( class_exists( 'Sitepulse_Easy_Mode' ) ) {
@@ -335,6 +343,9 @@ class Sitepulse_Loader {
 		Sitepulse_Remote_Management::unschedule();
 		Sitepulse_Remote_Updates::unschedule();
 		Sitepulse_Remote_Recovery::unschedule();
+
+		// Stop checking that wp-admin can be reached
+		Sitepulse_Admin_Access::unschedule();
 	}
 
 	/**

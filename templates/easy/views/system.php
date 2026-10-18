@@ -3,7 +3,7 @@
  * Easy Mode — System Information view.
  *
  * Zones:
- *  1. Core Environment   — WordPress, PHP, server info + Active plugins
+ *  1. Core Environment   — WordPress, PHP, server info + Active plugins + wp-admin access
  *  2. Infrastructure     — Disk I/O + Whitelabel
  *  3. Pro Status       — MU-Plugin status, Pro version & updates
  *
@@ -87,6 +87,8 @@ $sp_status_info    = isset( $status_info ) ? $status_info : ( $sp_settings_inst 
 		</div>
 	</div>
 </div>
+
+<?php Sitepulse_Admin_Access::render( 'easy' ); ?>
 
 </div><!-- /sp-zone--infra -->
 

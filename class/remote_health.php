@@ -3,7 +3,8 @@
  * SitePulse remote management health checks
  *
  * Loads the site's own pages before and after an update, with WordPress's fatal-error
- * check (the "scrape" request its plugin and theme editors use), and compares them.
+ * check (the "scrape" request its plugin and theme editors use), and compares them. The
+ * wp-admin reachability check (Sitepulse_Admin_Access) loads its pages the same way.
  *
  * @package SitePulse
  */
@@ -135,16 +136,32 @@ class Sitepulse_Remote_Health {
 	}
 
 	/**
-	 * Load a page the way WordPress checks an edited plugin for fatal errors: the page
-	 * reports any PHP fatal error between two markers.
-	 *
 	 * @param string $url Page URL.
-	 * @return array status and fatal.
+	 * @return array status (0 when it did not answer), fatal and checked.
 	 */
 	private static function load( $url ) {
+		$page = self::fetch( $url );
+
+		return array(
+			'status'  => (int) wp_remote_retrieve_response_code( $page['response'] ),
+			'fatal'   => $page['fatal'],
+			'checked' => $page['checked'],
+		);
+	}
+
+	/**
+	 * Request a page the way WordPress checks an edited plugin for fatal errors: the page
+	 * reports any PHP fatal error between two markers.
+	 *
+	 * @param string $url     Page URL.
+	 * @param int    $timeout Seconds to wait for it.
+	 * @return array response (the HTTP response, or the WP_Error of a request that got no answer),
+	 *               fatal (the PHP fatal error, or null) and checked (whether WordPress's error check answered).
+	 */
+	public static function fetch( $url, $timeout = self::TIMEOUT ) {
 		$key   = md5( wp_generate_password( 20, false ) );
 		$nonce = (string) wp_rand();
-		set_transient( 'scrape_key_' . $key, $nonce, 2 * self::TIMEOUT );
+		set_transient( 'scrape_key_' . $key, $nonce, 2 * $timeout );
 
 		$response = wp_remote_get(
 			add_query_arg(
@@ -155,7 +172,7 @@ class Sitepulse_Remote_Health {
 				$url
 			),
 			array(
-				'timeout'     => self::TIMEOUT,
+				'timeout'     => $timeout,
 				'redirection' => 0,
 				'headers'     => array( 'Cache-Control' => 'no-cache' ),
 				'sslverify'   => apply_filters( 'https_local_ssl_verify', false, $url ),
@@ -163,14 +180,7 @@ class Sitepulse_Remote_Health {
 		);
 		delete_transient( 'scrape_key_' . $key );
 
-		if ( is_wp_error( $response ) ) {
-			return array(
-				'status'  => 0,
-				'fatal'   => null,
-				'checked' => false,
-			);
-		}
-
+		// A request that got no answer has no body, so no markers.
 		$body   = (string) wp_remote_retrieve_body( $response );
 		$start  = "###### wp_scraping_result_start:$key ######";
 		$end    = "###### wp_scraping_result_end:$key ######";
@@ -179,9 +189,9 @@ class Sitepulse_Remote_Health {
 
 		// A PHP error has a type; WordPress reports a failed key check without one.
 		return array(
-			'status'  => (int) wp_remote_retrieve_response_code( $response ),
-			'fatal'   => is_array( $result ) && isset( $result['type'] ) ? self::first_line( (string) ( $result['message'] ?? '' ) ) : null,
-			'checked' => false !== $at,
+			'response' => $response,
+			'fatal'    => is_array( $result ) && isset( $result['type'] ) ? self::first_line( (string) ( $result['message'] ?? '' ) ) : null,
+			'checked'  => false !== $at,
 		);
 	}
 }
