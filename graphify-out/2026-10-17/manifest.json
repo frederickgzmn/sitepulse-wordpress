@@ -318,9 +318,9 @@
     "semantic_hash": "9177b57d700fc636dad4a7c04e1dc3f1"
   },
   "uninstall.php": {
-    "mtime": 1792106182.092167,
-    "seen": 1792108155.272434,
-    "ast_hash": "f85ffc9a984f044da584fbeb5be808c1",
+    "mtime": 1792264019.857085,
+    "seen": 1792267959.7142987,
+    "ast_hash": "38ba0fe671ac27dce13ef82efb904e93",
     "semantic_hash": ""
   },
   ".commandcode/taste/taste.md": {
@@ -1026,21 +1026,21 @@
     "semantic_hash": ""
   },
   "class/remote_management.php": {
-    "mtime": 1792173190.0869472,
-    "seen": 1792174414.7745495,
-    "ast_hash": "85e19e6876e3e2ce8f979ec70310b9de",
+    "mtime": 1792263984.0066147,
+    "seen": 1792267959.7141168,
+    "ast_hash": "ab0660220df7bf651f5a5b980c199bf4",
     "semantic_hash": ""
   },
   "templates/backend/remote_management.php": {
-    "mtime": 1792092144.4314988,
-    "seen": 1792103396.5477679,
-    "ast_hash": "d4cd15a782d2ddd4a6507af7562e7606",
+    "mtime": 1792264016.430781,
+    "seen": 1792267959.7141545,
+    "ast_hash": "f2a9f796e239cc635b1d19818f718440",
     "semantic_hash": ""
   },
   "templates/easy/partials/remote-management.php": {
-    "mtime": 1792092144.431315,
-    "seen": 1792103396.547776,
-    "ast_hash": "0b5f3571b442fceae127ec7ae81609ef",
+    "mtime": 1792264016.4309394,
+    "seen": 1792267959.7141626,
+    "ast_hash": "44b022181abd2ae6c6a95d6cc64345d9",
     "semantic_hash": ""
   },
   "tests/php/RemoteBackupsTest.php": {
@@ -1074,9 +1074,9 @@
     "semantic_hash": ""
   },
   "tests/php/RemoteVariantsTest.php": {
-    "mtime": 1792086930.3868515,
-    "seen": 1792088841.6165047,
-    "ast_hash": "d302f5ad4338c35a86740362472ac27f",
+    "mtime": 1792264259.118734,
+    "seen": 1792267959.7142613,
+    "ast_hash": "0079a210b119f92713ad80ea14e6832b",
     "semantic_hash": ""
   },
   "tests/php/Support/RemoteManagement.php": {
@@ -1086,15 +1086,15 @@
     "semantic_hash": ""
   },
   "tests/php/fixtures/remote-variants.php": {
-    "mtime": 1792086930.3867412,
-    "seen": 1792088841.6165373,
-    "ast_hash": "3c8e7e58a4d2587469216f15f5bef375",
+    "mtime": 1792264259.1185458,
+    "seen": 1792267959.7142963,
+    "ast_hash": "99863562173a32d30a52c88ccf295e39",
     "semantic_hash": ""
   },
   "docs/remote-management.md": {
-    "mtime": 1792182235.6194074,
-    "seen": 1792196581.972149,
-    "ast_hash": "bb19da6f088587e4b1ebc61ae73da1e6",
+    "mtime": 1792267945.9304676,
+    "seen": 1792267959.7143092,
+    "ast_hash": "6e8c9077eb55f126e9104caf7d17ed1f",
     "semantic_hash": ""
   },
   "tests/php/RemoteBackupCommandsTest.php": {
@@ -1161,6 +1161,18 @@
     "mtime": 1792162358.2090487,
     "seen": 1792162715.5537145,
     "ast_hash": "cfa2f3d2ab928eb880973b19b1e47727",
+    "semantic_hash": ""
+  },
+  "templates/backend/remote_connection.php": {
+    "mtime": 1792264016.419445,
+    "seen": 1792267959.714153,
+    "ast_hash": "054a3d322ba977ab5cb78d0d45be7ba5",
+    "semantic_hash": ""
+  },
+  "tests/php/RemoteConnectionTest.php": {
+    "mtime": 1792264056.964518,
+    "seen": 1792267959.7142549,
+    "ast_hash": "39cedd7633b5e125721c9c5e7385ca41",
     "semantic_hash": ""
   }
 }
