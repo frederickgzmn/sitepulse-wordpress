@@ -1,17 +1,17 @@
 # Graph Report - sitepulse  (2026-10-18)
 
 ## Corpus Check
-- 188 files · ~388,508 words
+- 188 files · ~390,086 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 19 file(s) not represented in the graph (top: .css 8, .map 7, (none) 2)
 
 ## Summary
-- 4663 nodes · 11035 edges · 240 communities (102 shown, 138 thin omitted)
-- Extraction: 75% EXTRACTED · 25% INFERRED · 0% AMBIGUOUS · INFERRED: 2726 edges (avg confidence: 0.85)
+- 4673 nodes · 11067 edges · 235 communities (99 shown, 136 thin omitted)
+- Extraction: 75% EXTRACTED · 25% INFERRED · 0% AMBIGUOUS · INFERRED: 2736 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a3d9761b`
+- Built from commit: `4d2337a1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -31,11 +31,11 @@
 - St
 - BaseComponent
 - TemplateFactory
-- Fi
+- .hide
 - bootstrap.bundle.js
 - Tooltip
 - backend.js
-- .hide
+- Fs
 - remove
 - ._queueCallback
 - WP_REST_Response
@@ -44,7 +44,7 @@
 - Tooltip
 - Sitepulse_Remote_Backups
 - .hide
-- RestCoverageTest
+- apply_filters
 - Qi
 - Carousel
 - ._queueCallback
@@ -63,7 +63,7 @@
 - R
 - Offcanvas
 - Sitepulse_Frontend
-- Sitepulse_Test_Case
+- Sitepulse_Setup
 - Sitepulse_Test_Local_Filesystem
 - Tab
 - RemoteRecoveryTest
@@ -78,14 +78,14 @@
 - Dropdown
 - Tab
 - Tab
-- Sitepulse_Backend
+- BackendCoverageTest
 - TemplateFactory
 - Tab
 - onboarding.js
 - Sitepulse_Remote_Client
 - Sitepulse_Profiler
 - blueprint.json
-- .test_every_request_goes_to_the_api_the_setting_names
+- PopulatedTemplateTest
 - BaseComponent
 - AutoloadRestApiTest
 - Dropdown
@@ -98,16 +98,16 @@
 - ScrollSpy
 - ScrollSpy
 - easy-mode.js
-- PageAnalysisTest
-- plugin_basename
+- Sitepulse_Page_Analysis
+- Sitepulse_Remote_Activity
 - Ss
 - ScrollSpy
 - Sitepulse_Onboarding
 - Sitepulse_Utils
 - ts
 - Swipe
-- Sitepulse_Page_Analysis
-- sanitize_text_field
+- Ti
+- CoreAdditionalBehaviorTest
 - Qn
 - ScrollBarHelper
 - Toast
@@ -133,10 +133,10 @@
 - Sitepulse Logo
 - VersionBumpTest
 - Sitepulse_CurLoader
-- wp_get_theme
+- get_plugins
 - SitePulse — See What's Powering (or Slowing) Your Site
 - RemoteConnectionTest
-- Sitepulse_Easy_Mode
+- Sitepulse_Backend
 - Key Features
 - Privacy First
 - composer.json
@@ -146,19 +146,19 @@
 - PresentationWordPress.php
 - add_action
 - onboarding.test.cjs
-- Sitepulse_Remote_Activity
+- RemoteActivityTest
 - BackendTest
 - ps
 - FocusTrap
 - Sitepulse_Plugin
-- update_option
+- Sitepulse_Plugin_Profiler
 - browser.cjs
 - backend.test.cjs
 - Ln
 - LifecycleTest
+- wp_normalize_path
 - WP_REST_Request
-- RestApiTest
-- WP_Error
+- Sitepulse_Remote_Management
 - coverage.cjs
 - ref_node_assert
 - has_action
@@ -166,74 +166,69 @@
 - DiagnosticTemplateCoverageTest
 - remaining-browser-behavior.test.cjs
 - js-coverage.cjs
-- get_option
+- update_option
 - Me
 - Automated tests
 - get_transient
-- Sitepulse_Remote_Management
+- .time
 - remote-connection.test.cjs
-- Sitepulse_Monitoring
+- PetAssistantTemplateTest
 - Swipe
 - WordPress.php
-- Sitepulse_Page_Tracker
+- PageTrackerTest
 - CLAUDE.md
 - Sitepulse_Plugin
 - OptionalViewIntegrationTest
 - devDependencies
 - RemoteClientTest
-- api_backend.php
+- .roll_back
 - ErrorHandlerVariantsTest
 - page-analysis.test.cjs
 - Sitepulse_SSL_Health
 - pro-loader-boundary.php
-- Sitepulse_Cron_Manager
+- CronTest
 - remote-connection.js
 - Dashboard (portal) endpoints
 - Remote management
 - B
 - Sitepulse_Remote_Inventory
-- update_user_meta
+- UpdraftPlus_Options
 - RecentDashboardTest
 - Sitepulse_Remote_Health
 - CoreVariantsTest
-- CronCoverageTest
+- EasyModeSaveQueriesTest
 - ApiVariantsTest
 - RemoteVariantsTest
 - ProfilerCompatibilityTest
-- api-variants.php
+- FrontendTest
 - Sitepulse_Test_Filesystem
-- BackWPup_Job
+- UpdraftPlus_Backup_History
 - Sitepulse_AI_Diagnostic_Cron
-- current_user_can
-- is_wp_error
 - RemoteManagement.php
 - sitepulse_test_subprocess
 - ot
 - Sitepulse_Test_Database
-- Wi
+- Fi
 - ActionScheduler_Store
 - ActionSchedulerTest
 - TemplateTest
-- Ie
+- pi
 - BackWPup
 - wp_next_scheduled
 - Commands
-- HttpOriginTest
-- sitepulse_test_post_type
-- sitepulse_register_route
-- PageAnalysisTest.php
+- Sitepulse_Test_Case
 
 ## God Nodes (most connected - your core abstractions)
-1. `update_option()` - 250 edges
-2. `get_option()` - 190 edges
-3. `Sitepulse_Remote_Management` - 139 edges
+1. `update_option()` - 251 edges
+2. `get_option()` - 191 edges
+3. `Sitepulse_Remote_Management` - 142 edges
 4. `Sitepulse_Test_WP` - 136 edges
 5. `Sitepulse_Api_Service` - 102 edges
 6. `Sitepulse_Test_Backups` - 76 edges
 7. `Sitepulse_Profiler` - 74 edges
-8. `Sitepulse_Remote_Backups` - 72 edges
+8. `Sitepulse_Remote_Backups` - 73 edges
 9. `Sitepulse_Test_Case` - 70 edges
-10. `Sitepulse_Page_Analysis` - 67 edges
+10. `Sitepulse_Remote_Updates` - 69 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Project Structure & Module Organization` --references--> `Sitepulse_Plugin`  [INFERRED]
@@ -254,7 +249,7 @@
 - **SitePulse Core Monitoring Features** — readme_hook_level_timing, readme_slow_plugin_profiler, readme_per_page_tracking, readme_external_request_monitoring, readme_php_error_tracking [EXTRACTED 1.00]
 - **SitePulse Logo Visual Elements** — assets_img_sitepulse_logo_sitepulse_logo, assets_img_sitepulse_logo_heartbeat_waveform, assets_img_sitepulse_logo_status_dots [INFERRED 0.85]
 
-## Communities (240 total, 138 thin omitted)
+## Communities (235 total, 136 thin omitted)
 
 ### Community 0 - "bootstrap.esm.js"
 Cohesion: 0.03
@@ -273,8 +268,8 @@ Cohesion: 0.06
 Nodes (3): Collapse, Popover, Tooltip
 
 ### Community 5 - "Sitepulse_Error_Handler"
-Cohesion: 0.06
-Nodes (8): Sitepulse_Error_Handler, ErrorHandlerRecoveryTest, RuntimeException, ErrorHandlerTest, current_time(), get_bloginfo(), is_email(), sanitize_email()
+Cohesion: 0.05
+Nodes (10): Sitepulse_Error_Handler, ErrorHandlerRecoveryTest, RuntimeException, ErrorHandlerTest, StoredDataWritePathsTest, wp_mail(), current_time(), get_bloginfo() (+2 more)
 
 ### Community 6 - "bootstrap.js"
 Cohesion: 0.07
@@ -291,10 +286,6 @@ Nodes (4): findShadowRoot(), noop(), Popover, Tooltip
 ### Community 9 - "TemplateFactory"
 Cohesion: 0.08
 Nodes (6): Config, getElement(), getUID(), isElement(), TemplateFactory, toType()
-
-### Community 11 - "Sitepulse_Remote_Events"
-Cohesion: 0.12
-Nodes (3): Sitepulse_Remote_Events, get_file_data(), wp_delete_file()
 
 ### Community 13 - "BaseComponent"
 Cohesion: 0.07
@@ -333,12 +324,8 @@ Cohesion: 0.10
 Nodes (4): findShadowRoot(), noop(), Popover, Tooltip
 
 ### Community 26 - "Sitepulse_Remote_Backups"
-Cohesion: 0.06
-Nodes (3): Sitepulse_Remote_Backups, RemoteBackupsTest, UpdraftPlus_Options
-
-### Community 28 - "RestCoverageTest"
-Cohesion: 0.19
-Nodes (3): sitepulse_check_memory(), sitepulse_enable_save_queries(), RestCoverageTest
+Cohesion: 0.05
+Nodes (3): Sitepulse_Remote_Backups, RemoteBackupsTest, BackWPup_Job
 
 ### Community 35 - "Backdrop"
 Cohesion: 0.13
@@ -357,28 +344,24 @@ Cohesion: 0.12
 Nodes (16): B(), D(), I(), j(), M(), N(), O(), off() (+8 more)
 
 ### Community 44 - "R"
-Cohesion: 0.08
-Nodes (5): getDataAttributes(), H(), R, Ti, W
+Cohesion: 0.11
+Nodes (4): getDataAttributes(), H(), R, W
 
 ### Community 46 - "Sitepulse_Frontend"
-Cohesion: 0.18
-Nodes (4): Sitepulse_Frontend, FrontendAdminBarTest, Sitepulse_Test_Admin_Bar, FrontendTest
-
-### Community 47 - "Sitepulse_Test_Case"
-Cohesion: 0.07
-Nodes (5): Sitepulse_Setup, CoreRegressionTest, ProDetectionTest, SetupOnboardingTest, Sitepulse_Test_Case
+Cohesion: 0.23
+Nodes (3): Sitepulse_Frontend, FrontendAdminBarTest, Sitepulse_Test_Admin_Bar
 
 ### Community 51 - "remove"
-Cohesion: 0.12
-Nodes (4): Ue(), G, remove(), Ze
+Cohesion: 0.17
+Nodes (3): Ue(), remove(), Ze
 
 ### Community 52 - "do_action"
 Cohesion: 0.17
 Nodes (3): RemoteEventsTest, do_action(), get_theme_root()
 
 ### Community 53 - "home_url"
-Cohesion: 0.08
-Nodes (17): RuntimeException, add_query_arg(), admin_url(), check_admin_referer(), esc_url_raw(), home_url(), remove_query_arg(), sanitize_hex_color() (+9 more)
+Cohesion: 0.09
+Nodes (17): gethostbyname(), gethostname(), sitepulse_test_site_pages(), esc_url_raw(), home_url(), is_wp_error(), remove_query_arg(), sanitize_hex_color() (+9 more)
 
 ### Community 54 - "BaseComponent"
 Cohesion: 0.12
@@ -388,6 +371,10 @@ Nodes (5): Alert, BaseComponent, Button, enableDismissTrigger(), isDisabled()
 Cohesion: 0.31
 Nodes (15): bindEvents(), dismissOnboarding(), goToStep(), handleFinish(), handleKeys(), handleNext(), handlePrev(), handleSkip() (+7 more)
 
+### Community 66 - "Sitepulse_Remote_Client"
+Cohesion: 0.09
+Nodes (3): Sitepulse_Remote_Client, ApiBaseTest, RemoteApiMockTest
+
 ### Community 67 - "Sitepulse_Profiler"
 Cohesion: 0.06
 Nodes (3): Sitepulse_Profiler, ProfilerTest, RecentActivityTest
@@ -396,13 +383,13 @@ Nodes (3): Sitepulse_Profiler, ProfilerTest, RecentActivityTest
 Cohesion: 0.12
 Nodes (16): Automated Test Setup, WordPress Playground, features, networking, landingPage, meta, author, categories (+8 more)
 
+### Community 69 - "PopulatedTemplateTest"
+Cohesion: 0.22
+Nodes (3): PopulatedTemplateTest, sitepulse_test_seed_template_options(), sitepulse_test_template_data()
+
 ### Community 70 - "BaseComponent"
 Cohesion: 0.13
 Nodes (3): Alert, BaseComponent, Button
-
-### Community 71 - "AutoloadRestApiTest"
-Cohesion: 0.20
-Nodes (4): sitepulse_get_autoload_options(), sitepulse_get_protected_options(), sitepulse_update_autoload_option(), AutoloadRestApiTest
 
 ### Community 72 - "Dropdown"
 Cohesion: 0.14
@@ -420,21 +407,21 @@ Nodes (3): Alert, BaseComponent, Button
 Cohesion: 0.13
 Nodes (3): getScoreColor(), initPetAssistant(), initScoreRings()
 
-### Community 83 - "plugin_basename"
-Cohesion: 0.10
-Nodes (12): inc/ helpers, sitepulse_detect_first_position_conflict(), sitepulse_is_first_plugin(), sitepulse_move_to_first_position(), sitepulse_reorder_active_plugins_for_conflict(), register_activation_hook(), register_deactivation_hook(), get_plugin_data() (+4 more)
+### Community 82 - "Sitepulse_Page_Analysis"
+Cohesion: 0.06
+Nodes (5): Sitepulse_Page_Analysis, PageAnalysisTest, wc_get_page_id(), number_format_i18n(), wp_generate_password()
+
+### Community 83 - "Sitepulse_Remote_Activity"
+Cohesion: 0.08
+Nodes (7): Sitepulse_Remote_Activity, register_activation_hook(), register_deactivation_hook(), register_activation_hook(), register_deactivation_hook(), get_plugin_data(), plugin_basename()
 
 ### Community 86 - "Sitepulse_Onboarding"
-Cohesion: 0.06
-Nodes (11): Sitepulse_Onboarding, Architecture, Sitepulse_Loader, DirectAccessTemplateTest, submit_button(), wp_nonce_field(), delete_option(), esc_attr() (+3 more)
+Cohesion: 0.07
+Nodes (11): inc/ helpers, Sitepulse_Onboarding, Architecture, sitepulse_sanitize_param(), sitepulse_detect_first_position_conflict(), sitepulse_is_first_plugin(), Sitepulse_Loader, sitepulse_move_to_first_position() (+3 more)
 
-### Community 91 - "sanitize_text_field"
-Cohesion: 0.29
-Nodes (5): sitepulse_sanitize_param(), sitepulse_set_sp_profiler(), absint(), sanitize_text_field(), wp_kses_post()
-
-### Community 96 - "Sitepulse_Settings"
-Cohesion: 0.10
-Nodes (3): Sitepulse_Settings, SettingsTest, _get_cron_array()
+### Community 91 - "CoreAdditionalBehaviorTest"
+Cohesion: 0.09
+Nodes (4): Sitepulse_Product_Analytics, CoreAdditionalBehaviorTest, absint(), sanitize_key()
 
 ### Community 100 - "PluginTest"
 Cohesion: 0.10
@@ -445,8 +432,8 @@ Cohesion: 0.21
 Nodes (3): RemoteManagementTest, sitepulse_test_remote_request_body(), sitepulse_test_remote_response()
 
 ### Community 102 - "Sitepulse_Whitelabel_Service"
-Cohesion: 0.05
-Nodes (9): Sitepulse_Product_Analytics, Sitepulse_Whitelabel_Service, BrandingAnalyticsTest, PetAssistantTemplateTest, PopulatedTemplateTest, sitepulse_test_seed_template_options(), sitepulse_test_template_data(), sanitize_key() (+1 more)
+Cohesion: 0.12
+Nodes (3): Sitepulse_Whitelabel_Service, BrandingAnalyticsTest, wp_parse_args()
 
 ### Community 104 - "sitepulse_global.js"
 Cohesion: 0.31
@@ -476,13 +463,17 @@ Nodes (20): api(), card(), el(), format(), icon(), metric(), renderBreakdown(), 
 Cohesion: 0.09
 Nodes (9): Rollouts, PHPUnit\Framework\TestCase, sitepulse_read_php_coverage(), sitepulse_apply_version_bump(), sitepulse_next_version(), sitepulse_plan_version_bump(), sitepulse_version_locations(), CoverageGateTest (+1 more)
 
+### Community 139 - "get_plugins"
+Cohesion: 0.18
+Nodes (3): get_plugins(), Sitepulse_Test_Theme, wp_get_theme()
+
 ### Community 140 - "SitePulse — See What's Powering (or Slowing) Your Site"
 Cohesion: 0.13
 Nodes (14): Configuration, Contributing, FAQ, Installation, License, Measured Footprint, Option 1 — WordPress Playground (no install), Option 2 — Standard install (+6 more)
 
-### Community 143 - "Sitepulse_Easy_Mode"
-Cohesion: 0.08
-Nodes (8): Sitepulse_Easy_Mode, Sitepulse_Getting_Started, EasyModeTest, GettingStartedTest, get_current_user_id(), get_user_meta(), is_user_logged_in(), metadata_exists()
+### Community 143 - "Sitepulse_Backend"
+Cohesion: 0.05
+Nodes (17): Sitepulse_Backend, Sitepulse_Easy_Mode, Sitepulse_Getting_Started, EasyModeTest, GettingStartedTest, esc_js(), get_current_user_id(), get_user_meta() (+9 more)
 
 ### Community 144 - "Key Features"
 Cohesion: 0.40
@@ -505,12 +496,12 @@ Cohesion: 0.40
 Nodes (5): scripts, coverage:js, test, test:coverage, test:js
 
 ### Community 150 - "PresentationWordPress.php"
-Cohesion: 0.09
-Nodes (12): add_settings_section(), date_i18n(), do_settings_sections(), get_locale(), load_textdomain(), _n(), remove_all_actions(), wp_date() (+4 more)
+Cohesion: 0.05
+Nodes (18): Sitepulse_Monitoring, MonitoringTest, add_settings_section(), date_i18n(), do_settings_sections(), get_locale(), human_time_diff(), load_textdomain() (+10 more)
 
 ### Community 151 - "add_action"
-Cohesion: 0.12
-Nodes (4): add_action(), add_filter(), apply_filters(), Sitepulse_Test_Hook
+Cohesion: 0.07
+Nodes (6): Sitepulse_Page_Tracker, add_action(), add_filter(), get_num_queries(), remove_action(), Sitepulse_Test_Hook
 
 ### Community 152 - "onboarding.test.cjs"
 Cohesion: 0.20
@@ -520,9 +511,13 @@ Nodes (9): analysisI18n, analysisServer(), assert, { browser, jsonResponse }, gl
 Cohesion: 0.07
 Nodes (4): d(), ps, qt, vs
 
-### Community 158 - "update_option"
-Cohesion: 0.05
-Nodes (7): Sitepulse_Plugin_Profiler, ApiRegressionTest, CoreAdditionalBehaviorTest, PluginProfilerTest, StoredDataRobustnessTest, StoredDataWritePathsTest, update_option()
+### Community 157 - "Sitepulse_Plugin"
+Cohesion: 0.17
+Nodes (3): Sitepulse_Plugin, wp_convert_hr_to_bytes(), PluginAdditionalBehaviorTest
+
+### Community 158 - "Sitepulse_Plugin_Profiler"
+Cohesion: 0.06
+Nodes (4): Sitepulse_Plugin_Profiler, PluginProfilerTest, RestCoverageTest, StoredDataRobustnessTest
 
 ### Community 159 - "browser.cjs"
 Cohesion: 0.13
@@ -532,13 +527,17 @@ Nodes (17): assert, { browser }, localization, setup(), test, assert, { browser 
 Cohesion: 0.22
 Nodes (7): assert, autoloadResponse, { browser, jsonResponse }, loadOptions(), memoryResponse, setup(), test
 
-### Community 164 - "RestApiTest"
-Cohesion: 0.09
-Nodes (7): sitepulse_check_ai_diagnostic_status_api(), sitepulse_check_vulnerabilities_api(), sitepulse_get_memory_info(), sitepulse_rest_pre_dispatch(), sitepulse_set_wpslowhttp(), sitepulse_update_settings(), RestApiTest
+### Community 163 - "wp_normalize_path"
+Cohesion: 0.15
+Nodes (3): wp_debug_backtrace_summary(), get_template(), wp_normalize_path()
 
-### Community 165 - "WP_Error"
-Cohesion: 0.14
-Nodes (12): sitepulse_collect_plugin_data(), sitepulse_complete_onboarding(), sitepulse_dismiss_onboarding(), sitepulse_dismiss_onboarding_notice(), sitepulse_get_curl_stats(), sitepulse_get_plugin_profiler_stats(), sitepulse_get_profiler_stats(), sitepulse_request_ai_diagnostic_api() (+4 more)
+### Community 164 - "WP_REST_Request"
+Cohesion: 0.05
+Nodes (41): ArrayAccess, sitepulse_check_ai_diagnostic_status_api(), sitepulse_check_memory(), sitepulse_check_vulnerabilities_api(), sitepulse_collect_plugin_data(), sitepulse_complete_onboarding(), sitepulse_dismiss_getting_started(), sitepulse_dismiss_onboarding() (+33 more)
+
+### Community 165 - "Sitepulse_Remote_Management"
+Cohesion: 0.06
+Nodes (4): Sitepulse_Remote_Management, is_multisite(), site_url(), wp_generate_uuid4()
 
 ### Community 166 - "coverage.cjs"
 Cohesion: 0.17
@@ -549,8 +548,8 @@ Cohesion: 0.12
 Nodes (15): ref_node_assert, ref_node_test, assert, { browser }, test, assert, { browser, jsonResponse }, test (+7 more)
 
 ### Community 168 - "has_action"
-Cohesion: 0.19
-Nodes (3): Sitepulse_Cron_Fallback, CronTest, has_action()
+Cohesion: 0.15
+Nodes (4): Sitepulse_Cron_Fallback, fastcgi_finish_request(), has_action(), has_filter()
 
 ### Community 170 - "contains"
 Cohesion: 0.10
@@ -564,37 +563,29 @@ Nodes (5): assert, backend(), { browser, jsonResponse }, memory, test
 Cohesion: 0.08
 Nodes (26): description, engines, node, name, private, version, istanbul-lib-coverage, istanbul-lib-instrument (+18 more)
 
-### Community 174 - "get_option"
+### Community 174 - "update_option"
 Cohesion: 0.05
-Nodes (6): Sitepulse_Api_Service, ApiCoverageTest, ApiServiceTest, sitepulse_test_http_event(), sitepulse_test_recent_stat(), get_option()
+Nodes (8): Sitepulse_Api_Service, ApiCoverageTest, ApiRegressionTest, ApiServiceTest, sitepulse_test_http_event(), sitepulse_test_recent_stat(), get_option(), update_option()
 
 ### Community 176 - "Automated tests"
 Cohesion: 0.20
 Nodes (8): JavaScript, PHP, Regression fixes, Automated tests, JavaScript coverage, Limits and maintenance, PHP coverage, Run
 
 ### Community 177 - "get_transient"
-Cohesion: 0.17
-Nodes (4): delete_transient(), get_transient(), set_transient(), wp_doing_ajax()
+Cohesion: 0.11
+Nodes (4): SetupOnboardingTest, delete_transient(), get_transient(), set_transient()
 
-### Community 178 - "Sitepulse_Remote_Management"
-Cohesion: 0.06
-Nodes (5): Sitepulse_Remote_Management, human_time_diff(), site_url(), wp_clear_scheduled_hook(), wp_schedule_single_event()
+### Community 178 - ".time"
+Cohesion: 0.08
+Nodes (3): wp_clear_scheduled_hook(), wp_schedule_single_event(), wp_unschedule_event()
 
 ### Community 179 - "remote-connection.test.cjs"
 Cohesion: 0.40
 Nodes (5): assert, box(), { browser, jsonResponse }, settings(), test
 
-### Community 180 - "Sitepulse_Monitoring"
-Cohesion: 0.13
-Nodes (4): Sitepulse_Monitoring, MonitoringTest, delete_metadata(), is_admin()
-
 ### Community 182 - "WordPress.php"
 Cohesion: 0.04
-Nodes (45): HarnessIsolationTest, get_permalink(), get_the_title(), add_menu_page(), add_option(), add_submenu_page(), delete_user_meta(), did_action() (+37 more)
-
-### Community 183 - "Sitepulse_Page_Tracker"
-Cohesion: 0.08
-Nodes (4): Sitepulse_Page_Tracker, wp_debug_backtrace_summary(), PageTrackerTest, get_num_queries()
+Nodes (56): sitepulse_register_route(), sitepulse_reorder_active_plugins_for_conflict(), RuntimeException, HarnessIsolationTest, get_permalink(), get_the_title(), wp_strip_all_tags(), add_menu_page() (+48 more)
 
 ### Community 184 - "CLAUDE.md"
 Cohesion: 0.40
@@ -608,25 +599,25 @@ Nodes (6): Browser assets in assets/, class/ components, Prebuilt Assets, Sitepu
 Cohesion: 0.29
 Nodes (7): devDependencies, istanbul-lib-coverage, istanbul-lib-instrument, istanbul-lib-report, istanbul-reports, jquery, jsdom
 
-### Community 189 - "api_backend.php"
-Cohesion: 0.23
-Nodes (14): sitepulse_dismiss_getting_started(), sitepulse_enable_clear_curl_api_events(), sitepulse_enable_clear_load_events(), sitepulse_page_analysis_collect(), sitepulse_page_analysis_delete(), sitepulse_page_analysis_id(), sitepulse_page_analysis_report(), sitepulse_page_analysis_response() (+6 more)
+### Community 189 - ".roll_back"
+Cohesion: 0.28
+Nodes (5): Automatic_Upgrader_Skin, wp_clean_plugins_cache(), wp_clean_themes_cache(), wp_update_plugins(), wp_update_themes()
 
 ### Community 191 - "page-analysis.test.cjs"
 Cohesion: 0.18
 Nodes (8): jsonResponse(), assert, { browser, jsonResponse }, data, i18n, server(), setup(), test
 
-### Community 198 - "Sitepulse_Cron_Manager"
-Cohesion: 0.14
-Nodes (4): Sitepulse_Cron_Manager, wp_get_scheduled_event(), wp_get_schedules(), wp_schedule_event()
+### Community 198 - "CronTest"
+Cohesion: 0.12
+Nodes (5): Sitepulse_Cron_Manager, CronTest, wp_get_scheduled_event(), wp_get_schedules(), wp_schedule_event()
 
 ### Community 200 - "Dashboard (portal) endpoints"
 Cohesion: 0.13
-Nodes (15): Backup warnings, Connecting a site to an account, Dashboard (portal) endpoints, Key rotation, Monthly reports, Notifications, `POST /api/website/remote/check-in`, Roles (+7 more)
+Nodes (15): Backup warnings, Connecting a site to an account, Dashboard (portal) endpoints, Key rotation, Monthly reports, Notifications, `POST /api/website/remote/command-progress`, Roles (+7 more)
 
 ### Community 201 - "Remote management"
-Cohesion: 0.15
-Nodes (12): API → site, Development, Endpoints, Phases, `POST /api/website/remote/command-result`, `POST /api/website/remote/key`, Remote management, Retention (+4 more)
+Cohesion: 0.12
+Nodes (15): API → site, Development, Endpoints, Phases, `POST /api/website/remote/check-in`, `POST /api/website/remote/command-result`, `POST /api/website/remote/events`, `POST /api/website/remote/key` (+7 more)
 
 ### Community 202 - "B"
 Cohesion: 0.11
@@ -636,53 +627,45 @@ Nodes (3): B, U, x()
 Cohesion: 0.11
 Nodes (8): Sitepulse_Remote_Inventory, disk_free_space(), get_filesystem_method(), get_site_option(), is_plugin_active(), wp_get_themes(), wp_get_translation_updates(), wp_is_file_mod_allowed()
 
-### Community 215 - "api-variants.php"
-Cohesion: 0.22
-Nodes (5): gethostbyname(), gethostname(), register_activation_hook(), register_deactivation_hook(), wp_convert_hr_to_bytes()
-
-### Community 219 - "current_user_can"
-Cohesion: 0.32
-Nodes (5): check_ajax_referer(), current_user_can(), Sitepulse_Test_Json_Response, wp_send_json_error(), wp_send_json_success()
-
-### Community 220 - "is_wp_error"
-Cohesion: 0.12
-Nodes (12): has_filter(), is_wp_error(), remove_action(), remove_filter(), sitepulse_test_callback_id(), wp_generate_password(), wp_json_encode(), wp_rand() (+4 more)
+### Community 206 - "Sitepulse_Remote_Health"
+Cohesion: 0.15
+Nodes (4): Sitepulse_Remote_Health, maybe_unserialize(), remove_filter(), sitepulse_test_callback_id()
 
 ### Community 221 - "RemoteManagement.php"
-Cohesion: 0.11
-Nodes (11): Automatic_Upgrader_Skin, BackWPup_JobTypes, Core_Upgrader, Plugin_Upgrader, sitepulse_test_remote_endpoint(), sitepulse_test_site_pages(), Sitepulse_Test_Updraft_Admin, Sitepulse_Test_Upgrader (+3 more)
+Cohesion: 0.14
+Nodes (8): BackWPup_JobTypes, Core_Upgrader, Plugin_Upgrader, Sitepulse_Test_Updraft_Admin, Sitepulse_Test_Upgrader, Sitepulse_Test_Upgrades, Theme_Upgrader, updraft_try_include_file()
 
 ### Community 233 - "BackWPup"
-Cohesion: 0.10
-Nodes (6): BackWPup, BackWPup_Cron, Updraft_Restorer_Skin, UpdraftPlus_Backup_History, trailingslashit(), update_site_option()
-
-### Community 234 - "wp_next_scheduled"
-Cohesion: 0.28
-Nodes (3): wp_doing_cron(), wp_next_scheduled(), wp_unschedule_event()
+Cohesion: 0.11
+Nodes (6): BackWPup, BackWPup_Cron, Updraft_Restorer_Skin, trailingslashit(), update_site_option(), wp_delete_file()
 
 ### Community 235 - "Commands"
 Cohesion: 0.17
-Nodes (10): Backup commands, Backup preset format, Commands, `POST /api/website/remote/events`, `POST /api/website/remote/inventory`, `POST /api/website/remote/safe-update`, Safe updates, Update commands (+2 more)
+Nodes (8): Backup commands, Backup preset format, Commands, `POST /api/website/remote/inventory`, `POST /api/website/remote/safe-update`, Safe updates, Update commands, DirectAccessTemplateTest
+
+### Community 236 - "Sitepulse_Test_Case"
+Cohesion: 0.17
+Nodes (3): CoreRegressionTest, HttpOriginTest, Sitepulse_Test_Case
 
 ## Knowledge Gaps
 - **267 isolated node(s):** `elementMap`, `Data`, `DOMContentLoadedCallbacks`, `eventRegistry`, `customEvents` (+262 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1314 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **138 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1319 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **136 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Sitepulse_Test_Case` connect `Sitepulse_Test_Case` to `Sitepulse_Error_Handler`, `VersionBumpTest`, `Sitepulse_CurLoader`, `RemoteConnectionTest`, `Sitepulse_Easy_Mode`, `Sitepulse_Remote_Activity`, `BackendTest`, `Sitepulse_Remote_Backups`, `RestCoverageTest`, `Sitepulse_Plugin`, `update_option`, `LifecycleTest`, `RemoteBackupCommandsTest`, `RestApiTest`, `has_action`, `DiagnosticTemplateCoverageTest`, `get_option`, `Sitepulse_Frontend`, `Sitepulse_Test_Local_Filesystem`, `get_transient`, `RemoteRecoveryTest`, `Sitepulse_Monitoring`, `do_action`, `WordPress.php`, `Sitepulse_Page_Tracker`, `Sitepulse_Remote_Updates`, `OptionalViewIntegrationTest`, `RemoteClientTest`, `Sitepulse_Backend`, `ErrorHandlerVariantsTest`, `Sitepulse_Remote_Client`, `Sitepulse_Profiler`, `.test_every_request_goes_to_the_api_the_setting_names`, `AutoloadRestApiTest`, `update_user_meta`, `RecentDashboardTest`, `RemoteInventoryTest`, `CoreVariantsTest`, `PageAnalysisTest`, `CronCoverageTest`, `ApiVariantsTest`, `RemoteVariantsTest`, `Sitepulse_Onboarding`, `ProfilerCompatibilityTest`, `Sitepulse_Utils`, `current_user_can`, `Sitepulse_Settings`, `PluginTest`, `RemoteManagementTest`, `ActionSchedulerTest`, `Sitepulse_Whitelabel_Service`, `TemplateTest`, `HttpOriginTest`?**
-  _High betweenness centrality (0.052) - this node is a cross-community bridge._
-- **Why does `update_option()` connect `update_option` to `Sitepulse_Error_Handler`, `Sitepulse_CurLoader`, `Sitepulse_Remote_Events`, `RemoteConnectionTest`, `Sitepulse_Easy_Mode`, `add_action`, `Sitepulse_Test_Backups`, `Sitepulse_Remote_Activity`, `Sitepulse_Remote_Backups`, `RestCoverageTest`, `RestApiTest`, `RemoteBackupCommandsTest`, `WP_Error`, `has_action`, `DiagnosticTemplateCoverageTest`, `get_option`, `Sitepulse_Test_Case`, `Sitepulse_Frontend`, `get_transient`, `Sitepulse_Remote_Management`, `RemoteRecoveryTest`, `Sitepulse_Monitoring`, `home_url`, `WordPress.php`, `Sitepulse_Page_Tracker`, `do_action`, `Sitepulse_Remote_Updates`, `api_backend.php`, `Sitepulse_Backend`, `Sitepulse_Remote_Client`, `Sitepulse_Profiler`, `.test_every_request_goes_to_the_api_the_setting_names`, `Sitepulse_Cron_Manager`, `update_user_meta`, `PageAnalysisTest`, `plugin_basename`, `Sitepulse_Onboarding`, `ProfilerCompatibilityTest`, `Sitepulse_Utils`, `BackWPup_Job`, `Sitepulse_Page_Analysis`, `current_user_can`, `is_wp_error`, `sanitize_text_field`, `Sitepulse_AI_Diagnostic_Cron`, `RemoteManagement.php`, `Sitepulse_Settings`, `Sitepulse_Test_Database`, `RemoteManagementTest`, `Sitepulse_Whitelabel_Service`, `BackWPup`, `sitepulse_test_post_type`?**
-  _High betweenness centrality (0.033) - this node is a cross-community bridge._
-- **Why does `Dashboard (portal) endpoints` connect `Dashboard (portal) endpoints` to `VersionBumpTest`, `Remote management`, `Commands`, `remote-connection.test.cjs`?**
-  _High betweenness centrality (0.028) - this node is a cross-community bridge._
-- **Are the 246 inferred relationships involving `update_option()` (e.g. with `.make_api_request()` and `.make_vulnerability_api_request()`) actually correct?**
-  _`update_option()` has 246 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 185 inferred relationships involving `get_option()` (e.g. with `.check_ai_diagnostic_status()` and `.check_vulnerabilities()`) actually correct?**
-  _`get_option()` has 185 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 88 inferred relationships involving `Sitepulse_Remote_Management` (e.g. with `.watch()` and `.backwpup_finished()`) actually correct?**
-  _`Sitepulse_Remote_Management` has 88 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `Sitepulse_Test_Case` connect `Sitepulse_Test_Case` to `Sitepulse_Error_Handler`, `VersionBumpTest`, `Sitepulse_CurLoader`, `RemoteConnectionTest`, `Sitepulse_Backend`, `PresentationWordPress.php`, `add_action`, `RemoteActivityTest`, `BackendTest`, `Sitepulse_Remote_Backups`, `apply_filters`, `Sitepulse_Plugin`, `Sitepulse_Plugin_Profiler`, `LifecycleTest`, `RemoteBackupCommandsTest`, `WP_REST_Request`, `DiagnosticTemplateCoverageTest`, `update_option`, `Sitepulse_Frontend`, `Sitepulse_Setup`, `get_transient`, `RemoteRecoveryTest`, `PetAssistantTemplateTest`, `do_action`, `WordPress.php`, `PageTrackerTest`, `Sitepulse_Remote_Updates`, `OptionalViewIntegrationTest`, `RemoteClientTest`, `ErrorHandlerVariantsTest`, `BackendCoverageTest`, `Sitepulse_Remote_Client`, `Sitepulse_Profiler`, `PopulatedTemplateTest`, `CronTest`, `AutoloadRestApiTest`, `RecentDashboardTest`, `RemoteInventoryTest`, `CoreVariantsTest`, `Sitepulse_Page_Analysis`, `EasyModeSaveQueriesTest`, `ApiVariantsTest`, `RemoteVariantsTest`, `ProfilerCompatibilityTest`, `FrontendTest`, `Sitepulse_Utils`, `Sitepulse_AI_Diagnostic_Cron`, `CoreAdditionalBehaviorTest`, `PluginTest`, `RemoteManagementTest`, `ActionSchedulerTest`, `Sitepulse_Whitelabel_Service`, `TemplateTest`, `Commands`?**
+  _High betweenness centrality (0.045) - this node is a cross-community bridge._
+- **Why does `Dashboard (portal) endpoints` connect `Dashboard (portal) endpoints` to `VersionBumpTest`, `Remote management`, `get_plugins`, `Commands`, `remote-connection.test.cjs`?**
+  _High betweenness centrality (0.043) - this node is a cross-community bridge._
+- **Why does `settings()` connect `remote-connection.test.cjs` to `Dashboard (portal) endpoints`, `browser.cjs`?**
+  _High betweenness centrality (0.042) - this node is a cross-community bridge._
+- **Are the 247 inferred relationships involving `update_option()` (e.g. with `.make_api_request()` and `.make_vulnerability_api_request()`) actually correct?**
+  _`update_option()` has 247 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 186 inferred relationships involving `get_option()` (e.g. with `.check_ai_diagnostic_status()` and `.check_vulnerabilities()`) actually correct?**
+  _`get_option()` has 186 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 91 inferred relationships involving `Sitepulse_Remote_Management` (e.g. with `.watch()` and `.backwpup_finished()`) actually correct?**
+  _`Sitepulse_Remote_Management` has 91 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 47 inferred relationships involving `Sitepulse_Test_WP` (e.g. with `.queue()` and `.test_ai_poll_refreshes_queue_position_while_remaining_pending()`) actually correct?**
   _`Sitepulse_Test_WP` has 47 INFERRED edges - model-reasoned connections that need verification._
