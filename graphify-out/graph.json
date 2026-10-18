@@ -9593,7 +9593,7 @@
       "file_type": "code",
       "norm_label": ".command_label()",
       "source_file": "class/remote_management.php",
-      "source_location": "L972"
+      "source_location": "L976"
     },
     {
       "id": "loader_sitepulse_loader_load_plugin_textdomain",
@@ -11561,7 +11561,7 @@
       "file_type": "code",
       "norm_label": ".save_events()",
       "source_file": "class/remote_management.php",
-      "source_location": "L1059"
+      "source_location": "L1063"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_save_state",
@@ -11573,7 +11573,7 @@
       "file_type": "code",
       "norm_label": ".save_state()",
       "source_file": "class/remote_management.php",
-      "source_location": "L753"
+      "source_location": "L757"
     },
     {
       "id": "class_remote_updates_sitepulse_remote_updates_save_job",
@@ -13985,7 +13985,7 @@
       "file_type": "code",
       "norm_label": ".error_message()",
       "source_file": "class/remote_management.php",
-      "source_location": "L1079"
+      "source_location": "L1083"
     },
     {
       "id": "inc_api_backend_sitepulse_collect_plugin_data",
@@ -15989,7 +15989,7 @@
       "file_type": "code",
       "norm_label": ".is_blocked()",
       "source_file": "class/remote_management.php",
-      "source_location": "L223"
+      "source_location": "L226"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_license",
@@ -16001,7 +16001,7 @@
       "file_type": "code",
       "norm_label": ".license()",
       "source_file": "class/remote_management.php",
-      "source_location": "L738"
+      "source_location": "L742"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_queued_events",
@@ -16013,7 +16013,7 @@
       "file_type": "code",
       "norm_label": ".queued_events()",
       "source_file": "class/remote_management.php",
-      "source_location": "L1044"
+      "source_location": "L1048"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_signing_key",
@@ -16025,7 +16025,7 @@
       "file_type": "code",
       "norm_label": ".signing_key()",
       "source_file": "class/remote_management.php",
-      "source_location": "L855"
+      "source_location": "L859"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_state",
@@ -16037,7 +16037,7 @@
       "file_type": "code",
       "norm_label": ".state()",
       "source_file": "class/remote_management.php",
-      "source_location": "L238"
+      "source_location": "L241"
     },
     {
       "id": "inc_ai_diagnostic_cron_sitepulse_ai_diagnostic_cron_check_status_callback",
@@ -17165,7 +17165,7 @@
       "file_type": "code",
       "norm_label": ".check_in_when_late()",
       "source_file": "class/remote_management.php",
-      "source_location": "L155"
+      "source_location": "L158"
     },
     {
       "id": "class_remote_recovery_sitepulse_remote_recovery_run_job",
@@ -17405,7 +17405,7 @@
       "file_type": "code",
       "norm_label": ".backups_text()",
       "source_file": "class/remote_management.php",
-      "source_location": "L643"
+      "source_location": "L647"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_can_connect",
@@ -17417,7 +17417,7 @@
       "file_type": "code",
       "norm_label": ".can_connect()",
       "source_file": "class/remote_management.php",
-      "source_location": "L208"
+      "source_location": "L211"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_check_in",
@@ -17429,7 +17429,7 @@
       "file_type": "code",
       "norm_label": ".check_in()",
       "source_file": "class/remote_management.php",
-      "source_location": "L273"
+      "source_location": "L276"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_check_in_when_woken",
@@ -17441,7 +17441,7 @@
       "file_type": "code",
       "norm_label": ".check_in_when_woken()",
       "source_file": "class/remote_management.php",
-      "source_location": "L132"
+      "source_location": "L135"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_clamp",
@@ -17453,7 +17453,7 @@
       "file_type": "code",
       "norm_label": ".clamp()",
       "source_file": "class/remote_management.php",
-      "source_location": "L1095"
+      "source_location": "L1099"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_client",
@@ -17465,7 +17465,7 @@
       "file_type": "code",
       "norm_label": ".client()",
       "source_file": "class/remote_management.php",
-      "source_location": "L848"
+      "source_location": "L852"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_cloud_services_enabled",
@@ -17477,7 +17477,7 @@
       "file_type": "code",
       "norm_label": ".cloud_services_enabled()",
       "source_file": "class/remote_management.php",
-      "source_location": "L745"
+      "source_location": "L749"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_command_result",
@@ -17489,7 +17489,7 @@
       "file_type": "code",
       "norm_label": ".command_result()",
       "source_file": "class/remote_management.php",
-      "source_location": "L959"
+      "source_location": "L963"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_connection",
@@ -17501,7 +17501,7 @@
       "file_type": "code",
       "norm_label": ".connection()",
       "source_file": "class/remote_management.php",
-      "source_location": "L532"
+      "source_location": "L536"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_connection_from",
@@ -17513,7 +17513,7 @@
       "file_type": "code",
       "norm_label": ".connection_from()",
       "source_file": "class/remote_management.php",
-      "source_location": "L554"
+      "source_location": "L558"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_connection_view",
@@ -17525,7 +17525,7 @@
       "file_type": "code",
       "norm_label": ".connection_view()",
       "source_file": "class/remote_management.php",
-      "source_location": "L668"
+      "source_location": "L672"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_cron_health",
@@ -17537,7 +17537,7 @@
       "file_type": "code",
       "norm_label": ".cron_health()",
       "source_file": "class/remote_management.php",
-      "source_location": "L255"
+      "source_location": "L258"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_ensure_schedule",
@@ -17549,7 +17549,7 @@
       "file_type": "code",
       "norm_label": ".ensure_schedule()",
       "source_file": "class/remote_management.php",
-      "source_location": "L181"
+      "source_location": "L184"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_inventory_changed",
@@ -17561,7 +17561,7 @@
       "file_type": "code",
       "norm_label": ".inventory_changed()",
       "source_file": "class/remote_management.php",
-      "source_location": "L372"
+      "source_location": "L376"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_is_active",
@@ -17573,7 +17573,7 @@
       "file_type": "code",
       "norm_label": ".is_active()",
       "source_file": "class/remote_management.php",
-      "source_location": "L231"
+      "source_location": "L234"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_log",
@@ -17585,7 +17585,7 @@
       "file_type": "code",
       "norm_label": ".log()",
       "source_file": "class/remote_management.php",
-      "source_location": "L1066"
+      "source_location": "L1070"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_log_entries",
@@ -17597,7 +17597,7 @@
       "file_type": "code",
       "norm_label": ".log_entries()",
       "source_file": "class/remote_management.php",
-      "source_location": "L385"
+      "source_location": "L389"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_log_outcome",
@@ -17609,7 +17609,7 @@
       "file_type": "code",
       "norm_label": ".log_outcome()",
       "source_file": "class/remote_management.php",
-      "source_location": "L901"
+      "source_location": "L905"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_record_event",
@@ -17621,7 +17621,7 @@
       "file_type": "code",
       "norm_label": ".record_event()",
       "source_file": "class/remote_management.php",
-      "source_location": "L360"
+      "source_location": "L364"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_schedule_next",
@@ -17633,7 +17633,7 @@
       "file_type": "code",
       "norm_label": ".schedule_next()",
       "source_file": "class/remote_management.php",
-      "source_location": "L760"
+      "source_location": "L764"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_unschedule",
@@ -17645,7 +17645,7 @@
       "file_type": "code",
       "norm_label": ".unschedule()",
       "source_file": "class/remote_management.php",
-      "source_location": "L198"
+      "source_location": "L201"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_view_data",
@@ -17657,7 +17657,7 @@
       "file_type": "code",
       "norm_label": ".view_data()",
       "source_file": "class/remote_management.php",
-      "source_location": "L602"
+      "source_location": "L606"
     },
     {
       "id": "class_remote_recovery_sitepulse_remote_recovery_schedule",
@@ -19025,7 +19025,7 @@
       "file_type": "code",
       "norm_label": ".can_register()",
       "source_file": "class/remote_management.php",
-      "source_location": "L216"
+      "source_location": "L219"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_check_in_after_response",
@@ -19037,7 +19037,7 @@
       "file_type": "code",
       "norm_label": ".check_in_after_response()",
       "source_file": "class/remote_management.php",
-      "source_location": "L171"
+      "source_location": "L174"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_queue_event",
@@ -19049,7 +19049,7 @@
       "file_type": "code",
       "norm_label": ".queue_event()",
       "source_file": "class/remote_management.php",
-      "source_location": "L1030"
+      "source_location": "L1034"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_status",
@@ -19061,7 +19061,7 @@
       "file_type": "code",
       "norm_label": ".status()",
       "source_file": "class/remote_management.php",
-      "source_location": "L708"
+      "source_location": "L712"
     },
     {
       "id": "class_remote_recovery_sitepulse_remote_recovery_put_back",
@@ -24197,7 +24197,7 @@
       "file_type": "code",
       "norm_label": ".ajax_connection_poll()",
       "source_file": "class/remote_management.php",
-      "source_location": "L491"
+      "source_location": "L495"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_render_settings",
@@ -24209,7 +24209,7 @@
       "file_type": "code",
       "norm_label": ".render_settings()",
       "source_file": "class/remote_management.php",
-      "source_location": "L586"
+      "source_location": "L590"
     },
     {
       "id": "tests_php_support_testcase_sitepulse_test_case_ajaxresponse",
@@ -24485,7 +24485,7 @@
       "file_type": "code",
       "norm_label": ".connection_request()",
       "source_file": "class/remote_management.php",
-      "source_location": "L454"
+      "source_location": "L458"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_finish_command",
@@ -24497,7 +24497,7 @@
       "file_type": "code",
       "norm_label": ".finish_command()",
       "source_file": "class/remote_management.php",
-      "source_location": "L869"
+      "source_location": "L873"
     },
     {
       "id": "class_remote_recovery_sitepulse_remote_recovery_restore",
@@ -26237,7 +26237,7 @@
       "file_type": "code",
       "norm_label": ".init()",
       "source_file": "class/remote_management.php",
-      "source_location": "L104"
+      "source_location": "L107"
     },
     {
       "id": "class_remote_recovery_sitepulse_remote_recovery_init",
@@ -37157,7 +37157,7 @@
       "file_type": "code",
       "norm_label": ".handle_block_form()",
       "source_file": "class/remote_management.php",
-      "source_location": "L400"
+      "source_location": "L404"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_handle_connection_form",
@@ -37169,7 +37169,7 @@
       "file_type": "code",
       "norm_label": ".handle_connection_form()",
       "source_file": "class/remote_management.php",
-      "source_location": "L427"
+      "source_location": "L431"
     },
     {
       "id": "class_utils_sitepulse_utils_redact_url_query",
@@ -40805,7 +40805,7 @@
       "file_type": "code",
       "norm_label": ".rotate_key()",
       "source_file": "class/remote_management.php",
-      "source_location": "L830"
+      "source_location": "L834"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_run_command",
@@ -40817,7 +40817,7 @@
       "file_type": "code",
       "norm_label": ".run_command()",
       "source_file": "class/remote_management.php",
-      "source_location": "L920"
+      "source_location": "L924"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_run_commands",
@@ -40829,7 +40829,7 @@
       "file_type": "code",
       "norm_label": ".run_commands()",
       "source_file": "class/remote_management.php",
-      "source_location": "L787"
+      "source_location": "L791"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_send_events",
@@ -40841,7 +40841,7 @@
       "file_type": "code",
       "norm_label": ".send_events()",
       "source_file": "class/remote_management.php",
-      "source_location": "L1001"
+      "source_location": "L1005"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_send_inventory",
@@ -40853,7 +40853,7 @@
       "file_type": "code",
       "norm_label": ".send_inventory()",
       "source_file": "class/remote_management.php",
-      "source_location": "L770"
+      "source_location": "L774"
     },
     {
       "id": "class_remote_management_sitepulse_remote_management_send_pending_results",
@@ -40865,7 +40865,7 @@
       "file_type": "code",
       "norm_label": ".send_pending_results()",
       "source_file": "class/remote_management.php",
-      "source_location": "L886"
+      "source_location": "L890"
     },
     {
       "id": "tests_php_remoteapimocktest_remoteapimocktest_mock",
@@ -46073,7 +46073,7 @@
       "file_type": "code",
       "norm_label": ".plugin_links()",
       "source_file": "class/remote_management.php",
-      "source_location": "L520"
+      "source_location": "L524"
     },
     {
       "id": "class_remote_recovery_sitepulse_remote_recovery_finish",
@@ -50534,7 +50534,7 @@
       "node_kind": "heading",
       "norm_label": "rollouts",
       "source_file": "docs/remote-management.md",
-      "source_location": "L439"
+      "source_location": "L440"
     },
     {
       "id": "uninstall",
@@ -53609,7 +53609,7 @@
       "node_kind": "heading",
       "norm_label": "backup warnings",
       "source_file": "docs/remote-management.md",
-      "source_location": "L502"
+      "source_location": "L503"
     },
     {
       "id": "docs_remote_management_connecting_a_site_to_an_account",
@@ -53621,7 +53621,7 @@
       "node_kind": "heading",
       "norm_label": "connecting a site to an account",
       "source_file": "docs/remote-management.md",
-      "source_location": "L217"
+      "source_location": "L218"
     },
     {
       "id": "docs_remote_management_dashboard_portal_endpoints",
@@ -53633,7 +53633,7 @@
       "node_kind": "heading",
       "norm_label": "dashboard (portal) endpoints",
       "source_file": "docs/remote-management.md",
-      "source_location": "L359"
+      "source_location": "L360"
     },
     {
       "id": "docs_remote_management_key_rotation",
@@ -53645,7 +53645,7 @@
       "node_kind": "heading",
       "norm_label": "key rotation",
       "source_file": "docs/remote-management.md",
-      "source_location": "L429"
+      "source_location": "L430"
     },
     {
       "id": "docs_remote_management_monthly_reports",
@@ -53657,7 +53657,7 @@
       "node_kind": "heading",
       "norm_label": "monthly reports",
       "source_file": "docs/remote-management.md",
-      "source_location": "L579"
+      "source_location": "L580"
     },
     {
       "id": "docs_remote_management_notifications",
@@ -53669,7 +53669,7 @@
       "node_kind": "heading",
       "norm_label": "notifications",
       "source_file": "docs/remote-management.md",
-      "source_location": "L615"
+      "source_location": "L616"
     },
     {
       "id": "docs_remote_management_post_api_website_remote_check_in",
@@ -53693,7 +53693,7 @@
       "node_kind": "heading",
       "norm_label": "roles",
       "source_file": "docs/remote-management.md",
-      "source_location": "L415"
+      "source_location": "L416"
     },
     {
       "id": "docs_remote_management_slowdowns_and_security_fixes",
@@ -53705,7 +53705,7 @@
       "node_kind": "heading",
       "norm_label": "slowdowns and security fixes",
       "source_file": "docs/remote-management.md",
-      "source_location": "L555"
+      "source_location": "L556"
     },
     {
       "id": "docs_remote_management_timeline",
@@ -53717,7 +53717,7 @@
       "node_kind": "heading",
       "norm_label": "timeline",
       "source_file": "docs/remote-management.md",
-      "source_location": "L563"
+      "source_location": "L564"
     },
     {
       "id": "docs_remote_management_update_policy",
@@ -53729,7 +53729,7 @@
       "node_kind": "heading",
       "norm_label": "update policy",
       "source_file": "docs/remote-management.md",
-      "source_location": "L513"
+      "source_location": "L514"
     },
     {
       "id": "docs_remote_management_update_warnings",
@@ -53741,7 +53741,7 @@
       "node_kind": "heading",
       "norm_label": "update warnings",
       "source_file": "docs/remote-management.md",
-      "source_location": "L543"
+      "source_location": "L544"
     },
     {
       "id": "docs_remote_management_updates_across_sites",
@@ -53753,7 +53753,7 @@
       "node_kind": "heading",
       "norm_label": "updates across sites",
       "source_file": "docs/remote-management.md",
-      "source_location": "L453"
+      "source_location": "L454"
     },
     {
       "id": "docs_remote_management_wp_cron",
@@ -53765,7 +53765,7 @@
       "node_kind": "heading",
       "norm_label": "wp-cron",
       "source_file": "docs/remote-management.md",
-      "source_location": "L485"
+      "source_location": "L486"
     },
     {
       "id": "docs_remote_management",
@@ -53801,7 +53801,7 @@
       "node_kind": "heading",
       "norm_label": "development",
       "source_file": "docs/remote-management.md",
-      "source_location": "L660"
+      "source_location": "L661"
     },
     {
       "id": "docs_remote_management_endpoints",
@@ -53825,7 +53825,7 @@
       "node_kind": "heading",
       "norm_label": "phases",
       "source_file": "docs/remote-management.md",
-      "source_location": "L671"
+      "source_location": "L672"
     },
     {
       "id": "docs_remote_management_post_api_website_remote_command_result",
@@ -53837,7 +53837,7 @@
       "node_kind": "heading",
       "norm_label": "`post /api/website/remote/command-result`",
       "source_file": "docs/remote-management.md",
-      "source_location": "L207"
+      "source_location": "L208"
     },
     {
       "id": "docs_remote_management_post_api_website_remote_key",
@@ -53849,7 +53849,7 @@
       "node_kind": "heading",
       "norm_label": "`post /api/website/remote/key`",
       "source_file": "docs/remote-management.md",
-      "source_location": "L113"
+      "source_location": "L114"
     },
     {
       "id": "docs_remote_management_remote_management",
@@ -53873,7 +53873,7 @@
       "node_kind": "heading",
       "norm_label": "retention",
       "source_file": "docs/remote-management.md",
-      "source_location": "L656"
+      "source_location": "L657"
     },
     {
       "id": "docs_remote_management_signing",
@@ -54208,7 +54208,7 @@
       "node_kind": "heading",
       "norm_label": "backup commands",
       "source_file": "docs/remote-management.md",
-      "source_location": "L268"
+      "source_location": "L269"
     },
     {
       "id": "docs_remote_management_backup_preset_format",
@@ -54220,7 +54220,7 @@
       "node_kind": "heading",
       "norm_label": "backup preset format",
       "source_file": "docs/remote-management.md",
-      "source_location": "L281"
+      "source_location": "L282"
     },
     {
       "id": "docs_remote_management_commands",
@@ -54232,7 +54232,7 @@
       "node_kind": "heading",
       "norm_label": "commands",
       "source_file": "docs/remote-management.md",
-      "source_location": "L251"
+      "source_location": "L252"
     },
     {
       "id": "docs_remote_management_post_api_website_remote_events",
@@ -54244,7 +54244,7 @@
       "node_kind": "heading",
       "norm_label": "`post /api/website/remote/events`",
       "source_file": "docs/remote-management.md",
-      "source_location": "L175"
+      "source_location": "L176"
     },
     {
       "id": "docs_remote_management_post_api_website_remote_inventory",
@@ -54256,7 +54256,7 @@
       "node_kind": "heading",
       "norm_label": "`post /api/website/remote/inventory`",
       "source_file": "docs/remote-management.md",
-      "source_location": "L117"
+      "source_location": "L118"
     },
     {
       "id": "docs_remote_management_post_api_website_remote_safe_update",
@@ -54268,7 +54268,7 @@
       "node_kind": "heading",
       "norm_label": "`post /api/website/remote/safe-update`",
       "source_file": "docs/remote-management.md",
-      "source_location": "L355"
+      "source_location": "L356"
     },
     {
       "id": "docs_remote_management_safe_updates",
@@ -54280,7 +54280,7 @@
       "node_kind": "heading",
       "norm_label": "safe updates",
       "source_file": "docs/remote-management.md",
-      "source_location": "L324"
+      "source_location": "L325"
     },
     {
       "id": "docs_remote_management_update_commands",
@@ -54292,7 +54292,7 @@
       "node_kind": "heading",
       "norm_label": "update commands",
       "source_file": "docs/remote-management.md",
-      "source_location": "L295"
+      "source_location": "L296"
     },
     {
       "id": "tests_php_httporigintest",
@@ -99366,7 +99366,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "class/remote_management.php",
-      "source_location": "L1079",
+      "source_location": "L1083",
       "weight": 1.0
     },
     {
@@ -99378,7 +99378,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "class/remote_management.php",
-      "source_location": "L830",
+      "source_location": "L834",
       "weight": 1.0
     },
     {
@@ -99390,7 +99390,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "class/remote_management.php",
-      "source_location": "L920",
+      "source_location": "L924",
       "weight": 1.0
     },
     {
@@ -99402,7 +99402,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "class/remote_management.php",
-      "source_location": "L787",
+      "source_location": "L791",
       "weight": 1.0
     },
     {
@@ -99414,7 +99414,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "class/remote_management.php",
-      "source_location": "L1001",
+      "source_location": "L1005",
       "weight": 1.0
     },
     {
@@ -99426,7 +99426,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "class/remote_management.php",
-      "source_location": "L770",
+      "source_location": "L774",
       "weight": 1.0
     },
     {
@@ -99438,7 +99438,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "class/remote_management.php",
-      "source_location": "L886",
+      "source_location": "L890",
       "weight": 1.0
     },
     {
@@ -107753,7 +107753,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L268",
+      "source_location": "L269",
       "weight": 1.0
     },
     {
@@ -107764,7 +107764,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L281",
+      "source_location": "L282",
       "weight": 1.0
     },
     {
@@ -107775,7 +107775,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L295",
+      "source_location": "L296",
       "weight": 1.0
     },
     {
@@ -107786,7 +107786,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L324",
+      "source_location": "L325",
       "weight": 1.0
     },
     {
@@ -107797,7 +107797,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L355",
+      "source_location": "L356",
       "weight": 1.0
     },
     {
@@ -107808,7 +107808,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L415",
+      "source_location": "L416",
       "weight": 1.0
     },
     {
@@ -107819,7 +107819,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L429",
+      "source_location": "L430",
       "weight": 1.0
     },
     {
@@ -107830,7 +107830,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L439",
+      "source_location": "L440",
       "weight": 1.0
     },
     {
@@ -107841,7 +107841,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L453",
+      "source_location": "L454",
       "weight": 1.0
     },
     {
@@ -107852,7 +107852,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L485",
+      "source_location": "L486",
       "weight": 1.0
     },
     {
@@ -107863,7 +107863,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L502",
+      "source_location": "L503",
       "weight": 1.0
     },
     {
@@ -107874,7 +107874,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L513",
+      "source_location": "L514",
       "weight": 1.0
     },
     {
@@ -107885,7 +107885,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L543",
+      "source_location": "L544",
       "weight": 1.0
     },
     {
@@ -107896,7 +107896,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L555",
+      "source_location": "L556",
       "weight": 1.0
     },
     {
@@ -107907,7 +107907,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L563",
+      "source_location": "L564",
       "weight": 1.0
     },
     {
@@ -107918,7 +107918,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L579",
+      "source_location": "L580",
       "weight": 1.0
     },
     {
@@ -107929,7 +107929,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L615",
+      "source_location": "L616",
       "weight": 1.0
     },
     {
@@ -107940,7 +107940,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L113",
+      "source_location": "L114",
       "weight": 1.0
     },
     {
@@ -107951,7 +107951,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L117",
+      "source_location": "L118",
       "weight": 1.0
     },
     {
@@ -107962,7 +107962,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L175",
+      "source_location": "L176",
       "weight": 1.0
     },
     {
@@ -107973,7 +107973,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L207",
+      "source_location": "L208",
       "weight": 1.0
     },
     {
@@ -108006,7 +108006,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L217",
+      "source_location": "L218",
       "weight": 1.0
     },
     {
@@ -108017,7 +108017,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L251",
+      "source_location": "L252",
       "weight": 1.0
     },
     {
@@ -108028,7 +108028,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L359",
+      "source_location": "L360",
       "weight": 1.0
     },
     {
@@ -108050,7 +108050,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L656",
+      "source_location": "L657",
       "weight": 1.0
     },
     {
@@ -108061,7 +108061,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L660",
+      "source_location": "L661",
       "weight": 1.0
     },
     {
@@ -108072,7 +108072,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "docs/remote-management.md",
-      "source_location": "L671",
+      "source_location": "L672",
       "weight": 1.0
     },
     {
@@ -135132,7 +135132,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L1001",
+      "source_location": "L1005",
       "weight": 1.0
     },
     {
@@ -135143,18 +135143,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L1030",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management",
-      "target": "class_remote_management_sitepulse_remote_management_init",
-      "relation": "method",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "class/remote_management.php",
-      "source_location": "L104",
+      "source_location": "L1034",
       "weight": 1.0
     },
     {
@@ -135165,7 +135154,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L1044",
+      "source_location": "L1048",
       "weight": 1.0
     },
     {
@@ -135176,7 +135165,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L1059",
+      "source_location": "L1063",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management",
+      "target": "class_remote_management_sitepulse_remote_management_init",
+      "relation": "method",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "class/remote_management.php",
+      "source_location": "L107",
       "weight": 1.0
     },
     {
@@ -135187,7 +135187,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L1066",
+      "source_location": "L1070",
       "weight": 1.0
     },
     {
@@ -135198,7 +135198,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L1079",
+      "source_location": "L1083",
       "weight": 1.0
     },
     {
@@ -135209,7 +135209,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L1095",
+      "source_location": "L1099",
       "weight": 1.0
     },
     {
@@ -135220,7 +135220,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L132",
+      "source_location": "L135",
       "weight": 1.0
     },
     {
@@ -135231,7 +135231,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L155",
+      "source_location": "L158",
       "weight": 1.0
     },
     {
@@ -135242,7 +135242,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L171",
+      "source_location": "L174",
       "weight": 1.0
     },
     {
@@ -135253,7 +135253,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L181",
+      "source_location": "L184",
       "weight": 1.0
     },
     {
@@ -135264,7 +135264,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L198",
+      "source_location": "L201",
       "weight": 1.0
     },
     {
@@ -135275,7 +135275,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L208",
+      "source_location": "L211",
       "weight": 1.0
     },
     {
@@ -135286,7 +135286,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L216",
+      "source_location": "L219",
       "weight": 1.0
     },
     {
@@ -135297,7 +135297,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L223",
+      "source_location": "L226",
       "weight": 1.0
     },
     {
@@ -135308,7 +135308,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L231",
+      "source_location": "L234",
       "weight": 1.0
     },
     {
@@ -135319,7 +135319,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L238",
+      "source_location": "L241",
       "weight": 1.0
     },
     {
@@ -135330,7 +135330,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L255",
+      "source_location": "L258",
       "weight": 1.0
     },
     {
@@ -135341,7 +135341,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L273",
+      "source_location": "L276",
       "weight": 1.0
     },
     {
@@ -135352,7 +135352,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L360",
+      "source_location": "L364",
       "weight": 1.0
     },
     {
@@ -135363,7 +135363,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L372",
+      "source_location": "L376",
       "weight": 1.0
     },
     {
@@ -135374,7 +135374,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L385",
+      "source_location": "L389",
       "weight": 1.0
     },
     {
@@ -135385,7 +135385,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L400",
+      "source_location": "L404",
       "weight": 1.0
     },
     {
@@ -135396,7 +135396,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L427",
+      "source_location": "L431",
       "weight": 1.0
     },
     {
@@ -135407,7 +135407,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L454",
+      "source_location": "L458",
       "weight": 1.0
     },
     {
@@ -135418,7 +135418,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L491",
+      "source_location": "L495",
       "weight": 1.0
     },
     {
@@ -135429,7 +135429,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L520",
+      "source_location": "L524",
       "weight": 1.0
     },
     {
@@ -135440,7 +135440,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L532",
+      "source_location": "L536",
       "weight": 1.0
     },
     {
@@ -135451,7 +135451,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L554",
+      "source_location": "L558",
       "weight": 1.0
     },
     {
@@ -135462,7 +135462,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L586",
+      "source_location": "L590",
       "weight": 1.0
     },
     {
@@ -135473,7 +135473,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L602",
+      "source_location": "L606",
       "weight": 1.0
     },
     {
@@ -135484,7 +135484,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L643",
+      "source_location": "L647",
       "weight": 1.0
     },
     {
@@ -135495,7 +135495,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L668",
+      "source_location": "L672",
       "weight": 1.0
     },
     {
@@ -135506,7 +135506,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L708",
+      "source_location": "L712",
       "weight": 1.0
     },
     {
@@ -135517,7 +135517,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L738",
+      "source_location": "L742",
       "weight": 1.0
     },
     {
@@ -135528,7 +135528,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L745",
+      "source_location": "L749",
       "weight": 1.0
     },
     {
@@ -135539,7 +135539,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L753",
+      "source_location": "L757",
       "weight": 1.0
     },
     {
@@ -135550,7 +135550,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L760",
+      "source_location": "L764",
       "weight": 1.0
     },
     {
@@ -135561,7 +135561,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L770",
+      "source_location": "L774",
       "weight": 1.0
     },
     {
@@ -135572,7 +135572,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L787",
+      "source_location": "L791",
       "weight": 1.0
     },
     {
@@ -135583,7 +135583,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L830",
+      "source_location": "L834",
       "weight": 1.0
     },
     {
@@ -135594,7 +135594,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L848",
+      "source_location": "L852",
       "weight": 1.0
     },
     {
@@ -135605,7 +135605,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L855",
+      "source_location": "L859",
       "weight": 1.0
     },
     {
@@ -135616,7 +135616,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L869",
+      "source_location": "L873",
       "weight": 1.0
     },
     {
@@ -135627,7 +135627,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L886",
+      "source_location": "L890",
       "weight": 1.0
     },
     {
@@ -135638,7 +135638,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L901",
+      "source_location": "L905",
       "weight": 1.0
     },
     {
@@ -135649,7 +135649,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L920",
+      "source_location": "L924",
       "weight": 1.0
     },
     {
@@ -135660,7 +135660,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L959",
+      "source_location": "L963",
       "weight": 1.0
     },
     {
@@ -135671,7 +135671,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "class/remote_management.php",
-      "source_location": "L972",
+      "source_location": "L976",
       "weight": 1.0
     },
     {
@@ -158021,7 +158021,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L492",
+      "source_location": "L496",
       "weight": 1.0
     },
     {
@@ -158033,7 +158033,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L492",
+      "source_location": "L496",
       "weight": 1.0
     },
     {
@@ -158045,7 +158045,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L493",
+      "source_location": "L497",
       "weight": 1.0
     },
     {
@@ -158057,7 +158057,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L498",
+      "source_location": "L502",
       "weight": 1.0
     },
     {
@@ -158069,7 +158069,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L501",
+      "source_location": "L505",
       "weight": 1.0
     },
     {
@@ -158081,7 +158081,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L506",
+      "source_location": "L510",
       "weight": 1.0
     },
     {
@@ -158093,7 +158093,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L217",
+      "source_location": "L220",
       "weight": 1.0
     },
     {
@@ -158105,7 +158105,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L282",
+      "source_location": "L285",
       "weight": 1.0
     },
     {
@@ -158117,7 +158117,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L288",
+      "source_location": "L291",
       "weight": 1.0
     },
     {
@@ -158129,7 +158129,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L296",
+      "source_location": "L300",
       "weight": 1.0
     },
     {
@@ -158141,7 +158141,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L314",
+      "source_location": "L318",
       "weight": 1.0
     },
     {
@@ -158153,7 +158153,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L328",
+      "source_location": "L332",
       "weight": 1.0
     },
     {
@@ -158165,48 +158165,12 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L173",
+      "source_location": "L176",
       "weight": 1.0
     },
     {
       "source": "class_remote_management_sitepulse_remote_management_check_in_when_late",
       "target": "tests_php_support_wordpress_current_user_can",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "class/remote_management.php",
-      "source_location": "L156",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management_check_in_when_late",
-      "target": "tests_php_support_wordpress_wp_doing_ajax",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "class/remote_management.php",
-      "source_location": "L156",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management_check_in_when_late",
-      "target": "tests_php_support_wordpress_wp_doing_cron",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "class/remote_management.php",
-      "source_location": "L156",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management_check_in_when_late",
-      "target": "tests_php_support_wordpress_wp_next_scheduled",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "INFERRED",
@@ -158218,6 +158182,42 @@
     },
     {
       "source": "class_remote_management_sitepulse_remote_management_check_in_when_late",
+      "target": "tests_php_support_wordpress_wp_doing_ajax",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "class/remote_management.php",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management_check_in_when_late",
+      "target": "tests_php_support_wordpress_wp_doing_cron",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "class/remote_management.php",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management_check_in_when_late",
+      "target": "tests_php_support_wordpress_wp_next_scheduled",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "class/remote_management.php",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management_check_in_when_late",
       "target": "class_remote_backups_sitepulse_remote_backups_time",
       "relation": "calls",
       "_origin": "ast",
@@ -158225,7 +158225,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L160",
+      "source_location": "L163",
       "weight": 1.0
     },
     {
@@ -158237,7 +158237,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L160",
+      "source_location": "L163",
       "weight": 1.0
     },
     {
@@ -158249,7 +158249,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L164",
+      "source_location": "L167",
       "weight": 1.0
     },
     {
@@ -158261,7 +158261,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L165",
+      "source_location": "L168",
       "weight": 1.0
     },
     {
@@ -158273,7 +158273,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L137",
+      "source_location": "L140",
       "weight": 1.0
     },
     {
@@ -158285,7 +158285,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L138",
+      "source_location": "L141",
       "weight": 1.0
     },
     {
@@ -158297,7 +158297,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L746",
+      "source_location": "L750",
       "weight": 1.0
     },
     {
@@ -158309,7 +158309,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L981",
+      "source_location": "L985",
       "weight": 1.0
     },
     {
@@ -158321,7 +158321,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L533",
+      "source_location": "L537",
       "weight": 1.0
     },
     {
@@ -158333,7 +158333,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L576",
+      "source_location": "L580",
       "weight": 1.0
     },
     {
@@ -158345,7 +158345,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L457",
+      "source_location": "L461",
       "weight": 1.0
     },
     {
@@ -158357,7 +158357,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L471",
+      "source_location": "L475",
       "weight": 1.0
     },
     {
@@ -158369,7 +158369,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L676",
+      "source_location": "L680",
       "weight": 1.0
     },
     {
@@ -158381,7 +158381,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L676",
+      "source_location": "L680",
       "weight": 1.0
     },
     {
@@ -158393,36 +158393,12 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L684",
+      "source_location": "L688",
       "weight": 1.0
     },
     {
       "source": "class_remote_management_sitepulse_remote_management_connection_view",
       "target": "class_remote_backups_sitepulse_remote_backups_time",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "class/remote_management.php",
-      "source_location": "L690",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management_connection_view",
-      "target": "tests_php_support_presentationwordpress_human_time_diff",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "class/remote_management.php",
-      "source_location": "L690",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management_connection_view",
-      "target": "tests_php_support_wordpress_admin_url",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "INFERRED",
@@ -158434,6 +158410,30 @@
     },
     {
       "source": "class_remote_management_sitepulse_remote_management_connection_view",
+      "target": "tests_php_support_presentationwordpress_human_time_diff",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "class/remote_management.php",
+      "source_location": "L694",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management_connection_view",
+      "target": "tests_php_support_wordpress_admin_url",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "class/remote_management.php",
+      "source_location": "L698",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management_connection_view",
       "target": "tests_php_support_wordpress_wp_create_nonce",
       "relation": "calls",
       "_origin": "ast",
@@ -158441,7 +158441,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L696",
+      "source_location": "L700",
       "weight": 1.0
     },
     {
@@ -158453,7 +158453,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L256",
+      "source_location": "L259",
       "weight": 1.0
     },
     {
@@ -158465,7 +158465,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L258",
+      "source_location": "L261",
       "weight": 1.0
     },
     {
@@ -158477,7 +158477,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L263",
+      "source_location": "L266",
       "weight": 1.0
     },
     {
@@ -158489,7 +158489,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L182",
+      "source_location": "L185",
       "weight": 1.0
     },
     {
@@ -158501,7 +158501,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L191",
+      "source_location": "L194",
       "weight": 1.0
     },
     {
@@ -158513,7 +158513,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L191",
+      "source_location": "L194",
       "weight": 1.0
     },
     {
@@ -158525,36 +158525,12 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L872",
+      "source_location": "L876",
       "weight": 1.0
     },
     {
       "source": "class_remote_management_sitepulse_remote_management_handle_block_form",
       "target": "tests_php_support_wordpress_current_user_can",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "class/remote_management.php",
-      "source_location": "L401",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management_handle_block_form",
-      "target": "tests_php_support_wordpress_wp_die",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "class/remote_management.php",
-      "source_location": "L402",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management_handle_block_form",
-      "target": "tests_php_support_wordpress_check_admin_referer",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "INFERRED",
@@ -158566,6 +158542,30 @@
     },
     {
       "source": "class_remote_management_sitepulse_remote_management_handle_block_form",
+      "target": "tests_php_support_wordpress_wp_die",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "class/remote_management.php",
+      "source_location": "L406",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management_handle_block_form",
+      "target": "tests_php_support_wordpress_check_admin_referer",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "class/remote_management.php",
+      "source_location": "L409",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management_handle_block_form",
       "target": "class_settings_sitepulse_settings",
       "relation": "calls",
       "_origin": "ast",
@@ -158573,7 +158573,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L410",
+      "source_location": "L414",
       "weight": 1.0
     },
     {
@@ -158585,7 +158585,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L418",
+      "source_location": "L422",
       "weight": 1.0
     },
     {
@@ -158597,7 +158597,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L419",
+      "source_location": "L423",
       "weight": 1.0
     },
     {
@@ -158609,36 +158609,12 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L419",
+      "source_location": "L423",
       "weight": 1.0
     },
     {
       "source": "class_remote_management_sitepulse_remote_management_handle_connection_form",
       "target": "tests_php_support_wordpress_current_user_can",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "class/remote_management.php",
-      "source_location": "L428",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management_handle_connection_form",
-      "target": "tests_php_support_wordpress_wp_die",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "class/remote_management.php",
-      "source_location": "L429",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management_handle_connection_form",
-      "target": "tests_php_support_wordpress_check_admin_referer",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "INFERRED",
@@ -158650,31 +158626,31 @@
     },
     {
       "source": "class_remote_management_sitepulse_remote_management_handle_connection_form",
+      "target": "tests_php_support_wordpress_wp_die",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "class/remote_management.php",
+      "source_location": "L433",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management_handle_connection_form",
+      "target": "tests_php_support_wordpress_check_admin_referer",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "class/remote_management.php",
+      "source_location": "L436",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management_handle_connection_form",
       "target": "tests_php_support_wordpress_sanitize_key",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "class/remote_management.php",
-      "source_location": "L434",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management_handle_connection_form",
-      "target": "tests_php_support_wordpress_wp_unslash",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "class/remote_management.php",
-      "source_location": "L434",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management_handle_connection_form",
-      "target": "tests_php_support_wordpress_update_option",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "INFERRED",
@@ -158686,6 +158662,30 @@
     },
     {
       "source": "class_remote_management_sitepulse_remote_management_handle_connection_form",
+      "target": "tests_php_support_wordpress_wp_unslash",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "class/remote_management.php",
+      "source_location": "L438",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management_handle_connection_form",
+      "target": "tests_php_support_wordpress_update_option",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "class/remote_management.php",
+      "source_location": "L442",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management_handle_connection_form",
       "target": "tests_php_support_wordpress_wp_get_referer",
       "relation": "calls",
       "_origin": "ast",
@@ -158693,7 +158693,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L441",
+      "source_location": "L445",
       "weight": 1.0
     },
     {
@@ -158705,7 +158705,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L442",
+      "source_location": "L446",
       "weight": 1.0
     },
     {
@@ -158717,7 +158717,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L442",
+      "source_location": "L446",
       "weight": 1.0
     },
     {
@@ -158729,7 +158729,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L105",
+      "source_location": "L108",
       "weight": 1.0
     },
     {
@@ -158741,7 +158741,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L111",
+      "source_location": "L114",
       "weight": 1.0
     },
     {
@@ -158753,7 +158753,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L111",
+      "source_location": "L114",
       "weight": 1.0
     },
     {
@@ -158765,7 +158765,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L112",
+      "source_location": "L115",
       "weight": 1.0
     },
     {
@@ -158777,7 +158777,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L113",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -158789,7 +158789,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L114",
+      "source_location": "L117",
       "weight": 1.0
     },
     {
@@ -158801,7 +158801,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L115",
+      "source_location": "L118",
       "weight": 1.0
     },
     {
@@ -158813,7 +158813,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L118",
+      "source_location": "L121",
       "weight": 1.0
     },
     {
@@ -158825,7 +158825,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L118",
+      "source_location": "L121",
       "weight": 1.0
     },
     {
@@ -158837,7 +158837,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L224",
+      "source_location": "L227",
       "weight": 1.0
     },
     {
@@ -158849,7 +158849,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L739",
+      "source_location": "L743",
       "weight": 1.0
     },
     {
@@ -158861,7 +158861,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L1069",
+      "source_location": "L1073",
       "weight": 1.0
     },
     {
@@ -158873,7 +158873,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L1072",
+      "source_location": "L1076",
       "weight": 1.0
     },
     {
@@ -158885,24 +158885,12 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L386",
+      "source_location": "L390",
       "weight": 1.0
     },
     {
       "source": "class_remote_management_sitepulse_remote_management_plugin_links",
       "target": "tests_php_support_wordpress_current_user_can",
-      "relation": "calls",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
-      "context": "call",
-      "source_file": "class/remote_management.php",
-      "source_location": "L521",
-      "weight": 1.0
-    },
-    {
-      "source": "class_remote_management_sitepulse_remote_management_plugin_links",
-      "target": "tests_php_support_wordpress_admin_url",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "INFERRED",
@@ -158914,6 +158902,18 @@
     },
     {
       "source": "class_remote_management_sitepulse_remote_management_plugin_links",
+      "target": "tests_php_support_wordpress_admin_url",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "call",
+      "source_file": "class/remote_management.php",
+      "source_location": "L529",
+      "weight": 1.0
+    },
+    {
+      "source": "class_remote_management_sitepulse_remote_management_plugin_links",
       "target": "tests_php_support_wordpress_esc_url",
       "relation": "calls",
       "_origin": "ast",
@@ -158921,7 +158921,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L526",
+      "source_location": "L530",
       "weight": 1.0
     },
     {
@@ -158933,7 +158933,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L1033",
+      "source_location": "L1037",
       "weight": 1.0
     },
     {
@@ -158945,7 +158945,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L1045",
+      "source_location": "L1049",
       "weight": 1.0
     },
     {
@@ -158957,7 +158957,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L587",
+      "source_location": "L591",
       "weight": 1.0
     },
     {
@@ -158969,7 +158969,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L594",
+      "source_location": "L598",
       "weight": 1.0
     },
     {
@@ -158981,7 +158981,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L836",
+      "source_location": "L840",
       "weight": 1.0
     },
     {
@@ -158993,7 +158993,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L840",
+      "source_location": "L844",
       "weight": 1.0
     },
     {
@@ -159005,7 +159005,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L922",
+      "source_location": "L926",
       "weight": 1.0
     },
     {
@@ -159017,7 +159017,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L933",
+      "source_location": "L937",
       "weight": 1.0
     },
     {
@@ -159029,7 +159029,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L940",
+      "source_location": "L944",
       "weight": 1.0
     },
     {
@@ -159041,7 +159041,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L947",
+      "source_location": "L951",
       "weight": 1.0
     },
     {
@@ -159053,7 +159053,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L1060",
+      "source_location": "L1064",
       "weight": 1.0
     },
     {
@@ -159065,7 +159065,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L754",
+      "source_location": "L758",
       "weight": 1.0
     },
     {
@@ -159077,7 +159077,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L762",
+      "source_location": "L766",
       "weight": 1.0
     },
     {
@@ -159089,7 +159089,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L762",
+      "source_location": "L766",
       "weight": 1.0
     },
     {
@@ -159101,7 +159101,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L1010",
+      "source_location": "L1014",
       "weight": 1.0
     },
     {
@@ -159113,7 +159113,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L771",
+      "source_location": "L775",
       "weight": 1.0
     },
     {
@@ -159125,7 +159125,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L771",
+      "source_location": "L775",
       "weight": 1.0
     },
     {
@@ -159137,7 +159137,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L775",
+      "source_location": "L779",
       "weight": 1.0
     },
     {
@@ -159149,7 +159149,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L890",
+      "source_location": "L894",
       "weight": 1.0
     },
     {
@@ -159161,7 +159161,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L856",
+      "source_location": "L860",
       "weight": 1.0
     },
     {
@@ -159173,7 +159173,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L239",
+      "source_location": "L242",
       "weight": 1.0
     },
     {
@@ -159185,7 +159185,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L709",
+      "source_location": "L713",
       "weight": 1.0
     },
     {
@@ -159197,7 +159197,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L199",
+      "source_location": "L202",
       "weight": 1.0
     },
     {
@@ -159209,7 +159209,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L604",
+      "source_location": "L608",
       "weight": 1.0
     },
     {
@@ -159221,7 +159221,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L613",
+      "source_location": "L617",
       "weight": 1.0
     },
     {
@@ -159233,7 +159233,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L622",
+      "source_location": "L626",
       "weight": 1.0
     },
     {
@@ -159245,7 +159245,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L622",
+      "source_location": "L626",
       "weight": 1.0
     },
     {
@@ -159257,7 +159257,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L627",
+      "source_location": "L631",
       "weight": 1.0
     },
     {
@@ -159269,7 +159269,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "class/remote_management.php",
-      "source_location": "L633",
+      "source_location": "L637",
       "weight": 1.0
     },
     {
@@ -182513,7 +182513,7 @@
       "confidence_score": 0.95,
       "context": "backup",
       "source_file": "docs/remote-management.md",
-      "source_location": "L571",
+      "source_location": "L572",
       "weight": 1.0
     },
     {
@@ -182525,7 +182525,7 @@
       "confidence_score": 0.95,
       "context": "backup",
       "source_file": "docs/remote-management.md",
-      "source_location": "L475",
+      "source_location": "L476",
       "weight": 1.0
     },
     {
@@ -182537,7 +182537,7 @@
       "confidence_score": 0.95,
       "context": "check",
       "source_file": "docs/remote-management.md",
-      "source_location": "L335",
+      "source_location": "L336",
       "weight": 1.0
     },
     {
@@ -182549,7 +182549,7 @@
       "confidence_score": 0.95,
       "context": "command",
       "source_file": "docs/remote-management.md",
-      "source_location": "L448",
+      "source_location": "L449",
       "weight": 1.0
     },
     {
@@ -182561,7 +182561,7 @@
       "confidence_score": 0.95,
       "context": "command",
       "source_file": "docs/remote-management.md",
-      "source_location": "L576",
+      "source_location": "L577",
       "weight": 1.0
     },
     {
@@ -182573,7 +182573,7 @@
       "confidence_score": 0.95,
       "context": "cron",
       "source_file": "docs/remote-management.md",
-      "source_location": "L365",
+      "source_location": "L366",
       "weight": 1.0
     },
     {
@@ -182585,7 +182585,7 @@
       "confidence_score": 0.95,
       "context": "cron",
       "source_file": "docs/remote-management.md",
-      "source_location": "L97",
+      "source_location": "L98",
       "weight": 1.0
     },
     {
@@ -182597,7 +182597,7 @@
       "confidence_score": 0.95,
       "context": "cron",
       "source_file": "docs/remote-management.md",
-      "source_location": "L479",
+      "source_location": "L480",
       "weight": 1.0
     },
     {
@@ -182609,7 +182609,7 @@
       "confidence_score": 0.95,
       "context": "cron",
       "source_file": "docs/remote-management.md",
-      "source_location": "L494",
+      "source_location": "L495",
       "weight": 1.0
     },
     {
@@ -182621,7 +182621,7 @@
       "confidence_score": 0.95,
       "context": "daily",
       "source_file": "docs/remote-management.md",
-      "source_location": "L290",
+      "source_location": "L291",
       "weight": 1.0
     },
     {
@@ -182633,7 +182633,7 @@
       "confidence_score": 0.95,
       "context": "daily",
       "source_file": "docs/remote-management.md",
-      "source_location": "L167",
+      "source_location": "L168",
       "weight": 1.0
     },
     {
@@ -182645,7 +182645,7 @@
       "confidence_score": 0.95,
       "context": "data",
       "source_file": "docs/remote-management.md",
-      "source_location": "L235",
+      "source_location": "L236",
       "weight": 1.0
     },
     {
@@ -182657,7 +182657,7 @@
       "confidence_score": 0.95,
       "context": "data",
       "source_file": "docs/remote-management.md",
-      "source_location": "L638",
+      "source_location": "L639",
       "weight": 1.0
     },
     {
@@ -182669,7 +182669,7 @@
       "confidence_score": 0.95,
       "context": "data",
       "source_file": "docs/remote-management.md",
-      "source_location": "L188",
+      "source_location": "L189",
       "weight": 1.0
     },
     {
@@ -182681,7 +182681,7 @@
       "confidence_score": 0.95,
       "context": "data",
       "source_file": "docs/remote-management.md",
-      "source_location": "L565",
+      "source_location": "L566",
       "weight": 1.0
     },
     {
@@ -182693,7 +182693,7 @@
       "confidence_score": 0.95,
       "context": "day",
       "source_file": "docs/remote-management.md",
-      "source_location": "L196",
+      "source_location": "L197",
       "weight": 1.0
     },
     {
@@ -182705,7 +182705,7 @@
       "confidence_score": 0.95,
       "context": "domain",
       "source_file": "docs/remote-management.md",
-      "source_location": "L248",
+      "source_location": "L249",
       "weight": 1.0
     },
     {
@@ -182717,7 +182717,7 @@
       "confidence_score": 0.95,
       "context": "domain",
       "source_file": "docs/remote-management.md",
-      "source_location": "L361",
+      "source_location": "L362",
       "weight": 1.0
     },
     {
@@ -182729,7 +182729,7 @@
       "confidence_score": 0.95,
       "context": "domain",
       "source_file": "docs/remote-management.md",
-      "source_location": "L483",
+      "source_location": "L484",
       "weight": 1.0
     },
     {
@@ -182741,7 +182741,7 @@
       "confidence_score": 0.95,
       "context": "files",
       "source_file": "docs/remote-management.md",
-      "source_location": "L290",
+      "source_location": "L291",
       "weight": 1.0
     },
     {
@@ -182753,7 +182753,7 @@
       "confidence_score": 0.95,
       "context": "files",
       "source_file": "docs/remote-management.md",
-      "source_location": "L256",
+      "source_location": "L257",
       "weight": 1.0
     },
     {
@@ -182765,7 +182765,7 @@
       "confidence_score": 0.95,
       "context": "files",
       "source_file": "docs/remote-management.md",
-      "source_location": "L166",
+      "source_location": "L167",
       "weight": 1.0
     },
     {
@@ -182777,7 +182777,7 @@
       "confidence_score": 0.95,
       "context": "initiator",
       "source_file": "docs/remote-management.md",
-      "source_location": "L190",
+      "source_location": "L191",
       "weight": 1.0
     },
     {
@@ -182789,7 +182789,7 @@
       "confidence_score": 0.95,
       "context": "initiator",
       "source_file": "docs/remote-management.md",
-      "source_location": "L311",
+      "source_location": "L312",
       "weight": 1.0
     },
     {
@@ -182801,7 +182801,7 @@
       "confidence_score": 0.95,
       "context": "item",
       "source_file": "docs/remote-management.md",
-      "source_location": "L263",
+      "source_location": "L264",
       "weight": 1.0
     },
     {
@@ -182813,7 +182813,7 @@
       "confidence_score": 0.95,
       "context": "item",
       "source_file": "docs/remote-management.md",
-      "source_location": "L387",
+      "source_location": "L388",
       "weight": 1.0
     },
     {
@@ -182825,7 +182825,7 @@
       "confidence_score": 0.95,
       "context": "item",
       "source_file": "docs/remote-management.md",
-      "source_location": "L642",
+      "source_location": "L643",
       "weight": 1.0
     },
     {
@@ -182837,7 +182837,7 @@
       "confidence_score": 0.95,
       "context": "key",
       "source_file": "docs/remote-management.md",
-      "source_location": "L238",
+      "source_location": "L239",
       "weight": 1.0
     },
     {
@@ -182849,7 +182849,7 @@
       "confidence_score": 0.95,
       "context": "key",
       "source_file": "docs/remote-management.md",
-      "source_location": "L437",
+      "source_location": "L438",
       "weight": 1.0
     },
     {
@@ -182861,7 +182861,7 @@
       "confidence_score": 0.95,
       "context": "key",
       "source_file": "docs/remote-management.md",
-      "source_location": "L575",
+      "source_location": "L576",
       "weight": 1.0
     },
     {
@@ -182885,7 +182885,7 @@
       "confidence_score": 0.95,
       "context": "name",
       "source_file": "docs/remote-management.md",
-      "source_location": "L258",
+      "source_location": "L259",
       "weight": 1.0
     },
     {
@@ -182897,7 +182897,7 @@
       "confidence_score": 0.95,
       "context": "name",
       "source_file": "docs/remote-management.md",
-      "source_location": "L403",
+      "source_location": "L404",
       "weight": 1.0
     },
     {
@@ -182909,7 +182909,7 @@
       "confidence_score": 0.95,
       "context": "name",
       "source_file": "docs/remote-management.md",
-      "source_location": "L191",
+      "source_location": "L192",
       "weight": 1.0
     },
     {
@@ -182921,7 +182921,7 @@
       "confidence_score": 0.95,
       "context": "pages",
       "source_file": "docs/remote-management.md",
-      "source_location": "L388",
+      "source_location": "L389",
       "weight": 1.0
     },
     {
@@ -182933,7 +182933,7 @@
       "confidence_score": 0.95,
       "context": "pages",
       "source_file": "docs/remote-management.md",
-      "source_location": "L642",
+      "source_location": "L643",
       "weight": 1.0
     },
     {
@@ -182945,7 +182945,7 @@
       "confidence_score": 0.95,
       "context": "pending",
       "source_file": "docs/remote-management.md",
-      "source_location": "L605",
+      "source_location": "L606",
       "weight": 1.0
     },
     {
@@ -182957,7 +182957,7 @@
       "confidence_score": 0.95,
       "context": "pending",
       "source_file": "docs/remote-management.md",
-      "source_location": "L654",
+      "source_location": "L655",
       "weight": 1.0
     },
     {
@@ -182969,7 +182969,7 @@
       "confidence_score": 0.95,
       "context": "pending",
       "source_file": "docs/remote-management.md",
-      "source_location": "L448",
+      "source_location": "L449",
       "weight": 1.0
     },
     {
@@ -182981,7 +182981,7 @@
       "confidence_score": 0.95,
       "context": "pending",
       "source_file": "docs/remote-management.md",
-      "source_location": "L475",
+      "source_location": "L476",
       "weight": 1.0
     },
     {
@@ -182993,7 +182993,7 @@
       "confidence_score": 0.95,
       "context": "plugins",
       "source_file": "docs/remote-management.md",
-      "source_location": "L278",
+      "source_location": "L279",
       "weight": 1.0
     },
     {
@@ -183005,7 +183005,7 @@
       "confidence_score": 0.95,
       "context": "plugins",
       "source_file": "docs/remote-management.md",
-      "source_location": "L290",
+      "source_location": "L291",
       "weight": 1.0
     },
     {
@@ -183017,7 +183017,7 @@
       "confidence_score": 0.95,
       "context": "plugins",
       "source_file": "docs/remote-management.md",
-      "source_location": "L256",
+      "source_location": "L257",
       "weight": 1.0
     },
     {
@@ -183029,7 +183029,7 @@
       "confidence_score": 0.95,
       "context": "plugins",
       "source_file": "docs/remote-management.md",
-      "source_location": "L385",
+      "source_location": "L386",
       "weight": 1.0
     },
     {
@@ -183041,7 +183041,7 @@
       "confidence_score": 0.95,
       "context": "plugins",
       "source_file": "docs/remote-management.md",
-      "source_location": "L330",
+      "source_location": "L331",
       "weight": 1.0
     },
     {
@@ -183053,7 +183053,7 @@
       "confidence_score": 0.95,
       "context": "plugins",
       "source_file": "docs/remote-management.md",
-      "source_location": "L300",
+      "source_location": "L301",
       "weight": 1.0
     },
     {
@@ -183065,7 +183065,7 @@
       "confidence_score": 0.95,
       "context": "plugins",
       "source_file": "docs/remote-management.md",
-      "source_location": "L531",
+      "source_location": "L532",
       "weight": 1.0
     },
     {
@@ -183077,7 +183077,7 @@
       "confidence_score": 0.95,
       "context": "preset",
       "source_file": "docs/remote-management.md",
-      "source_location": "L276",
+      "source_location": "L277",
       "weight": 1.0
     },
     {
@@ -183089,7 +183089,7 @@
       "confidence_score": 0.95,
       "context": "preset",
       "source_file": "docs/remote-management.md",
-      "source_location": "L258",
+      "source_location": "L259",
       "weight": 1.0
     },
     {
@@ -183101,7 +183101,7 @@
       "confidence_score": 0.95,
       "context": "problems",
       "source_file": "docs/remote-management.md",
-      "source_location": "L311",
+      "source_location": "L312",
       "weight": 1.0
     },
     {
@@ -183113,7 +183113,7 @@
       "confidence_score": 0.95,
       "context": "progress",
       "source_file": "docs/remote-management.md",
-      "source_location": "L170",
+      "source_location": "L171",
       "weight": 1.0
     },
     {
@@ -183125,7 +183125,7 @@
       "confidence_score": 0.95,
       "context": "provider",
       "source_file": "docs/remote-management.md",
-      "source_location": "L270",
+      "source_location": "L271",
       "weight": 1.0
     },
     {
@@ -183137,7 +183137,7 @@
       "confidence_score": 0.95,
       "context": "provider",
       "source_file": "docs/remote-management.md",
-      "source_location": "L263",
+      "source_location": "L264",
       "weight": 1.0
     },
     {
@@ -183149,7 +183149,7 @@
       "confidence_score": 0.95,
       "context": "provider",
       "source_file": "docs/remote-management.md",
-      "source_location": "L193",
+      "source_location": "L194",
       "weight": 1.0
     },
     {
@@ -183161,7 +183161,7 @@
       "confidence_score": 0.95,
       "context": "provider",
       "source_file": "docs/remote-management.md",
-      "source_location": "L161",
+      "source_location": "L162",
       "weight": 1.0
     },
     {
@@ -183173,7 +183173,7 @@
       "confidence_score": 0.95,
       "context": "provider",
       "source_file": "docs/remote-management.md",
-      "source_location": "L475",
+      "source_location": "L476",
       "weight": 1.0
     },
     {
@@ -183185,7 +183185,7 @@
       "confidence_score": 0.95,
       "context": "result",
       "source_file": "docs/remote-management.md",
-      "source_location": "L352",
+      "source_location": "L353",
       "weight": 1.0
     },
     {
@@ -183197,7 +183197,7 @@
       "confidence_score": 0.95,
       "context": "result",
       "source_file": "docs/remote-management.md",
-      "source_location": "L311",
+      "source_location": "L312",
       "weight": 1.0
     },
     {
@@ -183209,7 +183209,7 @@
       "confidence_score": 0.95,
       "context": "set_auto_updates",
       "source_file": "docs/remote-management.md",
-      "source_location": "L262",
+      "source_location": "L263",
       "weight": 1.0
     },
     {
@@ -183221,7 +183221,7 @@
       "confidence_score": 0.95,
       "context": "set_auto_updates",
       "source_file": "docs/remote-management.md",
-      "source_location": "L675",
+      "source_location": "L676",
       "weight": 1.0
     },
     {
@@ -183233,7 +183233,7 @@
       "confidence_score": 0.95,
       "context": "set_auto_updates",
       "source_file": "docs/remote-management.md",
-      "source_location": "L313",
+      "source_location": "L314",
       "weight": 1.0
     },
     {
@@ -183245,7 +183245,7 @@
       "confidence_score": 0.95,
       "context": "settings",
       "source_file": "docs/remote-management.md",
-      "source_location": "L403",
+      "source_location": "L404",
       "weight": 1.0
     },
     {
@@ -183257,7 +183257,7 @@
       "confidence_score": 0.95,
       "context": "size",
       "source_file": "docs/remote-management.md",
-      "source_location": "L193",
+      "source_location": "L194",
       "weight": 1.0
     },
     {
@@ -183269,7 +183269,7 @@
       "confidence_score": 0.95,
       "context": "stop",
       "source_file": "docs/remote-management.md",
-      "source_location": "L357",
+      "source_location": "L358",
       "weight": 1.0
     },
     {
@@ -183281,7 +183281,7 @@
       "confidence_score": 0.95,
       "context": "time",
       "source_file": "docs/remote-management.md",
-      "source_location": "L193",
+      "source_location": "L194",
       "weight": 1.0
     },
     {
@@ -183293,7 +183293,7 @@
       "confidence_score": 0.95,
       "context": "time",
       "source_file": "docs/remote-management.md",
-      "source_location": "L565",
+      "source_location": "L566",
       "weight": 1.0
     },
     {
@@ -183910,5 +183910,5 @@
       "source_file": "assets/img/sitepulse-logo.png"
     }
   ],
-  "built_at_commit": "133fef423c3081c680f4ada011a521ee0cf70d05"
+  "built_at_commit": "a3d9761b36a7e24721dba09119dd2235baa41341"
 }
