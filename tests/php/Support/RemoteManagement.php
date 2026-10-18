@@ -42,6 +42,16 @@ final class Sitepulse_Test_Backups {
     public static function backwpup_started() { return BackWPup::get_plugin_data('TEMP') . '/.backwpup_job_started'; }
     /** Make UpdraftPlus active, as its main file does with the global $updraftplus. */
     public static function updraftplus($version = '1.26.9') { $GLOBALS['updraftplus'] = new UpdraftPlus($version); }
+    /**
+     * UpdraftPlus restores the options table first, as the backup holds it (options, and whether WordPress
+     * loads each on every request; transients live there too), then announces it with the final table name
+     * and the site's table prefix.
+     */
+    public static function restore_options(array $options, array $autoload = array()) {
+        Sitepulse_Test_WP::$options = $options; Sitepulse_Test_WP::$autoload = $autoload;
+        Sitepulse_Test_WP::$transients = Sitepulse_Test_WP::$transient_expirations = array();
+        do_action('updraftplus_restored_db_table', 'wp_options', 'wp_', 'InnoDB');
+    }
 }
 Sitepulse_Test_WP::rememberClassDefaults(Sitepulse_Test_Backups::class);
 
@@ -73,7 +83,10 @@ class UpdraftPlus_Options {
 }
 /** UpdraftPlus's history of backups, keyed by time. */
 final class UpdraftPlus_Backup_History {
-    public static function get_history($timestamp = false) { $history = (array) get_option('updraft_backup_history', array()); krsort($history); return $history; }
+    public static function get_history($timestamp = false) {
+        if (Sitepulse_Test_Backups::$throw) { throw new RuntimeException('UpdraftPlus is broken'); }
+        $history = (array) get_option('updraft_backup_history', array()); krsort($history); return $history;
+    }
     public static function rebuild($remote_scan = false, $only_add_this_file = false, $debug = false) {
         Sitepulse_Test_Backups::$calls[] = array('rebuild');
         update_option('updraft_backup_history', Sitepulse_Test_Backups::$found + (array) get_option('updraft_backup_history', array()));
@@ -193,6 +206,8 @@ final class Sitepulse_Test_Upgrades {
     /** Progress the site reported (command-progress), and whether the API cannot be reached for it. */
     public static $progress = array();
     public static $progress_unreachable = false;
+    /** WordPress.org's answers to HEAD requests for packages, by URL: an HTTP status or a WP_Error; 200 when not set. */
+    public static $packages = array();
     public static $calls = array();
     public static function reset() {
         foreach (Sitepulse_Test_WP::rememberClassDefaults(__CLASS__) as $name => $value) { self::${$name} = $value; }
@@ -234,7 +249,8 @@ function wc_get_page_permalink($page) { return Sitepulse_Test_Upgrades::$woocomm
 
 /**
  * The site's own pages answer WordPress's fatal-error check: healthy unless Sitepulse_Test_Upgrades::$pages
- * says otherwise, and the API acknowledges progress reports. Other requests (the SitePulse API) use the queue.
+ * says otherwise, the API acknowledges progress reports, and WordPress.org answers whether it has a package.
+ * Other requests (the SitePulse API) use the queue.
  */
 function sitepulse_test_site_pages($url, $args) {
     // The API acknowledges the progress the site reports while it updates, signed like its other answers.
@@ -244,6 +260,11 @@ function sitepulse_test_site_pages($url, $args) {
         return Sitepulse_Test_Upgrades::$progress_unreachable
             ? new WP_Error('http_request_failed', 'Connection refused')
             : call_user_func(sitepulse_test_remote_response(array('success' => true), 200, array('license' => is_string($key) && '' !== $key ? $key : SITEPULSE_TEST_LICENSE)), $url, $args);
+    }
+    // WordPress.org says whether it has a package.
+    if (0 === strpos($url, 'https://downloads.wordpress.org/') && 'HEAD' === ($args['method'] ?? '')) {
+        $answer = Sitepulse_Test_Upgrades::$packages[$url] ?? 200;
+        return is_wp_error($answer) ? $answer : Sitepulse_Test_WP::response('', $answer);
     }
     if (0 !== strpos($url, home_url('/'))) { return null; }
     $page = strtok($url, '?');

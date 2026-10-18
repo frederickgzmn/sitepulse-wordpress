@@ -25,9 +25,12 @@ if ($input['mode'] === 'api_base') {
 } elseif ($input['mode'] === 'hosts') {
     echo json_encode(Sitepulse_Remote_Inventory::collect()['updates']['management_tools']);
 } elseif ($input['mode'] === 'disk') {
+    $recovery = Sitepulse_Remote_Recovery::run_command('01JDISKRECOVERY00000000000', 'rollback_item', array('kind' => 'plugin', 'item' => 'seo/seo.php', 'version' => '1.0'));
+    delete_option(Sitepulse_Remote_Recovery::JOB_OPTION);
     echo json_encode(array(
         'disk_free' => Sitepulse_Remote_Inventory::collect()['site']['disk_free'],
         'update' => Sitepulse_Remote_Updates::run_command('01JDISK0000000000000000000', 'update_plugins', array('plugins' => array('seo/seo.php'))),
+        'recovery' => $recovery,
     ));
 } elseif ($input['mode'] === 'pro') {
     ob_start();

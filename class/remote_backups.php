@@ -54,6 +54,12 @@ class Sitepulse_Remote_Backups {
 	/** Backups of one folder, which also save the database (a safe update backs up what it updates). */
 	const FOLDER_BACKUPS = array( 'plugins', 'themes' );
 
+	/** Label of the UpdraftPlus backups the dashboard starts. */
+	const UPDRAFTPLUS_LABEL = 'SitePulse';
+
+	/** Label of the UpdraftPlus backups SitePulse takes before it updates the site. */
+	const UPDRAFTPLUS_UPDATE_LABEL = 'SitePulse (before update)';
+
 	/** UpdraftPlus settings of the parts a files backup includes. */
 	const UPDRAFTPLUS_PARTS = array(
 		'plugins' => 'updraft_include_plugins',
@@ -135,11 +141,12 @@ class Sitepulse_Remote_Backups {
 	/**
 	 * Run a backup command from the dashboard with the managed backup plugin.
 	 *
-	 * @param string $type backup_now, cancel_backup or apply_backup_preset.
-	 * @param array  $args Command arguments.
+	 * @param string $type          backup_now, cancel_backup or apply_backup_preset.
+	 * @param array  $args          Command arguments.
+	 * @param bool   $before_update Whether backup_now backs the site up before an update of SitePulse's.
 	 * @return array status, result and error for the API.
 	 */
-	public static function run_command( $type, array $args ) {
+	public static function run_command( $type, array $args, $before_update = false ) {
 		$provider = self::provider();
 		if ( null === $provider || ! $provider['supported'] ) {
 			return Sitepulse_Remote_Management::command_result( 'failed', null, 'no_backup_plugin' );
@@ -150,7 +157,7 @@ class Sitepulse_Remote_Backups {
 			if ( 'backup_now' === $type ) {
 				$what    = $args['what'] ?? 'full';
 				$outcome = is_string( $what ) && isset( self::UPDRAFTPLUS_BACKUP_NOW[ $what ] )
-					? ( $updraftplus ? self::updraftplus_backup_now( $what ) : self::backwpup_backup_now( $what ) )
+					? ( $updraftplus ? self::updraftplus_backup_now( $what, $before_update ) : self::backwpup_backup_now( $what ) )
 					: 'invalid_arguments';
 			} elseif ( 'cancel_backup' === $type ) {
 				$outcome = array( 'cancelled' => $updraftplus ? self::updraftplus_cancel() : self::backwpup_cancel() );
@@ -362,9 +369,12 @@ class Sitepulse_Remote_Backups {
 			return min( 1, (float) ( $substatus[ $done ] ?? 0 ) / max( 1, (float) ( $substatus[ $total ] ?? 1 ) ) );
 		};
 		$fixed    = array(
-			'filescreated' => 2,
-			'pruning'      => 5,
-			'finished'     => 6,
+			'filescreated'          => 2,
+			// The upload of each file archive as soon as it is made, while the others are zipped:
+			// UpdraftPlus's progress bar keeps it at the end of the file archives.
+			'partialclouduploading' => 2,
+			'pruning'               => 5,
+			'finished'              => 6,
 		);
 
 		if ( isset( $fixed[ $status ] ) ) {
@@ -423,14 +433,62 @@ class Sitepulse_Remote_Backups {
 	}
 
 	/**
+	 * @return bool Whether an UpdraftPlus backup runs, or a "Backup Now" waits in cron to start.
+	 */
+	public static function updraftplus_busy() {
+		return self::updraftplus_jobs() || self::updraftplus_queued();
+	}
+
+	/**
+	 * UpdraftPlus's record of the backup with this nonce, once that backup is over. UpdraftPlus
+	 * keeps a record of its last backup only, which another backup that finished since replaces,
+	 * and saves it after each of its runs: a backup that hit an error runs again later.
+	 *
+	 * @param string $nonce The backup's nonce.
+	 * @return array|null time, ok, errors and warnings; null until that backup is over and UpdraftPlus's last.
+	 */
+	public static function updraftplus_result( $nonce ) {
+		try {
+			$last = UpdraftPlus_Options::get_updraft_option( 'updraft_last_backup', array() );
+			$ours = is_array( $last ) && $nonce === ( $last['backup_nonce'] ?? null ) && ! isset( self::updraftplus_jobs()[ $nonce ] );
+
+			return $ours ? self::updraftplus_last( $last ) : null;
+		} catch ( Throwable $e ) {
+			// UpdraftPlus is gone or fails: the backup is not known to be over.
+			return null;
+		}
+	}
+
+	/**
+	 * @param string $nonce The backup's nonce.
+	 * @return array|null The backup in UpdraftPlus's history, with its timestamp; null when UpdraftPlus has none or cannot tell.
+	 */
+	public static function updraftplus_backup( $nonce ) {
+		try {
+			$history = (array) UpdraftPlus_Backup_History::get_history();
+		} catch ( Throwable $e ) {
+			$history = array();
+		}
+		foreach ( $history as $timestamp => $set ) {
+			if ( is_array( $set ) && $nonce === ( $set['nonce'] ?? null ) ) {
+				$set['timestamp'] = (int) $timestamp;
+				return $set;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Queue UpdraftPlus's own "Backup Now" in WordPress cron, so the check-in is not held up
 	 * while the backup runs. It uses the storage set up in UpdraftPlus.
 	 *
-	 * @param string $what full, files, database, plugins or themes.
+	 * @param string $what          full, files, database, plugins or themes.
+	 * @param bool   $before_update Whether SitePulse takes it before an update.
 	 * @return array|string Result, or an error code.
 	 */
-	private static function updraftplus_backup_now( $what ) {
-		if ( self::updraftplus_jobs() || self::updraftplus_queued() ) {
+	private static function updraftplus_backup_now( $what, $before_update ) {
+		if ( self::updraftplus_busy() ) {
 			return 'backup_running';
 		}
 
@@ -438,12 +496,18 @@ class Sitepulse_Remote_Backups {
 		$options = array(
 			'nocloud'     => false,
 			'use_nonce'   => $nonce,
-			'label'       => 'SitePulse',
+			'label'       => $before_update ? self::UPDRAFTPLUS_UPDATE_LABEL : self::UPDRAFTPLUS_LABEL,
 			'always_keep' => false,
 		);
 		// Like UpdraftPlus's "Backup Now" with only that folder ticked, with the database.
 		if ( in_array( $what, self::FOLDER_BACKUPS, true ) ) {
 			$options['restrict_files_to_override'] = array( $what );
+		}
+		// UpdraftPlus's own "automatic backup before updates": it does not count towards the number
+		// of backups UpdraftPlus keeps, so it never pushes the owner's backups out, and it is the
+		// first to go once that number is reached.
+		if ( $before_update ) {
+			$options['extradata'] = array( 'autobackup' => true );
 		}
 		wp_schedule_single_event( time(), self::UPDRAFTPLUS_BACKUP_NOW[ $what ], array( $options ) );
 
@@ -586,12 +650,13 @@ class Sitepulse_Remote_Backups {
 	}
 
 	/**
-	 * UpdraftPlus records errors as strings and warnings as arrays with a level.
+	 * UpdraftPlus records each problem with its level: a warning does not fail a backup or a
+	 * restore; anything else it records is an error.
 	 *
-	 * @param mixed $errors UpdraftPlus's errors of one backup.
+	 * @param mixed $errors Problems UpdraftPlus recorded.
 	 * @return array errors and warnings counts.
 	 */
-	private static function updraftplus_problems( $errors ) {
+	public static function updraftplus_problems( $errors ) {
 		$counts = array(
 			'errors'   => 0,
 			'warnings' => 0,

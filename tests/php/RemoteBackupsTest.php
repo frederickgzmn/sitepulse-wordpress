@@ -289,6 +289,7 @@ final class RemoteBackupsTest extends Sitepulse_Test_Case {
             'database done' => array(array('jobstatus' => 'dbcreated0'), 67),
             'database encrypted' => array(array('jobstatus' => 'dbencrypted0'), 67),
             'uploading half' => array(array('jobstatus' => 'clouduploading', 'uploading_substatus' => array('i' => 1, 't' => 2, 'p' => 0.5)), 75),
+            'uploading an archive while zipping the others' => array(array('jobstatus' => 'partialclouduploading', 'uploading_substatus' => array('i' => 0, 't' => 1, 'p' => 0.5)), 34),
             'pruning' => array(array('jobstatus' => 'pruning'), 84),
             'finished' => array(array('jobstatus' => 'finished'), 100),
             'waiting to retry' => array(array('jobstatus' => 'resumingforerrors'), 0),

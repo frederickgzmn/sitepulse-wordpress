@@ -54,6 +54,18 @@ class Sitepulse_Remote_Updates {
 	/** Seconds a safe update waits for that scan. */
 	const VISUAL_WAIT_SECONDS = 1800;
 
+	/**
+	 * Seconds after it was received within which an update must take its first step; later, it
+	 * answers expired instead of starting so long after it was asked for.
+	 */
+	const START_SECONDS = 3600;
+
+	/** The folder a safe update backs up with the database, by command (backup_parts). */
+	const BACKUP_FOLDERS = array(
+		'update_plugins' => 'plugins',
+		'update_themes'  => 'themes',
+	);
+
 	/** Most items per command. */
 	const MAX_ITEMS = 50;
 
@@ -97,7 +109,7 @@ class Sitepulse_Remote_Updates {
 		$kind  = self::KINDS[ $type ][0];
 		$items = 'core' === $kind ? self::strings( array( $args['version'] ?? null ) ) : self::strings( $args[ self::KINDS[ $type ][1] ] ?? null );
 		$wait  = $args['backup_wait'] ?? 60;
-		$what  = self::backup_what( $args['backup_parts'] ?? null );
+		$what  = self::backup_what( $args['backup_parts'] ?? null, $type );
 		$safe  = $args['safe_update'] ?? null;
 		if ( ! $items || count( $items ) > self::MAX_ITEMS || ! is_int( $wait ) || $wait < 5 || $wait > 240 || null === $what || ! ( null === $safe || ( is_string( $safe ) && '' !== $safe ) ) ) {
 			return self::failed( 'invalid_arguments' );
@@ -110,8 +122,7 @@ class Sitepulse_Remote_Updates {
 		if ( ! wp_is_file_mod_allowed( 'sitepulse_remote_updates' ) || 'direct' !== get_filesystem_method() ) {
 			return self::failed( 'cannot_update' );
 		}
-		$free = function_exists( 'disk_free_space' ) ? @disk_free_space( WP_CONTENT_DIR ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- WordPress core reads it the same way before updates.
-		if ( false !== $free && $free < self::MIN_FREE_BYTES ) {
+		if ( ! self::enough_disk() ) {
 			return self::failed( 'not_enough_disk' );
 		}
 
@@ -139,6 +150,7 @@ class Sitepulse_Remote_Updates {
 				'current'        => null,
 				'results'        => array(),
 				'started_at'     => time(),
+				'begun'          => false,
 				'finished'       => false,
 				'error'          => null,
 			)
@@ -146,6 +158,15 @@ class Sitepulse_Remote_Updates {
 		self::schedule( 0 );
 
 		return null;
+	}
+
+	/**
+	 * @return bool Whether wp-content has the free space an update needs; true when the server does not tell.
+	 */
+	public static function enough_disk() {
+		$free = function_exists( 'disk_free_space' ) ? @disk_free_space( WP_CONTENT_DIR ) : false; // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- WordPress core reads it the same way before updates.
+
+		return false === $free || $free >= self::MIN_FREE_BYTES;
 	}
 
 	/**
@@ -161,17 +182,33 @@ class Sitepulse_Remote_Updates {
 			self::schedule( self::POLL_SECONDS );
 			return;
 		}
+		self::load_admin_api();
+		// An update that could not start within an hour is not run that late. One received by an
+		// older version of the plugin has no "begun": it has.
+		if ( false === ( $job['begun'] ?? true ) ) {
+			if ( time() - (int) $job['started_at'] > self::START_SECONDS ) {
+				self::finish( self::stop( $job, 'expired' ) );
+				return;
+			}
+			$job['begun'] = true;
+		}
 
 		set_transient( self::LOCK, 1, 10 * MINUTE_IN_SECONDS );
 		if ( function_exists( 'set_time_limit' ) ) {
 			set_time_limit( 10 * MINUTE_IN_SECONDS );
 		}
-		self::load_admin_api();
 
 		$started = time();
 		do {
-			$job = self::report_progress( self::step( $job ) );
+			// Saved before the progress report, which can take a while: a request that ends while
+			// it reports keeps the step it made.
+			$job = self::step( $job );
 			self::save_job( $job );
+			$reported = self::report_progress( $job );
+			if ( $reported !== $job ) {
+				$job = $reported;
+				self::save_job( $job );
+			}
 		} while ( ! $job['finished'] && ! isset( $job['wait'] ) && time() - $started < self::STEP_SECONDS );
 		delete_transient( self::LOCK );
 
@@ -248,10 +285,11 @@ class Sitepulse_Remote_Updates {
 	 * @return array
 	 */
 	private static function backup_step( array $job ) {
+		// An update started by an older version of the plugin has no backup_what.
+		$what = $job['backup_what'] ?? 'full';
 		if ( null === $job['backup'] ) {
 			$requested = time();
-			// An update started by an older version of the plugin has no backup_what.
-			$result = Sitepulse_Remote_Backups::run_command( 'backup_now', array( 'what' => $job['backup_what'] ?? 'full' ) );
+			$result    = Sitepulse_Remote_Backups::run_command( 'backup_now', array( 'what' => $what ), true );
 			if ( 'done' === $result['status'] ) {
 				$job['backup']          = array(
 					'provider'     => $result['result']['provider'],
@@ -273,10 +311,17 @@ class Sitepulse_Remote_Updates {
 			return self::stop( $job, array( 'backup_running' => 'backup_timeout', 'no_backup_plugin' => 'no_backup_plugin' )[ $result['error'] ] ?? 'backup_failed' );
 		}
 
-		$status   = Sitepulse_Remote_Backups::status();
-		$last     = is_array( $status['last'] ?? null ) ? $status['last'] : null;
-		$running  = is_array( $status['running'] ?? null ) ? $status['running'] : null;
-		$finished = null === $running && null !== $last && strtotime( (string) $last['time'] ) >= $job['backup']['requested_at'];
+		$status      = Sitepulse_Remote_Backups::status();
+		$running     = is_array( $status['running'] ?? null ) ? $status['running'] : null;
+		$updraftplus = 'updraftplus' === $job['backup']['provider'];
+		if ( $updraftplus ) {
+			// UpdraftPlus names each backup: only ours ends the wait, not another that finished first.
+			$last = Sitepulse_Remote_Backups::updraftplus_result( $job['backup']['job'] );
+		} else {
+			// BackWPup's runs have no name: once none runs, its last run is ours if it ended since the request.
+			$last = null === $running && is_array( $status['last'] ?? null ) ? $status['last'] : null;
+		}
+		$finished = null !== $last && strtotime( (string) $last['time'] ) >= $job['backup']['requested_at'];
 		if ( null !== $running ) {
 			$job['backup_progress'] = array(
 				'percent' => is_int( $running['progress'] ) ? max( 0, min( 100, $running['progress'] ) ) : null,
@@ -284,8 +329,12 @@ class Sitepulse_Remote_Updates {
 			);
 		}
 		if ( $finished ) {
+			$saved = true === $last['ok'] && ( ! $updraftplus || self::backed_up( $job['backup']['job'], $what ) );
+			if ( ! $saved ) {
+				return self::stop( $job, 'backup_failed' );
+			}
 			$job['phase'] = self::after_backup( $job['safe_update'] ?? null );
-			return true === $last['ok'] ? $job : self::stop( $job, 'backup_failed' );
+			return $job;
 		}
 		if ( time() - $job['backup']['requested_at'] > $job['backup_wait'] * MINUTE_IN_SECONDS ) {
 			return self::stop( $job, 'backup_timeout' );
@@ -382,15 +431,31 @@ class Sitepulse_Remote_Updates {
 	}
 
 	/**
-	 * @param mixed $parts The command's backup_parts: none, or the one folder a safe update backs up.
+	 * @param mixed  $parts The command's backup_parts: none, or the folder a safe update backs up.
+	 * @param string $type  The command, which updates that folder: plugins or themes, not WordPress.
 	 * @return string|null What the backup saves: full, plugins or themes; null when not valid.
 	 */
-	private static function backup_what( $parts ) {
+	private static function backup_what( $parts, $type ) {
 		if ( null === $parts ) {
 			return 'full';
 		}
+		$folder = self::BACKUP_FOLDERS[ $type ] ?? null;
 
-		return is_array( $parts ) && 1 === count( $parts ) && in_array( reset( $parts ), Sitepulse_Remote_Backups::FOLDER_BACKUPS, true ) ? reset( $parts ) : null;
+		return null !== $folder && array( $folder ) === $parts ? $folder : null;
+	}
+
+	/**
+	 * Whether UpdraftPlus's history has the backup with what it was to save: the database, and
+	 * for a safe update the folder it updates.
+	 *
+	 * @param string $nonce The backup's nonce.
+	 * @param string $what  full, plugins or themes.
+	 * @return bool
+	 */
+	private static function backed_up( $nonce, $what ) {
+		$set = Sitepulse_Remote_Backups::updraftplus_backup( $nonce );
+
+		return null !== $set && ! array_diff( 'full' === $what ? array( 'db' ) : array( 'db', $what ), array_keys( array_filter( $set ) ) );
 	}
 
 	/**

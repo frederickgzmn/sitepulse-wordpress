@@ -37,6 +37,7 @@ delete_option('sitepulse_remote_events');
 delete_option('sitepulse_remote_log');
 delete_option('sitepulse_remote_update_job');
 delete_option('sitepulse_remote_recovery_job');
+delete_option('sitepulse_remote_undone');
 delete_option('sitepulse_remote_activity');
 delete_option('sitepulse_remote_key');
 delete_option('sitepulse_remote_connection');
