@@ -133,6 +133,7 @@ class Sitepulse_Remote_Recovery {
 			set_time_limit( self::TIME_LIMIT );
 		}
 		Sitepulse_Remote_Updates::load_admin_api();
+		self::report_start( $job );
 
 		$result = 'restore_backup' === $job['type'] ? self::restore( $job['args'] ) : self::roll_back( $job['args'] );
 		delete_transient( self::LOCK );
@@ -151,6 +152,33 @@ class Sitepulse_Remote_Recovery {
 	 */
 	public static function unschedule() {
 		wp_clear_scheduled_hook( self::JOB_HOOK );
+	}
+
+	/**
+	 * Tell the dashboard the recovery is under way; its result says the rest.
+	 *
+	 * @param array $job The recovery.
+	 */
+	private static function report_start( array $job ) {
+		$client = Sitepulse_Remote_Management::client();
+		if ( null === $client ) {
+			return;
+		}
+
+		$client->post(
+			'command-progress',
+			array(
+				'id'       => $job['command'],
+				'progress' => array(
+					'phase'   => 'restore_backup' === $job['type'] ? 'restoring' : 'installing',
+					'percent' => null,
+					'backup'  => null,
+					'done'    => 0,
+					'total'   => 1,
+					'item'    => $job['args']['item'],
+				),
+			)
+		);
 	}
 
 	/**

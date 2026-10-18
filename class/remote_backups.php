@@ -343,9 +343,47 @@ class Sitepulse_Remote_Backups {
 
 		return array(
 			'name'     => (string) ( $job['label'] ?? '' ),
-			'progress' => null,
+			'progress' => self::updraftplus_progress( $job ),
 			'stage'    => (string) ( $job['jobstatus'] ?? '' ),
 		);
+	}
+
+	/**
+	 * How far an UpdraftPlus backup is, as UpdraftPlus's own progress bar counts it: six stages
+	 * (file archives, database, upload, pruning), with the progress UpdraftPlus records in each.
+	 *
+	 * @param array $job UpdraftPlus's job data.
+	 * @return int Percent.
+	 */
+	private static function updraftplus_progress( array $job ) {
+		$status   = (string) ( $job['jobstatus'] ?? '' );
+		$fraction = static function ( $substatus, $done, $total ) {
+			$substatus = is_array( $substatus ) ? $substatus : array();
+			return min( 1, (float) ( $substatus[ $done ] ?? 0 ) / max( 1, (float) ( $substatus[ $total ] ?? 1 ) ) );
+		};
+		$fixed    = array(
+			'filescreated' => 2,
+			'pruning'      => 5,
+			'finished'     => 6,
+		);
+
+		if ( isset( $fixed[ $status ] ) ) {
+			$stage = $fixed[ $status ];
+		} elseif ( 'filescreating' === $status ) {
+			$stage = 1 + $fraction( $job['filecreating_substatus'] ?? null, 'i', 't' );
+		} elseif ( 0 === strpos( $status, 'dbcreating' ) ) {
+			$stage = 2 + $fraction( $job['dbcreating_substatus'] ?? null, 'i', 'a' );
+		} elseif ( 0 === strpos( $status, 'dbencrypting' ) ) {
+			$stage = 3;
+		} elseif ( 0 === strpos( $status, 'db' ) ) {
+			$stage = 4;
+		} elseif ( 'clouduploading' === $status ) {
+			$stage = 4 + $fraction( $job['uploading_substatus'] ?? null, 'i', 't' );
+		} else {
+			$stage = 0;
+		}
+
+		return (int) min( 100, ceil( 100 / 6 * $stage ) );
 	}
 
 	/**

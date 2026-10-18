@@ -190,6 +190,9 @@ final class Sitepulse_Test_Upgrades {
     public static $pages = array();
     /** WooCommerce's cart and checkout links; empty without WooCommerce pages. */
     public static $woocommerce = array();
+    /** Progress the site reported (command-progress), and whether the API cannot be reached for it. */
+    public static $progress = array();
+    public static $progress_unreachable = false;
     public static $calls = array();
     public static function reset() {
         foreach (Sitepulse_Test_WP::rememberClassDefaults(__CLASS__) as $name => $value) { self::${$name} = $value; }
@@ -231,9 +234,17 @@ function wc_get_page_permalink($page) { return Sitepulse_Test_Upgrades::$woocomm
 
 /**
  * The site's own pages answer WordPress's fatal-error check: healthy unless Sitepulse_Test_Upgrades::$pages
- * says otherwise. Other requests (the SitePulse API) use the queue.
+ * says otherwise, and the API acknowledges progress reports. Other requests (the SitePulse API) use the queue.
  */
 function sitepulse_test_site_pages($url, $args) {
+    // The API acknowledges the progress the site reports while it updates, signed like its other answers.
+    if (false !== strpos($url, '/api/website/remote/command-progress')) {
+        Sitepulse_Test_Upgrades::$progress[] = json_decode($args['body'], true)['progress'];
+        $key = get_option(Sitepulse_Remote_Management::KEY_OPTION, '');
+        return Sitepulse_Test_Upgrades::$progress_unreachable
+            ? new WP_Error('http_request_failed', 'Connection refused')
+            : call_user_func(sitepulse_test_remote_response(array('success' => true), 200, array('license' => is_string($key) && '' !== $key ? $key : SITEPULSE_TEST_LICENSE)), $url, $args);
+    }
     if (0 !== strpos($url, home_url('/'))) { return null; }
     $page = strtok($url, '?');
     parse_str((string) parse_url($url, PHP_URL_QUERY), $query);

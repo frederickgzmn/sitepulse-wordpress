@@ -170,6 +170,7 @@ final class RemoteRecoveryTest extends Sitepulse_Test_Case {
         Sitepulse_Remote_Recovery::run_job();
 
         $this->assertSame(array('status' => 'done', 'result' => array('restored' => array('plugins', 'db')), 'error' => null), $this->results());
+        $this->assertSame(array(array('phase' => 'restoring', 'percent' => null, 'backup' => null, 'done' => 0, 'total' => 1, 'item' => 'seo/seo.php')), Sitepulse_Test_Upgrades::$progress, 'The restore says it started, signed with the current key.');
         $this->assertSame('Restored', get_option('blogname'), 'The database is the backup\'s.');
         $this->assertSame(array(self::KEY, array(self::COMMAND)), array(get_option(Sitepulse_Remote_Management::KEY_OPTION), Sitepulse_Remote_Management::state()['done_commands']), 'SitePulse\'s own settings are the current ones.');
         $this->assertFalse(get_option(Sitepulse_Remote_Updates::JOB_OPTION), 'The update the backup caught running does not run again.');
@@ -344,6 +345,17 @@ final class RemoteRecoveryTest extends Sitepulse_Test_Case {
         $this->assertNull($this->job());
     }
 
+    public function test_a_site_that_cannot_connect_still_recovers(): void {
+        $this->plugin('seo/seo.php', '1.1');
+        $this->rollback();
+        delete_option('sitepulse_license_key');
+
+        Sitepulse_Remote_Recovery::run_job();
+
+        $this->assertSame(array(), Sitepulse_Test_Upgrades::$progress);
+        $this->assertSame('no_package', Sitepulse_Remote_Management::state()['pending_results'][0]['error'], 'Its result waits for the next check-in.');
+    }
+
     public function test_one_request_at_a_time_runs_the_recovery(): void {
         Sitepulse_Remote_Recovery::run_job();
         $this->assertSame(array(), Sitepulse_Test_WP::$scheduled, 'Nothing to do without a recovery.');
@@ -373,6 +385,7 @@ final class RemoteRecoveryTest extends Sitepulse_Test_Case {
         Sitepulse_Remote_Recovery::run_job();
 
         $this->assertSame(array('status' => 'done', 'result' => array('kind' => 'plugin', 'id' => 'seo/seo.php', 'from' => '1.1', 'to' => '1.0'), 'error' => null), $this->results());
+        $this->assertSame('installing', Sitepulse_Test_Upgrades::$progress[0]['phase']);
         $this->assertSame(array(array('maintenance', true), array('install', 'https://downloads.wordpress.org/plugin/seo.1.0.zip', array('overwrite_package' => true)), array('maintenance', false)), Sitepulse_Test_Upgrades::$calls);
         $this->assertContains(array('plugins', 'plugins'), Sitepulse_Test_WP::$cache_deletes);
         $this->assertFalse(Sitepulse_Remote_Events::$updating);
