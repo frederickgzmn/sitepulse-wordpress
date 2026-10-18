@@ -1080,8 +1080,9 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         $this->offer('plugin', 'seo/seo.php', '1.1');
         Sitepulse_Test_Upgrades::$outcomes['plugin:seo/seo.php'] = function () { $this->plugin('seo/seo.php', '1.1'); return true; };
         $this->start('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_first' => false));
-        $job = array_replace($this->job(), $changes);
-        if (!array_key_exists('begun', $changes)) { unset($job['begun']); }
+        // The job's age is counted now, not when PHPUnit read the data provider, which can be minutes earlier.
+        $job = array_replace($this->job(), array('started_at' => time() - $changes['age']));
+        if (array_key_exists('begun', $changes)) { $job['begun'] = $changes['begun']; } else { unset($job['begun']); }
         update_option(Sitepulse_Remote_Updates::JOB_OPTION, $job);
         $this->api();
 
@@ -1092,9 +1093,9 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
 
     public static function timelyUpdates(): array {
         return array(
-            'its first step within the hour' => array(array('started_at' => time() - Sitepulse_Remote_Updates::START_SECONDS + 60, 'begun' => false)),
-            'begun two hours ago, such as after a long backup' => array(array('started_at' => time() - 7200, 'begun' => true)),
-            'received by an older version of the plugin' => array(array('started_at' => time() - 7200)),
+            'its first step within the hour' => array(array('age' => Sitepulse_Remote_Updates::START_SECONDS - 60, 'begun' => false)),
+            'begun two hours ago, such as after a long backup' => array(array('age' => 7200, 'begun' => true)),
+            'received by an older version of the plugin' => array(array('age' => 7200)),
         );
     }
 }
