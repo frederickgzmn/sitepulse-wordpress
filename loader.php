@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       SitePulse - Performance Monitor and AI Diagnostics
  * Description:       SitePulse gives you real-time insights into your WordPress site’s performance, slow queries, and bottlenecks - so you can keep your site fast, healthy, and optimized.
- * Version:           1.4.6
+ * Version:           1.5.0
  * Author:            Frederic Guzman
  * Author URI:        https://www.nilbug.com
  * Text Domain:       sitepulse
@@ -40,7 +40,7 @@ if ( ! defined( 'SITEPULSE_STRESS_MODE' ) ) {
 	define( 'SITEPULSE_STRESS_MODE', false );
 }
 
-define( 'SITEPULSE_VERSION',               '1.4.6' );
+define( 'SITEPULSE_VERSION',               '1.5.0' );
 define( 'SITEPULSE_NAME',                  'SitePulse' );
 define( 'SITEPULSE_SLUG',                  'sitepulse' );
 define( 'SITEPULSE_PREFIX',                'wpsp' );

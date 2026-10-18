@@ -12,6 +12,7 @@ SitePulse is a WordPress performance-monitoring plugin (hook/plugin profiling, o
 - Coverage (CI gate is **100% executable-line coverage** of all first-party PHP, including templates, `loader.php`, `uninstall.php`, and all JS): `XDEBUG_MODE=coverage composer test:coverage` (needs Xdebug 3; `test:coverage:branches` for path coverage) and `npm run test:coverage`. New production code needs tests that cover every line.
 - Runtime validation: load `blueprint.json` in WordPress Playground; the test suites do not replace a real WordPress check.
 - Release version: `composer bump-version` raises the patch number (1.4.6 → 1.4.7); pass `-- minor`, `-- major` or `-- X.Y.Z` for others and `-- --dry-run` to preview. It updates the `loader.php` header and `SITEPULSE_VERSION`, the `readme.txt` Stable tag and the `.pot` header, and warns when `readme.txt` has no changelog section for the new version. Test fixtures pin their own version and are not touched.
+- Release zip: `composer build-zip` writes `dist/sitepulse-<version>.zip` (the plugin's files under `sitepulse/`, no tests or tooling; `-- <folder>` for another place). It refuses when the header, `SITEPULSE_VERSION` and the Stable tag differ, and syntax-checks every PHP file it packs.
 - Note: `AGENTS.md` mentions `tests/README.md`, which does not exist.
 
 ## Architecture
