@@ -36,21 +36,21 @@
     "semantic_hash": "a92b3364fb0a7349f2a1c31a7ad5ed5e"
   },
   "assets/js/backend.js": {
-    "mtime": 1792369843.958044,
-    "seen": 1792369894.2132428,
-    "ast_hash": "e20bdd23d6c9a4c6af88188f61979ac0",
+    "mtime": 1792425703.248374,
+    "seen": 1792431687.1326137,
+    "ast_hash": "01f0d6368d40519e84c01d98a242a748",
     "semantic_hash": ""
   },
   "assets/js/deactivation-modal.js": {
-    "mtime": 1791318107.4298258,
-    "seen": 1791937551.6072965,
-    "ast_hash": "1d66eb43ce309044560f2bba4e38a8f6",
+    "mtime": 1792425703.2515023,
+    "seen": 1792431687.1326168,
+    "ast_hash": "e9e100effd40263b90ba3065ad08c45c",
     "semantic_hash": ""
   },
   "assets/js/easy-mode.js": {
-    "mtime": 1791318107.4299712,
-    "seen": 1791937551.6072986,
-    "ast_hash": "59d8c2eb21d2ce0c800d2a5237488298",
+    "mtime": 1792425703.267556,
+    "seen": 1792431687.1326187,
+    "ast_hash": "728ecf8c24ef8cfb7d50daf79fb8d642",
     "semantic_hash": ""
   },
   "assets/js/onboarding.js": {
@@ -870,9 +870,9 @@
     "semantic_hash": ""
   },
   "assets/js/page-analysis.js": {
-    "mtime": 1791318107.4302697,
-    "seen": 1791937551.6073031,
-    "ast_hash": "002e57beabd18609c45500d631ae399f",
+    "mtime": 1792428615.2448313,
+    "seen": 1792431687.1326234,
+    "ast_hash": "9868699ffa1a343753e0f45944e222a6",
     "semantic_hash": ""
   },
   "class/getting_started.php": {
