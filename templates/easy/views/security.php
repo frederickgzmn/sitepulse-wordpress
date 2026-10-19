@@ -20,6 +20,7 @@ $sp_security_warning_count = isset( $warning_count ) ? (int) $warning_count : ( 
 $sp_security_error_log_score = isset( $error_log_score ) ? (int) $error_log_score : 100;
 $sp_security_vulnerabilities = isset( $vulnerabilities ) ? $vulnerabilities : array();
 $sp_security_last_vuln_check = isset( $last_vulnerability_check ) ? $last_vulnerability_check : get_option( 'sitepulse_last_vulnerability_check', '' );
+$sp_security_vuln_queued_at = isset( $vulnerability_scan_queued_at ) ? $vulnerability_scan_queued_at : get_option( 'sitepulse_vulnerability_scan_queued_at', '' );
 ?>
 
 <!-- Page Header -->
@@ -111,20 +112,39 @@ $sp_security_last_vuln_check = isset( $last_vulnerability_check ) ? $last_vulner
 						<?php echo esc_html( sprintf(
 							/* translators: %s: last check time */
 							__( 'Last checked: %s', 'sitepulse' ),
-							wp_date( 'M j, g:i A', strtotime( $sp_security_last_vuln_check ) )
+							date_i18n( 'M j, g:i A', strtotime( $sp_security_last_vuln_check ) )
 						) ); ?>
 					</p>
 				<?php endif; ?>
 			</div>
-			<span class="sp-badge <?php echo ! empty( $sp_security_vulnerabilities ) ? 'sp-badge-danger' : 'sp-badge-success'; ?>">
-				<?php echo esc_html( count( $sp_security_vulnerabilities ) ); ?>
-			</span>
+			<?php if ( empty( $sp_security_vulnerabilities ) && empty( $sp_security_last_vuln_check ) ) : ?>
+				<span class="sp-badge sp-badge-secondary">&mdash;</span>
+			<?php else : ?>
+				<span class="sp-badge <?php echo ! empty( $sp_security_vulnerabilities ) ? 'sp-badge-danger' : 'sp-badge-success'; ?>">
+					<?php echo esc_html( count( $sp_security_vulnerabilities ) ); ?>
+				</span>
+			<?php endif; ?>
 		</div>
 		<div class="sp-card-body sp-p-0">
+			<?php // Scan feedback; a completed or queued scan reloads the page to show its state. ?>
+			<div class="sp-vulnerabilities-results" data-sp-reload-on-results="1">
+				<?php if ( ! empty( $sp_security_vuln_queued_at ) ) : ?>
+					<div class="alert alert-warning" style="margin: 12px 20px;">
+						<span class="dashicons dashicons-hourglass"></span>
+						<?php echo esc_html( sprintf(
+							/* translators: %s: when the scan was queued */
+							__( 'Your site has been in the queue for a vulnerability scan since %s. Results are usually ready within 30 minutes: click "Scan for Threats" to see them.', 'sitepulse' ),
+							date_i18n( 'M j, g:i A', strtotime( $sp_security_vuln_queued_at ) )
+						) ); ?>
+					</div>
+				<?php endif; ?>
+			</div>
 			<?php if ( ! empty( $sp_security_vulnerabilities ) ) : ?>
 				<?php foreach ( $sp_security_vulnerabilities as $vuln ) : ?>
 					<?php
-					$sev       = strtolower( $vuln['severity'] ?? '' );
+					// The scan stores the severity as the finding's "version".
+					$sev_label = (string) ( $vuln['severity'] ?? ( $vuln['version'] ?? __( 'Unknown', 'sitepulse' ) ) );
+					$sev       = strtolower( $sev_label );
 					$sev_badge = 'sp-badge-danger';
 					if ( 'critical' === $sev ) {
 						$sev_badge = 'sp-badge-danger';
@@ -164,14 +184,20 @@ $sp_security_last_vuln_check = isset( $last_vulnerability_check ) ? $last_vulner
 								<a href="<?php echo esc_url( $vuln['references'][0] ); ?>" target="_blank" rel="noopener noreferrer" class="sp-text-xs"><?php echo esc_html__( 'Details', 'sitepulse' ); ?> &rarr;</a>
 							<?php endif; ?>
 						</div>
-						<span class="sp-badge <?php echo esc_attr( $sev_badge ); ?>"><?php echo esc_html( ucfirst( $vuln['severity'] ?? __( 'Unknown', 'sitepulse' ) ) ); ?></span>
+						<span class="sp-badge <?php echo esc_attr( $sev_badge ); ?>"><?php echo esc_html( ucfirst( $sev_label ) ); ?></span>
 					</div>
 				<?php endforeach; ?>
-			<?php else : ?>
+			<?php elseif ( ! empty( $sp_security_last_vuln_check ) ) : ?>
 				<div class="sp-empty" style="padding: 32px;">
 					<div class="sp-empty-icon"><span class="dashicons dashicons-yes-alt" style="color:var(--sp-success);"></span></div>
 					<p class="sp-empty-title"><?php echo esc_html__( 'No Threats Found', 'sitepulse' ); ?></p>
 					<p class="sp-empty-desc"><?php echo esc_html__( 'All your plugins and themes are currently safe.', 'sitepulse' ); ?></p>
+				</div>
+			<?php elseif ( empty( $sp_security_vuln_queued_at ) ) : ?>
+				<div class="sp-empty" style="padding: 32px;">
+					<div class="sp-empty-icon"><span class="dashicons dashicons-shield-alt"></span></div>
+					<p class="sp-empty-title"><?php echo esc_html__( 'Not Scanned Yet', 'sitepulse' ); ?></p>
+					<p class="sp-empty-desc"><?php echo esc_html__( 'Click "Scan for Threats" to check your plugins, themes and WordPress version against known vulnerabilities.', 'sitepulse' ); ?></p>
 				</div>
 			<?php endif; ?>
 		</div>

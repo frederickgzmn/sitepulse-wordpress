@@ -194,6 +194,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<?php elseif ( ! empty( $is_ai_failed ) ) : ?>
 						<p class="sp-fw-500 sp-text-danger sp-mb-8"><span class="dashicons dashicons-warning" style="vertical-align:text-top;"></span> <?php echo esc_html__( 'Diagnostic Failed', 'sitepulse' ); ?></p>
 						<p class=""><?php echo esc_html__( 'Something went wrong while checking your site. Please try again.', 'sitepulse' ); ?></p>
+						<?php if ( ! empty( $ai_diagnostic_error ) ) : ?>
+							<p class="sp-text-xs sp-text-muted"><strong><?php echo esc_html__( 'Reason:', 'sitepulse' ); ?></strong> <?php echo esc_html( $ai_diagnostic_error ); ?></p>
+						<?php endif; ?>
 						<button type="button" class="sp-btn sp-btn-sm sp-btn-primary sp-request-ai-diagnostic-btn" data-force="true">
 							<span class="dashicons dashicons-update-alt"></span> <span class="sp-btn-text"><?php echo esc_html__( 'Try Again', 'sitepulse' ); ?></span>
 						</button>
@@ -773,7 +776,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 						<span class="dashicons dashicons-performance"></span>
 						<?php echo esc_html__( 'Speed Warnings', 'sitepulse' ); ?>
 					</h3>
-					<p class="sp-card-subtitle"><?php echo esc_html__( 'Plugins and connections that are slowing things down', 'sitepulse' ); ?></p>
+					<p class="sp-card-subtitle"><?php echo esc_html__( 'Plugins and themes that slowed down page loads in the last 24 hours', 'sitepulse' ); ?></p>
 				</div>
 			</div>
 			<div class="sp-card-body sp-p-0">
@@ -1000,10 +1003,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<p class="sp-text-xs sp-text-muted" style="margin:2px 0 0;">
 						<?php
 						$vuln_count = isset( $vulnerabilities ) ? count( $vulnerabilities ) : 0;
-						echo $vuln_count > 0
+						if ( $vuln_count > 0 ) {
 							/* translators: %d: number of vulnerabilities */
-							? esc_html( sprintf( __( '%d vulnerabilities found', 'sitepulse' ), $vuln_count ) )
-							: esc_html__( 'No issues detected', 'sitepulse' );
+							echo esc_html( sprintf( _n( '%d vulnerability found', '%d vulnerabilities found', $vuln_count, 'sitepulse' ), $vuln_count ) );
+						} elseif ( ! empty( $vulnerability_scan_queued_at ) ) {
+							echo esc_html__( 'Vulnerability scan in progress', 'sitepulse' );
+						} elseif ( ! empty( $last_vulnerability_check ) ) {
+							echo esc_html__( 'No issues detected', 'sitepulse' );
+						} else {
+							echo esc_html__( 'Not scanned yet', 'sitepulse' );
+						}
 						?>
 					</p>
 				</div>

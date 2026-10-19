@@ -111,8 +111,8 @@ final class BackendCoverageTest extends Sitepulse_Test_Case {
         $GLOBALS['timestart'] = microtime(true) - .5;
         $this->assertGreaterThanOrEqual(500, $this->invoke($backend, 'calculate_total_load_time', array()));
         $GLOBALS['timestart'] = null;
-        $this->assertSame(700.0, $this->invoke($backend, 'calculate_total_load_time', array(array('total' => .7), array())));
-        $this->assertNull($this->invoke($backend, 'get_top_slow_item', array(array('total' => 0))));
+        $this->assertSame(700.0, $this->invoke($backend, 'calculate_total_load_time', array(array('load_ms' => 650.0), array('load_ms' => 50.0))));
+        $this->assertNull($this->invoke($backend, 'get_top_slow_item', array(array('load_ms' => 0.0))));
         $scores = $this->invoke($backend, 'calculate_performance_scores', array(), array(), array('formatted' => '20 MB'), 60, array('error_count' => 12));
         $this->assertSame(75, $scores['memory_score']);
         $this->assertSame(0, $scores['plugins_score']);

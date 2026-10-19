@@ -16,7 +16,7 @@ final class FrontendAdminBarTest extends Sitepulse_Test_Case {
         update_option('sitepulse_profiler_stats', array(array('total_ms' => 2), array('total_ms' => 3))); update_option('sitepulse_curl_api_events', array(array('elapsed' => 2)));
         $GLOBALS['timestart'] = null; $bar = new Sitepulse_Test_Admin_Bar(); Sitepulse_Frontend::admin_bar_node($bar);
         $this->assertStringContainsString('API: 1', $bar->nodes['wpsp']['title']); $this->assertStringContainsString('Load: 2', $bar->nodes['wpsp']['title']); $this->assertStringNotContainsString('Paused', $bar->nodes['wpsp']['title']);
-        $this->assertSame(array('wpsp', 'wpsp_dashboard', 'wpsp_analyze_page', 'wpsp_monitoring'), array_keys($bar->nodes));
+        $this->assertSame(array('wpsp', 'wpsp_dashboard', 'wpsp_analyze_page', 'wpsp_monitoring', 'wpsp_wp_admin'), array_keys($bar->nodes));
         $this->assertSame('Analyze a page', $bar->nodes['wpsp_analyze_page']['title']); $this->assertSame('https://example.test/wp-admin/admin.php?page=wpsp_sitepulse_page_analysis', $bar->nodes['wpsp_analyze_page']['href']);
         $this->assertSame('Pause monitoring', $bar->nodes['wpsp_monitoring']['title']);
         $this->assertSame('https://example.test/wp-admin/admin-post.php?action=sitepulse_toggle_monitoring&_wp_http_referer=%2F&_wpnonce=nonce-sitepulse_toggle_monitoring', $bar->nodes['wpsp_monitoring']['href']);
@@ -44,6 +44,28 @@ final class FrontendAdminBarTest extends Sitepulse_Test_Case {
         Sitepulse_Monitoring::pause(); $GLOBALS['timestart'] = null; $bar = new Sitepulse_Test_Admin_Bar(); Sitepulse_Frontend::admin_bar_node($bar);
         $this->assertStringContainsString('<span class="wshp-paused">Paused</span>', $bar->nodes['wpsp']['title']);
         $this->assertSame('Resume monitoring', $bar->nodes['wpsp_monitoring']['title']); $this->assertSame('Start collecting performance data again', $bar->nodes['wpsp_monitoring']['meta']['title']);
+    }
+    public function test_the_menu_says_whether_the_server_can_reach_wp_admin(): void {
+        $GLOBALS['timestart'] = null; $bar = new Sitepulse_Test_Admin_Bar(); Sitepulse_Frontend::admin_bar_node($bar);
+        $node = $bar->nodes['wpsp_wp_admin'];
+        $this->assertSame(array('wp-admin: Not checked yet', 'wpsp', 'https://example.test/wp-admin/admin.php?page=wpsp_sitepulse&sp_view=system#sitepulse-wp-admin'), array($node['title'], $node['parent'], $node['href']));
+        $this->assertSame(array('class' => 'wshp-wp-admin wshp-wp-admin-neutral', 'title' => 'SitePulse checks every hour whether this server can reach its own wp-admin.'), $node['meta']);
+
+        update_option('sitepulse_admin_access', array('last' => array('reachable' => true, 'status' => 302, 'login_status' => 200, 'ms' => 90, 'error' => null, 'checked_at' => gmdate('Y-m-d\TH:i:s\Z', time() - 120))));
+        update_user_meta(1, 'sitepulse_easy_mode', '0');
+        $bar = new Sitepulse_Test_Admin_Bar(); Sitepulse_Frontend::admin_bar_node($bar);
+        $this->assertSame('wp-admin: Reachable', $bar->nodes['wpsp_wp_admin']['title']);
+        $this->assertSame('https://example.test/wp-admin/admin.php?page=wpsp_sitepulse_settings#sitepulse-wp-admin', $bar->nodes['wpsp_wp_admin']['href']);
+        $this->assertSame(array('class' => 'wshp-wp-admin wshp-wp-admin-success', 'title' => 'HTTP 302 → login · 90 ms · checked 2 mins ago'), $bar->nodes['wpsp_wp_admin']['meta']);
+        $this->assertStringNotContainsString('wshp-wp-admin-down', $bar->nodes['wpsp']['title'], 'Nothing in the toolbar itself while it works.');
+    }
+
+    public function test_the_toolbar_shows_when_the_server_cannot_reach_wp_admin(): void {
+        update_option('sitepulse_admin_access', array('last' => array('reachable' => false, 'status' => 0, 'login_status' => 0, 'ms' => 5, 'error' => 'connection_failed', 'message' => 'Connection refused', 'checked_at' => gmdate('Y-m-d\TH:i:s\Z', time() - 60))));
+        $GLOBALS['timestart'] = null; $bar = new Sitepulse_Test_Admin_Bar(); Sitepulse_Frontend::admin_bar_node($bar);
+        $this->assertStringContainsString('<span class="wshp-wp-admin-down">wp-admin unreachable</span>', $bar->nodes['wpsp']['title']);
+        $this->assertSame('wp-admin: Not reachable', $bar->nodes['wpsp_wp_admin']['title']);
+        $this->assertSame(array('class' => 'wshp-wp-admin wshp-wp-admin-danger', 'title' => 'The server could not connect to its own wp-admin (loopback requests may be blocked by the host).'), $bar->nodes['wpsp_wp_admin']['meta']);
     }
     /**
      * @runInSeparateProcess

@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0+.
 msgid ""
 msgstr ""
-"Project-Id-Version: SitePulse - Performance Monitor and AI Diagnostics 1.4.6\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/sitepulse\n"
+"Project-Id-Version: SitePulse - Performance Monitor and AI Diagnostics 1.5.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/app\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-06T17:53:28+00:00\n"
+"POT-Creation-Date: 2026-10-19T14:59:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: sitepulse\n"
@@ -34,127 +34,235 @@ msgstr ""
 msgid "https://www.nilbug.com"
 msgstr ""
 
-#: class/api_service.php:164
+#: class/admin_access.php:123
+msgid "A check is already running. Try again in a moment."
+msgstr ""
+
+#: class/admin_access.php:167
+#: templates/backend/dashboard.php:766
+#: templates/backend/dashboard.php:2461
+msgid "Not checked yet"
+msgstr ""
+
+#: class/admin_access.php:169
+msgid "SitePulse checks every hour whether this server can reach its own wp-admin."
+msgstr ""
+
+#. translators: %d: HTTP status of /wp-admin/, a redirect to the login page
+#: class/admin_access.php:183
+#, php-format
+msgid "HTTP %d → login"
+msgstr ""
+
+#. translators: %d: HTTP status of /wp-admin
+#: class/admin_access.php:185
+#, php-format
+msgid "HTTP %d"
+msgstr ""
+
+#. translators: %s: duration in milliseconds
+#: class/admin_access.php:187
+#: class/page_analysis.php:450
+#, php-format
+msgid "%s ms"
+msgstr ""
+
+#. translators: %s: human-readable time difference
+#: class/admin_access.php:189
+#, php-format
+msgid "checked %s ago"
+msgstr ""
+
+#: class/admin_access.php:193
+msgid "Reachable"
+msgstr ""
+
+#. translators: %s: human-readable time difference
+#: class/admin_access.php:200
+#, php-format
+msgid "Was not reachable until %s ago."
+msgstr ""
+
+#. translators: %s: human-readable time difference
+#: class/admin_access.php:206
+#, php-format
+msgid "Checked %s ago."
+msgstr ""
+
+#. translators: %s: human-readable time difference
+#: class/admin_access.php:209
+#, php-format
+msgid "Was reachable until %s ago."
+msgstr ""
+
+#: class/admin_access.php:213
+msgid "Not reachable"
+msgstr ""
+
+#. translators: %d: seconds
+#: class/admin_access.php:228
+#, php-format
+msgid "wp-admin did not answer the server's own request within %d seconds."
+msgstr ""
+
+#: class/admin_access.php:229
+msgid "The server could not connect to its own wp-admin (loopback requests may be blocked by the host)."
+msgstr ""
+
+#: class/admin_access.php:230
+msgid "A PHP fatal error stopped wp-admin or its login page."
+msgstr ""
+
+#. translators: %d: HTTP status
+#: class/admin_access.php:240
+#, php-format
+msgid "The login page answered HTTP %d instead of 200."
+msgstr ""
+
+#. translators: %d: HTTP status
+#: class/admin_access.php:242
+#, php-format
+msgid "wp-admin answered HTTP %d."
+msgstr ""
+
+#: class/api_service.php:214
 msgid "An error occurred while preparing the request"
 msgstr ""
 
-#: class/api_service.php:218
+#: class/api_service.php:269
 msgid "Invalid API endpoint URL"
 msgstr ""
 
-#: class/api_service.php:228
-#: class/api_service.php:655
-#: class/api_service.php:1006
+#: class/api_service.php:279
+#: class/api_service.php:745
+#: class/api_service.php:1136
 msgid "Failed to encode request payload"
 msgstr ""
 
-#: class/api_service.php:270
+#: class/api_service.php:321
 msgid "Request timed out. The server may be slow or the payload is too large."
 msgstr ""
 
-#: class/api_service.php:272
+#: class/api_service.php:323
 msgid "Could not connect to API server. Please check your internet connection."
 msgstr ""
 
-#: class/api_service.php:274
+#: class/api_service.php:325
 msgid "SSL certificate error. Please contact your hosting provider."
 msgstr ""
 
-#. translators: %d: HTTP response code
-#: class/api_service.php:294
-#, php-format
-msgid "API request failed with status code: %d"
-msgstr ""
-
-#: class/api_service.php:308
-#: class/api_service.php:736
-#: class/api_service.php:1109
+#: class/api_service.php:355
+#: class/api_service.php:814
 msgid "Failed to decode API response"
 msgstr ""
 
-#: class/api_service.php:395
+#: class/api_service.php:442
 msgid "Data sent successfully to API"
 msgstr ""
 
-#: class/api_service.php:594
-#: class/api_service.php:643
+#: class/api_service.php:458
+msgid "Too many requests to SitePulse. Please wait a minute and try again."
+msgstr ""
+
+#: class/api_service.php:461
+msgid "This site has reached today's limit of free SitePulse requests. Please try again tomorrow."
+msgstr ""
+
+#: class/api_service.php:464
+msgid "This site has a SitePulse Pro license. Activate the SitePulse Pro plugin to use it."
+msgstr ""
+
+#. translators: %d: HTTP response code
+#: class/api_service.php:469
+#, php-format
+msgid "SitePulse is temporarily unavailable (HTTP %d). Please try again in a few minutes."
+msgstr ""
+
+#. translators: %d: HTTP response code
+#: class/api_service.php:488
+#, php-format
+msgid "SitePulse refused the request (HTTP %d)."
+msgstr ""
+
+#: class/api_service.php:686
+#: class/api_service.php:733
 msgid "External API data collection is disabled. If you want to enable it, please update your settings."
 msgstr ""
 
-#: class/api_service.php:624
+#: class/api_service.php:714
 msgid "An error occurred while preparing the vulnerability check"
 msgstr ""
 
-#: class/api_service.php:682
+#: class/api_service.php:772
 msgid "Could not connect to API server. Please try again later."
 msgstr ""
 
-#: class/api_service.php:717
-msgid "Core: Too many requests. Please wait trying again later."
-msgstr ""
-
-#. translators: %d: HTTP response code
-#: class/api_service.php:727
-#, php-format
-msgid "Free scan requests exhausted with status code: %d. Please try again tomorrow."
-msgstr ""
-
-#: class/api_service.php:770
+#: class/api_service.php:848
 msgid "Vulnerability scan is pending. Please check back later."
 msgstr ""
 
-#: class/api_service.php:779
-msgid "No vulnerabilities found. The site is scheduled for a re-scan; please check back later."
+#: class/api_service.php:857
+msgid "Vulnerability scan results received."
 msgstr ""
 
-#: class/api_service.php:779
-msgid "Vulnerabilities detected."
+#. translators: %s: why the SitePulse API did not register the site
+#: class/api_service.php:887
+#, php-format
+msgid "This site is not registered with SitePulse yet: %s"
 msgstr ""
 
-#: class/api_service.php:797
+#: class/api_service.php:888
+msgid "the API did not issue a license key."
+msgstr ""
+
+#: class/api_service.php:913
 msgid "External API is disabled. Enable it in Settings to use AI diagnostics."
 msgstr ""
 
-#: class/api_service.php:863
+#: class/api_service.php:962
 msgid "An error occurred while requesting the AI diagnostic"
 msgstr ""
 
-#: class/api_service.php:880
+#: class/api_service.php:979
 msgid "External API is disabled."
 msgstr ""
 
-#: class/api_service.php:895
+#: class/api_service.php:994
 msgid "Previous AI diagnostic available."
 msgstr ""
 
-#: class/api_service.php:904
+#: class/api_service.php:1003
 msgid "No AI diagnostic has been requested yet."
 msgstr ""
 
-#: class/api_service.php:914
+#: class/api_service.php:1013
 msgid "AI diagnostic completed."
 msgstr ""
 
-#: class/api_service.php:924
+#: class/api_service.php:1023
 msgid "Previous AI diagnostic failed. Request a new one."
 msgstr ""
 
-#: class/api_service.php:1037
+#: class/api_service.php:1167
 msgid "Could not connect to API server: "
 msgstr ""
 
-#. translators: %d: HTTP response code
-#: class/api_service.php:1077
+#: class/api_service.php:1206
+msgid "SitePulse sent an answer that could not be read. Please try again in a few minutes."
+msgstr ""
+
+#: class/api_service.php:1216
+msgid "An AI diagnosis of this site is already in progress."
+msgstr ""
+
+#. translators: %s: why the AI diagnosis failed
+#: class/api_service.php:1247
 #, php-format
-msgid "Server error (HTTP %d). Please try again later."
+msgid "The AI diagnosis failed: %s"
 msgstr ""
 
-#: class/api_service.php:1088
-msgid "Too many requests. Please wait before trying again."
-msgstr ""
-
-#: class/api_service.php:1094
-msgid "Request failed"
+#: class/api_service.php:1248
+msgid "The AI diagnosis could not be completed."
 msgstr ""
 
 #: class/backend.php:78
@@ -484,21 +592,21 @@ msgstr ""
 #: class/backend.php:205
 #: templates/backend/curl_api.php:126
 #: templates/backend/dashboard.php:107
-#: templates/backend/dashboard.php:1960
-#: templates/backend/dashboard.php:2393
-#: templates/backend/dashboard.php:2523
-#: templates/backend/dashboard.php:2724
+#: templates/backend/dashboard.php:1977
+#: templates/backend/dashboard.php:2416
+#: templates/backend/dashboard.php:2556
+#: templates/backend/dashboard.php:2757
 #: templates/backend/resource_load.php:183
 #: templates/easy/views/api-monitor.php:126
-#: templates/easy/views/resource-load.php:133
-#: templates/easy/views/system.php:128
-#: templates/easy/views/system.php:151
-#: templates/easy/views/system.php:160
+#: templates/easy/views/resource-load.php:132
+#: templates/easy/views/system.php:130
+#: templates/easy/views/system.php:153
+#: templates/easy/views/system.php:162
 msgid "Status"
 msgstr ""
 
 #: class/backend.php:206
-#: templates/easy/views/resource-load.php:127
+#: templates/easy/views/resource-load.php:125
 msgid "Hook"
 msgstr ""
 
@@ -555,13 +663,15 @@ msgstr ""
 #: class/backend.php:263
 #: class/monitoring.php:101
 #: class/onboarding.php:276
+#: class/remote_management.php:424
+#: class/remote_management.php:452
 msgid "You do not have sufficient permissions to access this page."
 msgstr ""
 
 #: class/backend.php:294
 #: class/backend.php:295
 #: class/easy_mode.php:305
-#: class/frontend.php:77
+#: class/frontend.php:81
 #: templates/backend/onboarding.php:58
 #: templates/easy/partials/topbar.php:15
 #: templates/easy/views/home.php:22
@@ -593,7 +703,7 @@ msgstr ""
 #: templates/backend/onboarding.php:141
 #: templates/easy/views/api-monitor.php:31
 #: templates/easy/views/home.php:49
-#: templates/easy/views/home.php:984
+#: templates/easy/views/home.php:987
 msgid "External Requests"
 msgstr ""
 
@@ -605,11 +715,11 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: class/backend.php:1058
+#: class/backend.php:1024
 msgid "SitePulse settings updated successfully!"
 msgstr ""
 
-#: class/backend.php:1060
+#: class/backend.php:1026
 msgid "Failed to update settings."
 msgstr ""
 
@@ -672,8 +782,8 @@ msgid "Working…"
 msgstr ""
 
 #: class/easy_mode.php:317
-#: templates/backend/dashboard.php:1722
-#: templates/backend/dashboard.php:1738
+#: templates/backend/dashboard.php:1739
+#: templates/backend/dashboard.php:1755
 #: templates/easy/views/insights.php:52
 #: templates/easy/views/insights.php:122
 #: templates/easy/views/performance.php:21
@@ -685,10 +795,10 @@ msgid "PageSpeed"
 msgstr ""
 
 #: class/easy_mode.php:341
-#: templates/backend/dashboard.php:200
-#: templates/backend/dashboard.php:2053
+#: templates/backend/dashboard.php:206
+#: templates/backend/dashboard.php:2076
 #: templates/easy/partials/pet-assistant.php:130
-#: templates/easy/views/home.php:247
+#: templates/easy/views/home.php:250
 msgid "Security"
 msgstr ""
 
@@ -713,20 +823,24 @@ msgstr ""
 msgid "Unable to update wp-config.php."
 msgstr ""
 
-#: class/frontend.php:50
 #: class/frontend.php:52
 #: class/frontend.php:54
-#: templates/easy/views/home.php:543
+#: class/frontend.php:56
+#: templates/easy/views/home.php:546
 #: templates/easy/views/performance.php:52
 #: templates/easy/views/performance.php:77
 msgid "Load Time"
 msgstr ""
 
-#: class/frontend.php:61
+#: class/frontend.php:63
 msgid "Paused"
 msgstr ""
 
-#: class/frontend.php:86
+#: class/frontend.php:65
+msgid "wp-admin unreachable"
+msgstr ""
+
+#: class/frontend.php:90
 #: templates/backend/curl_api.php:33
 #: templates/backend/resource_load.php:30
 #: templates/easy/views/api-monitor.php:41
@@ -734,29 +848,35 @@ msgstr ""
 msgid "Analyze a page"
 msgstr ""
 
-#: class/frontend.php:86
+#: class/frontend.php:90
 msgid "Analyze this page"
 msgstr ""
 
-#: class/frontend.php:91
+#: class/frontend.php:95
 msgid "See exactly what makes this page slow"
 msgstr ""
 
-#: class/frontend.php:97
-#: loader.php:382
+#: class/frontend.php:101
+#: loader.php:418
 msgid "Resume monitoring"
 msgstr ""
 
-#: class/frontend.php:97
+#: class/frontend.php:101
 msgid "Pause monitoring"
 msgstr ""
 
-#: class/frontend.php:102
+#: class/frontend.php:106
 msgid "Start collecting performance data again"
 msgstr ""
 
-#: class/frontend.php:103
+#: class/frontend.php:107
 msgid "Stop collecting performance data without deactivating SitePulse. Settings and history are kept."
+msgstr ""
+
+#. translators: %s: Reachable, Not reachable or Not checked yet
+#: class/frontend.php:114
+#, php-format
+msgid "wp-admin: %s"
 msgstr ""
 
 #: class/getting_started.php:74
@@ -857,12 +977,6 @@ msgstr ""
 msgid "%s s"
 msgstr ""
 
-#. translators: %s: duration in milliseconds
-#: class/page_analysis.php:450
-#, php-format
-msgid "%s ms"
-msgstr ""
-
 #. translators: %s: memory in megabytes
 #: class/page_analysis.php:461
 #, php-format
@@ -900,7 +1014,7 @@ msgid "WordPress needs %1$s to build this page. Visitors notice the wait; aim fo
 msgstr ""
 
 #: class/page_analysis.php:504
-#: templates/backend/dashboard.php:1326
+#: templates/backend/dashboard.php:1343
 msgid "Slow"
 msgstr ""
 
@@ -1072,26 +1186,298 @@ msgstr ""
 msgid "Page"
 msgstr ""
 
+#. translators: %s: why the check-in failed
+#: class/remote_management.php:317
+#, php-format
+msgid "Check-in with SitePulse failed: %s"
+msgstr ""
+
+#: class/remote_management.php:347
+msgid "Remote management turned on from the SitePulse dashboard."
+msgstr ""
+
+#: class/remote_management.php:347
+msgid "Remote management turned off."
+msgstr ""
+
+#: class/remote_management.php:433
+msgid "Remote management blocked on this site."
+msgstr ""
+
+#: class/remote_management.php:433
+msgid "Remote management unblocked on this site."
+msgstr ""
+
+#: class/remote_management.php:505
+msgid "This site was disconnected from its SitePulse accounts."
+msgstr ""
+
+#: class/remote_management.php:528
+msgid "That is not a SitePulse license. A license is five groups of four characters (0 to 9 and A to F) separated by dashes, such as 1A2B-3C4D-5E6F-7A8B-9C0D."
+msgstr ""
+
+#: class/remote_management.php:542
+msgid "The SitePulse license of this site was changed in its settings."
+msgstr ""
+
+#: class/remote_management.php:545
+msgid "The license was saved and the site checked in."
+msgstr ""
+
+#: class/remote_management.php:557
+msgid "SitePulse does not accept that license for this site, so it was not saved. Enter the license your SitePulse dashboard shows for this site."
+msgstr ""
+
+#. translators: %s: why the check-in failed
+#: class/remote_management.php:559
+#, php-format
+msgid "The license was not saved: SitePulse could not check it. %s"
+msgstr ""
+
+#: class/remote_management.php:603
+#: templates/backend/remote_connection.php:45
+msgid "Connection key"
+msgstr ""
+
+#: class/remote_management.php:689
+#: templates/backend/dashboard.php:1550
+#: templates/backend/dashboard.php:1595
+#: templates/backend/settings.php:38
+#: templates/backend/settings.php:472
+#: templates/easy/views/resource-load.php:180
+#: templates/easy/views/system.php:154
+msgid "Active"
+msgstr ""
+
+#: class/remote_management.php:690
+msgid "Off"
+msgstr ""
+
+#: class/remote_management.php:691
+msgid "Blocked"
+msgstr ""
+
+#: class/remote_management.php:692
+msgid "Connection problem"
+msgstr ""
+
+#: class/remote_management.php:693
+msgid "Unavailable"
+msgstr ""
+
+#. translators: %s: human-readable time difference
+#: class/remote_management.php:704
+#: class/remote_management.php:772
+#: templates/easy/views/page-analysis.php:117
+#, php-format
+msgid "%s ago"
+msgstr ""
+
+#. translators: %s: human-readable time difference
+#: class/remote_management.php:704
+msgid "Never"
+msgstr ""
+
+#: class/remote_management.php:727
+msgid "None. Install UpdraftPlus or BackWPup to back this site up from your SitePulse dashboard; updates work without one."
+msgstr ""
+
+#. translators: %s: backup plugin and its version
+#: class/remote_management.php:737
+#, php-format
+msgid "%s. Backups from your SitePulse dashboard need UpdraftPlus 1.26 or later."
+msgstr ""
+
+#. translators: %s: backup plugin and its version
+#: class/remote_management.php:739
+#, php-format
+msgid "%s. Backups from your SitePulse dashboard need BackWPup 5."
+msgstr ""
+
+#: class/remote_management.php:796
+msgid "Remote management is not available on multisite networks yet."
+msgstr ""
+
+#: class/remote_management.php:799
+msgid "Turn on PageSpeed & AI Reports (Cloud Services) to use remote management."
+msgstr ""
+
+#: class/remote_management.php:802
+msgid "Blocked: the SitePulse dashboard cannot see or manage the updates and backups of this site."
+msgstr ""
+
+#. translators: %s: why the check-in failed
+#: class/remote_management.php:811
+#, php-format
+msgid "The last check-in with SitePulse failed: %s"
+msgstr ""
+
+#: class/remote_management.php:813
+msgid "The last check-in with SitePulse failed. See the activity below."
+msgstr ""
+
+#: class/remote_management.php:820
+msgid "Active: your SitePulse dashboard manages the updates and backups of this site."
+msgstr ""
+
+#: class/remote_management.php:821
+msgid "Active: your SitePulse dashboard manages the updates of this site."
+msgstr ""
+
+#: class/remote_management.php:825
+msgid "Not managed yet. Get a connection key below and enter it in your SitePulse dashboard."
+msgstr ""
+
+#. translators: %s: name of a request from the SitePulse dashboard
+#: class/remote_management.php:906
+#, php-format
+msgid "Dashboard request started: %s."
+msgstr ""
+
+#: class/remote_management.php:934
+msgid "Remote management key replaced from the SitePulse dashboard."
+msgstr ""
+
+#. translators: %s: name of a request from the SitePulse dashboard
+#: class/remote_management.php:998
+#, php-format
+msgid "Dashboard request done: %s."
+msgstr ""
+
+#. translators: 1: name of a request from the SitePulse dashboard, 2: error code
+#: class/remote_management.php:1000
+#, php-format
+msgid "Dashboard request failed: %1$s (%2$s)."
+msgstr ""
+
+#: class/remote_management.php:1067
+msgid "refresh the site inventory"
+msgstr ""
+
+#. translators: %s: what the backup saves: full, files or database
+#: class/remote_management.php:1069
+#, php-format
+msgid "back up now (%s)"
+msgstr ""
+
+#: class/remote_management.php:1070
+msgid "cancel the running backup"
+msgstr ""
+
+#. translators: %s: name of a backup preset
+#: class/remote_management.php:1072
+#, php-format
+msgid "apply the backup preset \"%s\""
+msgstr ""
+
+#. translators: %s: WordPress version
+#: class/remote_management.php:1078
+#, php-format
+msgid "update WordPress to %s"
+msgstr ""
+
+#: class/remote_management.php:1079
+msgid "turn off WordPress auto-updates"
+msgstr ""
+
+#: class/remote_management.php:1079
+msgid "turn on WordPress auto-updates"
+msgstr ""
+
+#. translators: %s: plugin file or theme folder
+#: class/remote_management.php:1081
+#, php-format
+msgid "restore %s and the database from the backup taken before its update"
+msgstr ""
+
+#. translators: 1: plugin file or theme folder, 2: version
+#: class/remote_management.php:1083
+#, php-format
+msgid "roll %1$s back to %2$s"
+msgstr ""
+
+#. translators: %s: why WordPress could not send the request, such as "cURL error 28: Operation timed out"
+#: class/remote_management.php:1181
+#, php-format
+msgid "SitePulse could not be reached from this server (%s). Check that the server can reach api.sitepulse.me, then try again."
+msgstr ""
+
+#: class/remote_management.php:1184
+msgid "SitePulse answered, but the answer was not signed for this site. Check the server's date and time, then try again."
+msgstr ""
+
+#: class/remote_management.php:1187
+msgid "SitePulse's answer could not be understood. Please try again in a moment."
+msgstr ""
+
+#: class/remote_management.php:1190
+msgid "SitePulse could not be reached. Please try again in a moment."
+msgstr ""
+
+#: class/remote_management.php:1198
+msgid "SitePulse does not accept this site's key: the site's license or address no longer matches SitePulse's record for this domain. Enter the license your SitePulse dashboard shows for this site below, then press Check connection."
+msgstr ""
+
+#: class/remote_management.php:1199
+msgid "SitePulse rejected the request because this server's clock is more than 5 minutes off. Fix the server's date and time, then try again."
+msgstr ""
+
+#: class/remote_management.php:1200
+msgid "SitePulse had already received this request. Please try again."
+msgstr ""
+
+#: class/remote_management.php:1201
+msgid "The request reached SitePulse without its signature headers: a proxy or firewall on this server strips them."
+msgstr ""
+
+#: class/remote_management.php:1202
+msgid "SitePulse has blocked this site's license. Contact SitePulse support."
+msgstr ""
+
+#. translators: %d: HTTP status code, such as 503
+#: class/remote_management.php:1210
+#, php-format
+msgid "SitePulse is having trouble right now (HTTP %d). Please try again in a few minutes."
+msgstr ""
+
+#. translators: %d: HTTP status code, 401 or 403
+#: class/remote_management.php:1214
+#, php-format
+msgid "SitePulse refused this site's request (HTTP %d). Check the server's date and time, and that Cloud Services are on; if the site's address or license changed, disconnect and connect again."
+msgstr ""
+
+#. translators: %d: HTTP status code, 429
+#: class/remote_management.php:1218
+#, php-format
+msgid "SitePulse asked this site to slow down (HTTP %d). Please try again in a minute."
+msgstr ""
+
+#. translators: %d: HTTP status code
+#: class/remote_management.php:1221
+#, php-format
+msgid "SitePulse answered HTTP %d. Please try again in a moment."
+msgstr ""
+
 #. translators: %d: number of days
-#: class/settings.php:91
+#: class/settings.php:92
 #, php-format
 msgid "wp cron failed for %d days"
 msgstr ""
 
 #. translators: %d: number of hours
-#: class/settings.php:97
+#: class/settings.php:98
 #, php-format
 msgid "wp cron failed for %d hours"
 msgstr ""
 
 #. translators: %d: number of minutes
-#: class/settings.php:103
+#: class/settings.php:104
 #, php-format
 msgid "wp cron failed for %d minutes"
 msgstr ""
 
 #. translators: %d: number of past-due actions
-#: class/settings.php:160
+#: class/settings.php:161
 #, php-format
 msgid "Action Scheduler has %d+ past-due actions; cron system may be broken"
 msgstr ""
@@ -1104,18 +1490,34 @@ msgstr ""
 msgid "You do not have permission to perform this action."
 msgstr ""
 
-#: inc/api_backend.php:750
+#: inc/api_backend.php:748
 msgid "Plugin data collected successfully"
 msgstr ""
 
-#: inc/api_backend.php:773
-#: inc/api_backend.php:917
-#: inc/api_backend.php:954
+#: inc/api_backend.php:771
+#: inc/api_backend.php:929
+#: inc/api_backend.php:966
 msgid "API Service not found."
 msgstr ""
 
+#: inc/api_backend.php:789
+msgid "Your site is in the queue for a vulnerability scan. Results are usually ready within 30 minutes: check again then."
+msgstr ""
+
+#: inc/api_backend.php:888
+msgid "No known vulnerabilities found."
+msgstr ""
+
+#. translators: %d: number of known vulnerabilities
+#: inc/api_backend.php:891
+#, php-format
+msgid "%d known vulnerability found: update the affected plugin, theme or WordPress."
+msgid_plural "%d known vulnerabilities found: update the affected plugins, themes or WordPress."
+msgstr[0] ""
+msgstr[1] ""
+
 #. translators: 1: option name, 2: autoload value
-#: inc/api_backend.php:1151
+#: inc/api_backend.php:1163
 #, php-format
 msgid "Option \"%1$s\" autoload set to \"%2$s\""
 msgstr ""
@@ -1132,30 +1534,53 @@ msgstr ""
 msgid "SitePulse Pro is already active. SitePulse Free need to be deactivated."
 msgstr ""
 
-#: loader.php:380
+#: loader.php:416
 msgid "SitePulse monitoring is paused, so no performance data is being collected. Your settings and history are kept."
 msgstr ""
 
-#: loader.php:389
+#: loader.php:425
 msgid "SitePulse monitoring is paused. Both the Performance Monitor and External Requests tracker are disabled. Please enable them in the SitePulse dashboard to start tracking performance."
 msgstr ""
 
-#: loader.php:391
+#: loader.php:427
 msgid "SitePulse Performance Monitor is disabled. Please enable it in the SitePulse dashboard to start tracking performance."
 msgstr ""
 
-#: loader.php:393
+#: loader.php:429
 msgid "SitePulse External Requests tracker is disabled. Please enable it in the SitePulse dashboard to start tracking external connections."
 msgstr ""
 
 #. translators: %s: URL to onboarding page
-#: loader.php:431
+#: loader.php:467
 #, php-format
 msgid "Want to get started with SitePulse? Run the %s to configure the plugin."
 msgstr ""
 
-#: loader.php:432
+#: loader.php:468
 msgid "setup wizard"
+msgstr ""
+
+#: templates/backend/admin_access.php:23
+msgid "wp-admin"
+msgstr ""
+
+#: templates/backend/admin_access.php:28
+msgid "Checked every hour from this server, as WordPress checks an edited plugin for errors. Updates from your SitePulse dashboard load wp-admin to check the site."
+msgstr ""
+
+#: templates/backend/admin_access.php:29
+#: templates/easy/partials/admin-access.php:32
+msgid "Checking…"
+msgstr ""
+
+#: templates/backend/admin_access.php:29
+#: templates/easy/partials/admin-access.php:32
+msgid "The check could not run. Reload the page and try again."
+msgstr ""
+
+#: templates/backend/admin_access.php:29
+#: templates/easy/partials/admin-access.php:32
+msgid "Check now"
 msgstr ""
 
 #: templates/backend/curl_api.php:14
@@ -1171,19 +1596,18 @@ msgid "External connections made during page load"
 msgstr ""
 
 #: templates/backend/curl_api.php:51
-#: templates/backend/dashboard.php:2207
-#: templates/backend/dashboard.php:2327
+#: templates/backend/dashboard.php:2230
+#: templates/backend/dashboard.php:2350
 #: templates/backend/resource_load.php:52
 msgid "Events"
 msgstr ""
 
 #: templates/backend/curl_api.php:55
-#: templates/backend/dashboard.php:2332
+#: templates/backend/dashboard.php:2355
 msgid "Threshold"
 msgstr ""
 
 #: templates/backend/curl_api.php:72
-#: templates/backend/dashboard.php:2349
 msgid "No API requests detected. Please enable the monitor tracker to start collecting data."
 msgstr ""
 
@@ -1237,590 +1661,598 @@ msgid "Page address"
 msgstr ""
 
 #: templates/backend/dashboard.php:90
-#: templates/backend/dashboard.php:1943
+#: templates/backend/dashboard.php:1960
 msgid "AI Diagnostic Report"
 msgstr ""
 
 #: templates/backend/dashboard.php:91
-#: templates/backend/dashboard.php:1944
+#: templates/backend/dashboard.php:1961
 #: templates/easy/views/home.php:161
 msgid "Beta"
 msgstr ""
 
 #: templates/backend/dashboard.php:93
-#: templates/backend/dashboard.php:1946
+#: templates/backend/dashboard.php:1963
 msgid "AI-powered analysis and recommendations"
 msgstr ""
 
 #: templates/backend/dashboard.php:101
-#: templates/backend/dashboard.php:224
-#: templates/backend/dashboard.php:1954
-#: templates/backend/dashboard.php:2077
-#: templates/easy/views/home.php:236
+#: templates/backend/dashboard.php:230
+#: templates/backend/dashboard.php:1971
+#: templates/backend/dashboard.php:2100
+#: templates/easy/views/home.php:239
 msgid "Health"
 msgstr ""
 
 #: templates/backend/dashboard.php:104
-#: templates/backend/dashboard.php:1957
+#: templates/backend/dashboard.php:1974
 msgid "Processing"
 msgstr ""
 
 #: templates/backend/dashboard.php:104
-#: templates/backend/dashboard.php:1957
+#: templates/backend/dashboard.php:1974
 msgid "Pending"
 msgstr ""
 
 #: templates/backend/dashboard.php:118
-#: templates/backend/dashboard.php:1971
+#: templates/backend/dashboard.php:1988
 msgid "Loading..."
 msgstr ""
 
 #: templates/backend/dashboard.php:121
-#: templates/backend/dashboard.php:1974
+#: templates/backend/dashboard.php:1991
 msgid "Processing Analysis"
 msgstr ""
 
 #: templates/backend/dashboard.php:123
-#: templates/backend/dashboard.php:1976
+#: templates/backend/dashboard.php:1993
 msgid "Our AI is analyzing your site data. This may take a few minutes."
 msgstr ""
 
 #: templates/backend/dashboard.php:126
-#: templates/backend/dashboard.php:1979
+#: templates/backend/dashboard.php:1996
 msgid "Waiting in Queue"
 msgstr ""
 
 #: templates/backend/dashboard.php:128
-#: templates/backend/dashboard.php:1981
+#: templates/backend/dashboard.php:1998
 msgid "Your request has been queued. Processing will begin shortly."
 msgstr ""
 
 #: templates/backend/dashboard.php:129
-#: templates/backend/dashboard.php:299
-#: templates/backend/dashboard.php:1982
-#: templates/backend/dashboard.php:2154
+#: templates/backend/dashboard.php:305
+#: templates/backend/dashboard.php:1999
+#: templates/backend/dashboard.php:2177
 msgid "AI can make mistakes, so always double-check recommendations."
 msgstr ""
 
 #: templates/backend/dashboard.php:134
-#: templates/backend/dashboard.php:1987
+#: templates/backend/dashboard.php:2004
 msgid "Requested:"
 msgstr ""
 
 #: templates/backend/dashboard.php:141
-#: templates/backend/dashboard.php:1994
+#: templates/backend/dashboard.php:2011
 msgid "Queue Position:"
 msgstr ""
 
 #: templates/backend/dashboard.php:148
-#: templates/backend/dashboard.php:2001
+#: templates/backend/dashboard.php:2018
 msgid "Auto-checking every minute..."
 msgstr ""
 
 #: templates/backend/dashboard.php:157
-#: templates/backend/dashboard.php:2010
+#: templates/backend/dashboard.php:2027
 #: templates/easy/views/home.php:195
 msgid "Diagnostic Failed"
 msgstr ""
 
 #: templates/backend/dashboard.php:159
-#: templates/backend/dashboard.php:2012
+#: templates/backend/dashboard.php:2029
 msgid "The AI diagnostic could not be completed. Please try again."
 msgstr ""
 
 #: templates/backend/dashboard.php:163
-#: templates/backend/dashboard.php:2016
+#: templates/backend/dashboard.php:2033
+#: templates/easy/views/home.php:198
+msgid "Reason:"
+msgstr ""
+
+#: templates/backend/dashboard.php:169
+#: templates/backend/dashboard.php:2039
 msgid "Retry Diagnostic"
 msgstr ""
 
-#: templates/backend/dashboard.php:192
-#: templates/backend/dashboard.php:2045
-#: templates/easy/views/home.php:246
+#: templates/backend/dashboard.php:198
+#: templates/backend/dashboard.php:2068
+#: templates/easy/views/home.php:249
 msgid "Speed"
 msgstr ""
 
-#: templates/backend/dashboard.php:212
-#: templates/backend/dashboard.php:2065
-#: templates/easy/views/home.php:248
+#: templates/backend/dashboard.php:218
+#: templates/backend/dashboard.php:2088
+#: templates/easy/views/home.php:251
 msgid "Errors"
 msgstr ""
 
-#: templates/backend/dashboard.php:262
-#: templates/backend/dashboard.php:2117
+#: templates/backend/dashboard.php:268
+#: templates/backend/dashboard.php:2140
 msgid "Recommendations"
 msgstr ""
 
-#: templates/backend/dashboard.php:284
-#: templates/backend/dashboard.php:2140
+#: templates/backend/dashboard.php:290
+#: templates/backend/dashboard.php:2163
 msgid "Recommended Plugins"
 msgstr ""
 
-#: templates/backend/dashboard.php:288
-#: templates/backend/dashboard.php:2144
+#: templates/backend/dashboard.php:294
+#: templates/backend/dashboard.php:2167
 msgid "+"
 msgstr ""
 
-#: templates/backend/dashboard.php:300
-#: templates/backend/dashboard.php:2155
+#: templates/backend/dashboard.php:306
+#: templates/backend/dashboard.php:2178
 msgid "Last run:"
 msgstr ""
 
-#: templates/backend/dashboard.php:306
-#: templates/backend/dashboard.php:2161
+#: templates/backend/dashboard.php:312
+#: templates/backend/dashboard.php:2184
 msgid "Run New Diagnostic"
 msgstr ""
 
-#: templates/backend/dashboard.php:316
-#: templates/backend/dashboard.php:2171
+#: templates/backend/dashboard.php:322
+#: templates/backend/dashboard.php:2194
 msgid "AI-Powered Site Analysis"
 msgstr ""
 
-#: templates/backend/dashboard.php:318
-#: templates/backend/dashboard.php:2173
+#: templates/backend/dashboard.php:324
+#: templates/backend/dashboard.php:2196
 msgid "Get intelligent insights about your site's performance, security, and optimization opportunities."
 msgstr ""
 
-#: templates/backend/dashboard.php:322
-#: templates/backend/dashboard.php:2177
+#: templates/backend/dashboard.php:328
+#: templates/backend/dashboard.php:2200
 msgid "Request AI Diagnostic"
 msgstr ""
 
-#: templates/backend/dashboard.php:337
+#: templates/backend/dashboard.php:343
 msgid "Your Site Health Overview"
 msgstr ""
 
-#: templates/backend/dashboard.php:342
+#: templates/backend/dashboard.php:348
 #: templates/easy/views/home.php:30
 msgid "Updated"
 msgstr ""
 
-#: templates/backend/dashboard.php:355
-#: templates/backend/dashboard.php:1506
+#: templates/backend/dashboard.php:361
+#: templates/backend/dashboard.php:1523
 msgid "Needs Improvement"
 msgstr ""
 
-#: templates/backend/dashboard.php:358
-#: templates/backend/dashboard.php:1509
+#: templates/backend/dashboard.php:364
+#: templates/backend/dashboard.php:1526
 msgid "Good, but can be better"
 msgstr ""
 
-#: templates/backend/dashboard.php:360
-#: templates/backend/dashboard.php:1511
+#: templates/backend/dashboard.php:366
+#: templates/backend/dashboard.php:1528
 msgid "Optimal"
 msgstr ""
 
-#: templates/backend/dashboard.php:375
+#: templates/backend/dashboard.php:381
 msgid "Overall Health Score"
 msgstr ""
 
-#: templates/backend/dashboard.php:379
-#: templates/backend/dashboard.php:406
-#: templates/backend/dashboard.php:1555
+#: templates/backend/dashboard.php:385
+#: templates/backend/dashboard.php:412
+#: templates/backend/dashboard.php:1572
 #: templates/easy/partials/score-ring.php:23
 msgid "Excellent"
 msgstr ""
 
-#: templates/backend/dashboard.php:381
+#: templates/backend/dashboard.php:387
 #: templates/backend/resource_load.php:127
 #: templates/easy/partials/score-ring.php:26
-#: templates/easy/views/home.php:636
-#: templates/easy/views/home.php:648
+#: templates/easy/views/home.php:639
+#: templates/easy/views/home.php:651
 msgid "Good"
 msgstr ""
 
-#: templates/backend/dashboard.php:383
-#: templates/easy/views/home.php:214
-#: templates/easy/views/home.php:623
+#: templates/backend/dashboard.php:389
+#: templates/easy/views/home.php:217
+#: templates/easy/views/home.php:626
 msgid "Needs Attention"
 msgstr ""
 
-#: templates/backend/dashboard.php:401
-#: templates/backend/dashboard.php:1550
+#: templates/backend/dashboard.php:407
+#: templates/backend/dashboard.php:1567
 msgid "PageSpeed Performance"
 msgstr ""
 
-#: templates/backend/dashboard.php:406
-#: templates/backend/dashboard.php:1555
+#: templates/backend/dashboard.php:412
+#: templates/backend/dashboard.php:1572
 #: templates/easy/partials/score-ring.php:32
 msgid "Needs Work"
 msgstr ""
 
-#: templates/backend/dashboard.php:406
-#: templates/backend/dashboard.php:1555
+#: templates/backend/dashboard.php:412
+#: templates/backend/dashboard.php:1572
 msgid "Poor"
 msgstr ""
 
-#: templates/backend/dashboard.php:423
+#: templates/backend/dashboard.php:429
 msgid "Site Speed Score"
 msgstr ""
 
-#: templates/backend/dashboard.php:427
+#: templates/backend/dashboard.php:433
 msgid "Fast Loading"
 msgstr ""
 
-#: templates/backend/dashboard.php:430
+#: templates/backend/dashboard.php:436
 msgid "Moderate Speed"
 msgstr ""
 
-#: templates/backend/dashboard.php:432
+#: templates/backend/dashboard.php:438
 msgid "Slow Loading"
 msgstr ""
 
-#: templates/backend/dashboard.php:450
+#: templates/backend/dashboard.php:456
 msgid "System Resources"
 msgstr ""
 
-#: templates/backend/dashboard.php:454
+#: templates/backend/dashboard.php:460
 msgid "Efficient"
 msgstr ""
 
-#: templates/backend/dashboard.php:457
+#: templates/backend/dashboard.php:463
 msgid "Acceptable"
 msgstr ""
 
-#: templates/backend/dashboard.php:459
+#: templates/backend/dashboard.php:465
 msgid "High Usage"
 msgstr ""
 
-#: templates/backend/dashboard.php:473
-#: templates/easy/views/home.php:584
+#: templates/backend/dashboard.php:479
+#: templates/easy/views/home.php:587
 msgid "Claim Your Early Access"
 msgstr ""
 
-#: templates/backend/dashboard.php:474
-#: templates/easy/views/home.php:585
+#: templates/backend/dashboard.php:480
+#: templates/easy/views/home.php:588
 msgid "Experience the future of WordPress performance today. SitePulse Pro is now open for early access. Secure your spot and start optimizing with elite tools."
 msgstr ""
 
-#: templates/backend/dashboard.php:479
-#: templates/easy/views/home.php:590
+#: templates/backend/dashboard.php:485
+#: templates/easy/views/home.php:593
 msgid "Secure My Spot"
 msgstr ""
 
-#: templates/backend/dashboard.php:498
+#: templates/backend/dashboard.php:504
 msgid "Page Loading Performance"
 msgstr ""
 
-#: templates/backend/dashboard.php:500
+#: templates/backend/dashboard.php:506
 msgid "How fast your pages load for visitors"
 msgstr ""
 
-#: templates/backend/dashboard.php:509
+#: templates/backend/dashboard.php:515
 msgid "Performance Score"
 msgstr ""
 
-#: templates/backend/dashboard.php:527
+#: templates/backend/dashboard.php:533
 msgid "Great!"
 msgstr ""
 
-#: templates/backend/dashboard.php:528
+#: templates/backend/dashboard.php:534
 msgid "Your pages are loading quickly, which means visitors have a smooth experience on your site."
 msgstr ""
 
-#: templates/backend/dashboard.php:530
+#: templates/backend/dashboard.php:536
 msgid "Good, but can improve"
 msgstr ""
 
-#: templates/backend/dashboard.php:531
+#: templates/backend/dashboard.php:537
 msgid "Your pages load at a reasonable speed. To make them faster, consider optimizing images, using a caching plugin, or reducing the number of plugins."
 msgstr ""
 
-#: templates/backend/dashboard.php:533
+#: templates/backend/dashboard.php:539
 msgid "Needs Optimization"
 msgstr ""
 
-#: templates/backend/dashboard.php:534
+#: templates/backend/dashboard.php:540
 msgid "Your pages may be loading slowly. This can frustrate visitors and hurt your search engine rankings. Consider: optimizing images, using a caching plugin, reducing plugins, or upgrading your hosting plan."
 msgstr ""
 
-#: templates/backend/dashboard.php:539
-#: templates/backend/dashboard.php:842
+#: templates/backend/dashboard.php:545
+#: templates/backend/dashboard.php:858
 msgid "What this means:"
 msgstr ""
 
-#: templates/backend/dashboard.php:541
+#: templates/backend/dashboard.php:547
 msgid "Faster pages = Better user experience"
 msgstr ""
 
-#: templates/backend/dashboard.php:542
+#: templates/backend/dashboard.php:548
 msgid "Faster pages = Better search rankings"
 msgstr ""
 
-#: templates/backend/dashboard.php:543
+#: templates/backend/dashboard.php:549
 msgid "Faster pages = More conversions"
 msgstr ""
 
-#: templates/backend/dashboard.php:557
+#: templates/backend/dashboard.php:563
 msgid "External Connections"
 msgstr ""
 
-#: templates/backend/dashboard.php:559
+#: templates/backend/dashboard.php:565
 msgid "Connections to payment, social, and analytics services"
 msgstr ""
 
-#: templates/backend/dashboard.php:568
+#: templates/backend/dashboard.php:574
 msgid "Connection Score"
 msgstr ""
 
-#: templates/backend/dashboard.php:586
+#: templates/backend/dashboard.php:592
 msgid "Excellent!"
 msgstr ""
 
-#: templates/backend/dashboard.php:587
+#: templates/backend/dashboard.php:593
 msgid "Your site connects to external services (like payment processors, social media, or analytics) very efficiently."
 msgstr ""
 
-#: templates/backend/dashboard.php:589
+#: templates/backend/dashboard.php:595
 msgid "Working Well"
 msgstr ""
 
-#: templates/backend/dashboard.php:590
+#: templates/backend/dashboard.php:596
 msgid "Your external connections are functioning properly. Some connections may be slightly slower than ideal."
 msgstr ""
 
-#: templates/backend/dashboard.php:592
+#: templates/backend/dashboard.php:598
 #: templates/easy/views/api-monitor.php:67
 msgid "Slow Connections"
 msgstr ""
 
-#: templates/backend/dashboard.php:593
+#: templates/backend/dashboard.php:599
 msgid "Some external services your site connects to are responding slowly. This could affect features like payments, social sharing, or analytics."
 msgstr ""
 
-#: templates/backend/dashboard.php:598
+#: templates/backend/dashboard.php:604
 msgid "External connections include:"
 msgstr ""
 
-#: templates/backend/dashboard.php:600
+#: templates/backend/dashboard.php:606
 msgid "Payment gateways (Stripe, PayPal, etc.)"
 msgstr ""
 
-#: templates/backend/dashboard.php:601
+#: templates/backend/dashboard.php:607
 msgid "Social media APIs (Facebook, Twitter, etc.)"
 msgstr ""
 
-#: templates/backend/dashboard.php:602
+#: templates/backend/dashboard.php:608
 msgid "Analytics services (Google Analytics, etc.)"
 msgstr ""
 
-#: templates/backend/dashboard.php:603
+#: templates/backend/dashboard.php:609
 msgid "Third-party services and APIs"
 msgstr ""
 
-#: templates/backend/dashboard.php:617
-#: templates/backend/dashboard.php:1597
-#: templates/backend/settings.php:431
-#: templates/easy/views/home.php:553
+#: templates/backend/dashboard.php:623
+#: templates/backend/dashboard.php:1614
+#: templates/backend/settings.php:432
+#: templates/easy/views/home.php:556
 #: templates/easy/views/system.php:57
 msgid "Memory Usage"
 msgstr ""
 
-#: templates/backend/dashboard.php:619
+#: templates/backend/dashboard.php:625
 msgid "How much server memory your site uses"
 msgstr ""
 
-#: templates/backend/dashboard.php:628
+#: templates/backend/dashboard.php:634
 msgid "Current Usage"
 msgstr ""
 
-#: templates/backend/dashboard.php:649
+#: templates/backend/dashboard.php:655
 msgid "Excellent Memory Usage!"
 msgstr ""
 
-#: templates/backend/dashboard.php:650
+#: templates/backend/dashboard.php:656
 msgid "Your site is using memory very efficiently. This means your site can handle more visitors without slowing down."
 msgstr ""
 
-#: templates/backend/dashboard.php:652
+#: templates/backend/dashboard.php:658
 msgid "Acceptable Usage"
 msgstr ""
 
-#: templates/backend/dashboard.php:653
+#: templates/backend/dashboard.php:659
 msgid "Your memory usage is within acceptable limits. Monitor it to ensure it doesn't increase significantly."
 msgstr ""
 
-#: templates/backend/dashboard.php:655
+#: templates/backend/dashboard.php:661
 msgid "High Memory Usage"
 msgstr ""
 
-#: templates/backend/dashboard.php:656
+#: templates/backend/dashboard.php:662
 msgid "Your site is using a lot of memory. This could cause your site to slow down or crash during high traffic. Consider reducing plugins or upgrading your hosting plan."
 msgstr ""
 
-#: templates/backend/dashboard.php:661
+#: templates/backend/dashboard.php:667
 msgid "Memory is used for:"
 msgstr ""
 
-#: templates/backend/dashboard.php:663
+#: templates/backend/dashboard.php:669
 msgid "Running plugins and themes"
 msgstr ""
 
-#: templates/backend/dashboard.php:664
+#: templates/backend/dashboard.php:670
 msgid "Processing page requests"
 msgstr ""
 
-#: templates/backend/dashboard.php:665
+#: templates/backend/dashboard.php:671
 msgid "Storing temporary data"
 msgstr ""
 
-#: templates/backend/dashboard.php:679
-#: templates/backend/dashboard.php:1618
-#: templates/backend/settings.php:399
+#: templates/backend/dashboard.php:685
+#: templates/backend/dashboard.php:1635
+#: templates/backend/settings.php:400
 #: templates/easy/views/api-monitor.php:77
-#: templates/easy/views/home.php:563
+#: templates/easy/views/home.php:566
 #: templates/easy/views/resource-load.php:77
 #: templates/easy/views/system.php:68
 msgid "Active Plugins"
 msgstr ""
 
-#: templates/backend/dashboard.php:681
+#: templates/backend/dashboard.php:687
 msgid "Number of active plugins on your site"
 msgstr ""
 
-#: templates/backend/dashboard.php:690
+#: templates/backend/dashboard.php:696
 msgid "Total Plugins"
 msgstr ""
 
-#: templates/backend/dashboard.php:704
+#: templates/backend/dashboard.php:710
 msgid "plugins"
 msgstr ""
 
-#: templates/backend/dashboard.php:712
+#: templates/backend/dashboard.php:718
 msgid "Good Plugin Count!"
 msgstr ""
 
-#: templates/backend/dashboard.php:713
+#: templates/backend/dashboard.php:719
 msgid "You have a reasonable number of plugins. Each plugin adds functionality but also uses resources, so keeping the count manageable is important."
 msgstr ""
 
-#: templates/backend/dashboard.php:715
+#: templates/backend/dashboard.php:721
 msgid "Consider Reviewing"
 msgstr ""
 
-#: templates/backend/dashboard.php:716
+#: templates/backend/dashboard.php:722
 msgid "You have quite a few plugins. Review them regularly and deactivate any you're not using. Unused plugins can still slow down your site."
 msgstr ""
 
-#: templates/backend/dashboard.php:718
+#: templates/backend/dashboard.php:724
 msgid "Too Many Plugins"
 msgstr ""
 
-#: templates/backend/dashboard.php:719
+#: templates/backend/dashboard.php:725
 msgid "You have a lot of plugins active. This can significantly slow down your site. Review and deactivate unused plugins, or consider combining functionality with fewer, more comprehensive plugins."
 msgstr ""
 
-#: templates/backend/dashboard.php:724
+#: templates/backend/dashboard.php:730
 msgid "Best practices:"
 msgstr ""
 
-#: templates/backend/dashboard.php:726
+#: templates/backend/dashboard.php:732
 msgid "Deactivate plugins you don't use"
 msgstr ""
 
-#: templates/backend/dashboard.php:727
+#: templates/backend/dashboard.php:733
 msgid "Delete unused plugins completely"
 msgstr ""
 
-#: templates/backend/dashboard.php:728
+#: templates/backend/dashboard.php:734
 msgid "Keep plugins updated"
 msgstr ""
 
-#: templates/backend/dashboard.php:729
+#: templates/backend/dashboard.php:735
 msgid "Use quality plugins from trusted sources"
 msgstr ""
 
-#: templates/backend/dashboard.php:744
-#: templates/backend/dashboard.php:2422
+#: templates/backend/dashboard.php:750
+#: templates/backend/dashboard.php:2445
 msgid "Security & Vulnerabilities"
 msgstr ""
 
-#: templates/backend/dashboard.php:746
-#: templates/backend/dashboard.php:2424
+#: templates/backend/dashboard.php:752
+#: templates/backend/dashboard.php:2447
 msgid "Scan your site for known security vulnerabilities"
 msgstr ""
 
-#: templates/backend/dashboard.php:756
-#: templates/backend/dashboard.php:2434
+#: templates/backend/dashboard.php:762
+#: templates/backend/dashboard.php:2457
 msgid "Last checked:"
 msgstr ""
 
-#: templates/backend/dashboard.php:760
-#: templates/backend/dashboard.php:2438
-msgid "Not checked yet"
-msgstr ""
-
-#: templates/backend/dashboard.php:770
-#: templates/backend/dashboard.php:2448
-msgid "Vulnerabilities Found"
+#. translators: %s: when the scan was queued
+#: templates/backend/dashboard.php:777
+#: templates/backend/dashboard.php:2472
+#, php-format
+msgid "Your site has been in the queue for a vulnerability scan since %s. Results are usually ready within 30 minutes: click \"Check Vulnerabilities\" to see them."
 msgstr ""
 
 #: templates/backend/dashboard.php:786
-#: templates/backend/dashboard.php:2464
+#: templates/backend/dashboard.php:2481
+msgid "Vulnerabilities Found"
+msgstr ""
+
+#: templates/backend/dashboard.php:802
+#: templates/backend/dashboard.php:2497
 msgid "No vulnerabilities found."
 msgstr ""
 
-#: templates/backend/dashboard.php:791
-#: templates/backend/dashboard.php:2469
+#: templates/backend/dashboard.php:807
+#: templates/backend/dashboard.php:2502
 msgid "Run a scan to check for vulnerabilities."
 msgstr ""
 
 #. translators: %s: Pro version link
-#: templates/backend/dashboard.php:799
-#: templates/backend/dashboard.php:2477
+#: templates/backend/dashboard.php:815
+#: templates/backend/dashboard.php:2510
 #, php-format
 msgid "Database powered by Wordfence and daily automatic checking & alerts with the %s"
 msgstr ""
 
-#: templates/backend/dashboard.php:800
-#: templates/backend/dashboard.php:2478
+#: templates/backend/dashboard.php:816
+#: templates/backend/dashboard.php:2511
 msgid "Pro version"
 msgstr ""
 
-#: templates/backend/dashboard.php:805
-#: templates/backend/dashboard.php:2483
+#: templates/backend/dashboard.php:821
+#: templates/backend/dashboard.php:2516
 msgid "Check Vulnerabilities"
 msgstr ""
 
-#: templates/backend/dashboard.php:820
+#: templates/backend/dashboard.php:836
 msgid "Error Status & Site Stability"
 msgstr ""
 
-#: templates/backend/dashboard.php:822
+#: templates/backend/dashboard.php:838
 msgid "Errors and warnings detected on your site"
 msgstr ""
 
-#: templates/backend/dashboard.php:835
+#: templates/backend/dashboard.php:851
 msgid "No Errors Found!"
 msgstr ""
 
-#: templates/backend/dashboard.php:838
+#: templates/backend/dashboard.php:854
 msgid "Excellent news! Your site is running smoothly with no errors detected in the last 2 days. This means your site is stable and functioning properly."
 msgstr ""
 
-#: templates/backend/dashboard.php:844
+#: templates/backend/dashboard.php:860
 msgid "Your site code is working correctly"
 msgstr ""
 
-#: templates/backend/dashboard.php:845
+#: templates/backend/dashboard.php:861
 msgid "No conflicts between plugins or themes"
 msgstr ""
 
-#: templates/backend/dashboard.php:846
+#: templates/backend/dashboard.php:862
 msgid "Visitors are experiencing a smooth site"
 msgstr ""
 
-#: templates/backend/dashboard.php:847
+#: templates/backend/dashboard.php:863
 msgid "Your site is ready for production use"
 msgstr ""
 
 #. translators: %1$d: number of errors, %2$d: number of warnings
-#: templates/backend/dashboard.php:858
+#: templates/backend/dashboard.php:874
 #, php-format
 msgid "%1$d Errors and %2$d Warnings Found"
 msgstr ""
 
 #. translators: %d: number of errors
-#: templates/backend/dashboard.php:865
+#: templates/backend/dashboard.php:881
 #, php-format
 msgid "%d Error Found"
 msgid_plural "%d Errors Found"
@@ -1828,82 +2260,86 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of warnings
-#: templates/backend/dashboard.php:871
+#: templates/backend/dashboard.php:887
 #, php-format
 msgid "%d Warning Found"
 msgid_plural "%d Warnings Found"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/backend/dashboard.php:879
+#: templates/backend/dashboard.php:895
 msgid "Errors:"
 msgstr ""
 
-#: templates/backend/dashboard.php:880
+#: templates/backend/dashboard.php:896
 msgid "These are serious issues that can cause parts of your site to stop working. They should be fixed as soon as possible."
 msgstr ""
 
-#: templates/backend/dashboard.php:885
-#: templates/backend/dashboard.php:1057
+#: templates/backend/dashboard.php:901
+#: templates/backend/dashboard.php:1074
 msgid "Warnings:"
 msgstr ""
 
-#: templates/backend/dashboard.php:886
+#: templates/backend/dashboard.php:902
 msgid "These are less serious but may indicate potential problems. They should be reviewed and addressed when possible."
 msgstr ""
 
-#: templates/backend/dashboard.php:890
+#: templates/backend/dashboard.php:906
 msgid "What to do:"
 msgstr ""
 
-#: templates/backend/dashboard.php:891
+#: templates/backend/dashboard.php:907
 msgid "Switch to Developer View to see detailed information about each error, including where it occurred and how to fix it. If you're not technical, consider contacting your developer or hosting support."
 msgstr ""
 
-#: templates/backend/dashboard.php:906
+#: templates/backend/dashboard.php:922
 msgid "Error Score"
 msgstr ""
 
-#: templates/backend/dashboard.php:930
+#: templates/backend/dashboard.php:946
 msgid "Performance Warnings"
 msgstr ""
 
-#: templates/backend/dashboard.php:932
-msgid "Plugins, themes, or processes that are slowing down your site"
+#: templates/backend/dashboard.php:948
+msgid "Plugins, themes and external requests that slowed down your site in the last 24 hours"
 msgstr ""
 
-#: templates/backend/dashboard.php:946
+#: templates/backend/dashboard.php:962
 msgid "Load Time Performance Score"
 msgstr ""
 
-#: templates/backend/dashboard.php:955
+#: templates/backend/dashboard.php:971
 msgid "Current Load Time:"
 msgstr ""
 
-#: templates/backend/dashboard.php:975
+#: templates/backend/dashboard.php:991
 msgid "Top Performance Issue"
 msgstr ""
 
-#: templates/backend/dashboard.php:978
+#: templates/backend/dashboard.php:994
 msgid "Slowest Item:"
 msgstr ""
 
-#: templates/backend/dashboard.php:996
+#: templates/backend/dashboard.php:1008
+msgid "own time per page load, last 24 hours"
+msgstr ""
+
+#: templates/backend/dashboard.php:1013
 msgid "Hook:"
 msgstr ""
 
-#: templates/backend/dashboard.php:1001
+#: templates/backend/dashboard.php:1018
 msgid "Location:"
 msgstr ""
 
 #. translators: %1$d: number of critical issues, %2$d: number of warning issues
-#: templates/backend/dashboard.php:1030
+#: templates/backend/dashboard.php:1047
 #, php-format
 msgid "%1$d Critical and %2$d Warning Issues Found"
 msgstr ""
 
 #. translators: %d: number of critical issues
-#: templates/backend/dashboard.php:1037
+#: templates/backend/dashboard.php:1054
 #, php-format
 msgid "%d Critical Issue Found"
 msgid_plural "%d Critical Issues Found"
@@ -1911,50 +2347,50 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of performance warnings
-#: templates/backend/dashboard.php:1043
+#: templates/backend/dashboard.php:1060
 #, php-format
 msgid "%d Performance Warning"
 msgid_plural "%d Performance Warnings"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/backend/dashboard.php:1051
+#: templates/backend/dashboard.php:1068
 msgid "Critical Issues:"
 msgstr ""
 
-#: templates/backend/dashboard.php:1052
+#: templates/backend/dashboard.php:1069
 msgid "These plugins or themes are taking more than 1 second to load, which significantly slows down your site. Consider replacing or optimizing them."
 msgstr ""
 
-#: templates/backend/dashboard.php:1058
+#: templates/backend/dashboard.php:1075
 msgid "These items are taking longer than ideal to load (over 0.5 seconds). While not critical, optimizing them can improve your site speed."
 msgstr ""
 
-#: templates/backend/dashboard.php:1063
-msgid "Slow Items Detected:"
+#: templates/backend/dashboard.php:1080
+msgid "Slow items in the last 24 hours:"
 msgstr ""
 
-#: templates/backend/dashboard.php:1085
-#: templates/backend/dashboard.php:1320
+#: templates/backend/dashboard.php:1102
+#: templates/backend/dashboard.php:1337
 msgid "Very Slow"
 msgstr ""
 
 #. translators: %d: number of additional slow items not shown
 #. translators: %d: number of additional slow API requests not shown
-#: templates/backend/dashboard.php:1098
-#: templates/backend/dashboard.php:1187
+#: templates/backend/dashboard.php:1115
+#: templates/backend/dashboard.php:1204
 #, php-format
 msgid "... and %d more. Switch to Developer View to see all."
 msgstr ""
 
 #. translators: %1$d: number of critical slow API requests, %2$d: number of warning slow API requests
-#: templates/backend/dashboard.php:1129
+#: templates/backend/dashboard.php:1146
 #, php-format
 msgid "%1$d Critical and %2$d Warning Slow API Requests"
 msgstr ""
 
 #. translators: %d: number of critical slow API requests
-#: templates/backend/dashboard.php:1136
+#: templates/backend/dashboard.php:1153
 #, php-format
 msgid "%d Critical Slow API Request"
 msgid_plural "%d Critical Slow API Requests"
@@ -1962,256 +2398,247 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of slow API requests
-#: templates/backend/dashboard.php:1142
+#: templates/backend/dashboard.php:1159
 #, php-format
 msgid "%d Slow API Request"
 msgid_plural "%d Slow API Requests"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/backend/dashboard.php:1149
+#: templates/backend/dashboard.php:1166
 msgid "Your site is making requests to external services (like payment processors, analytics, or social media) that are responding slowly. This can delay page loading."
 msgstr ""
 
-#: templates/backend/dashboard.php:1152
-msgid "Slow API Requests:"
+#: templates/backend/dashboard.php:1169
+msgid "Slow API requests in the last 24 hours:"
 msgstr ""
 
-#: templates/backend/dashboard.php:1201
+#: templates/backend/dashboard.php:1218
 msgid "Possible Causes & Recommendations"
 msgstr ""
 
 #. translators: %d: number of slow plugins or themes
-#: templates/backend/dashboard.php:1211
+#: templates/backend/dashboard.php:1228
 #, php-format
 msgid "<strong>Slow Plugins/Themes:</strong> %d plugin(s) or theme(s) are taking too long to load. Consider deactivating unused ones, updating them, or finding faster alternatives."
 msgstr ""
 
 #. translators: %d: number of slow external service connections
-#: templates/backend/dashboard.php:1220
+#: templates/backend/dashboard.php:1237
 #, php-format
 msgid "<strong>Slow External Connections:</strong> %d external service(s) are responding slowly. These might be payment processors, analytics, or social media APIs. Consider using asynchronous loading or removing unnecessary integrations."
 msgstr ""
 
-#: templates/backend/dashboard.php:1227
+#: templates/backend/dashboard.php:1244
 msgid "<strong>Overall Slow Performance:</strong> Your site is taking more than 2 seconds to load. This could be due to multiple factors including hosting, database queries, or too many active plugins."
 msgstr ""
 
-#: templates/backend/dashboard.php:1229
+#: templates/backend/dashboard.php:1246
 msgid "<strong>Moderate Performance Issues:</strong> Your site load time is above 2 seconds. While acceptable, optimizing could significantly improve user experience."
 msgstr ""
 
 #. translators: %d: number of active plugins
-#: templates/backend/dashboard.php:1236
+#: templates/backend/dashboard.php:1253
 #, php-format
 msgid "<strong>Too Many Plugins:</strong> You have %d active plugins. Each plugin adds overhead. Review and deactivate unused plugins."
 msgstr ""
 
-#: templates/backend/dashboard.php:1243
+#: templates/backend/dashboard.php:1260
 msgid "<strong>High Memory Usage:</strong> Your site is using a lot of server memory. This can slow down page loading. Consider reducing plugins or upgrading hosting."
 msgstr ""
 
-#: templates/backend/dashboard.php:1248
+#: templates/backend/dashboard.php:1265
 msgid "<strong>General Optimization:</strong> While no major issues were detected, you can still improve performance by using caching, optimizing images, and keeping everything updated."
 msgstr ""
 
-#: templates/backend/dashboard.php:1265
+#: templates/backend/dashboard.php:1282
 msgid "Recommended Actions:"
 msgstr ""
 
-#: templates/backend/dashboard.php:1269
+#: templates/backend/dashboard.php:1286
 msgid "Review and optimize the slow plugins/themes listed above"
 msgstr ""
 
-#: templates/backend/dashboard.php:1274
+#: templates/backend/dashboard.php:1291
 msgid "Consider using asynchronous loading for external API calls"
 msgstr ""
 
-#: templates/backend/dashboard.php:1276
+#: templates/backend/dashboard.php:1293
 msgid "Review if all external integrations are necessary"
 msgstr ""
 
-#: templates/backend/dashboard.php:1278
+#: templates/backend/dashboard.php:1295
 msgid "Install and configure a caching plugin"
 msgstr ""
 
-#: templates/backend/dashboard.php:1279
+#: templates/backend/dashboard.php:1296
 msgid "Optimize images and reduce file sizes"
 msgstr ""
 
-#: templates/backend/dashboard.php:1280
+#: templates/backend/dashboard.php:1297
 msgid "Deactivate and delete unused plugins"
 msgstr ""
 
-#: templates/backend/dashboard.php:1281
+#: templates/backend/dashboard.php:1298
 msgid "Keep WordPress, themes, and plugins updated"
 msgstr ""
 
-#: templates/backend/dashboard.php:1283
-#: templates/backend/dashboard.php:1353
+#: templates/backend/dashboard.php:1300
+#: templates/backend/dashboard.php:1370
 msgid "Consider upgrading your hosting plan for better performance"
 msgstr ""
 
-#: templates/backend/dashboard.php:1286
+#: templates/backend/dashboard.php:1303
 msgid "Switch to Developer View for detailed technical analysis"
 msgstr ""
 
-#: templates/backend/dashboard.php:1296
+#: templates/backend/dashboard.php:1313
 msgid "Overall Site Performance"
 msgstr ""
 
-#: templates/backend/dashboard.php:1300
+#: templates/backend/dashboard.php:1317
 msgid "Total Load Time:"
 msgstr ""
 
-#: templates/backend/dashboard.php:1311
+#: templates/backend/dashboard.php:1328
 msgid "Performance Score:"
 msgstr ""
 
-#: templates/backend/dashboard.php:1333
+#: templates/backend/dashboard.php:1350
 msgid "Very Slow Performance:"
 msgstr ""
 
-#: templates/backend/dashboard.php:1334
+#: templates/backend/dashboard.php:1351
 msgid "Your site is loading very slowly. This significantly impacts user experience and search engine rankings. Visitors may leave before your site finishes loading. This needs immediate attention."
 msgstr ""
 
-#: templates/backend/dashboard.php:1336
+#: templates/backend/dashboard.php:1353
 msgid "Slow Performance:"
 msgstr ""
 
-#: templates/backend/dashboard.php:1337
+#: templates/backend/dashboard.php:1354
 msgid "Your site is loading slower than ideal. Most visitors expect sites to load in under 3 seconds. Improving this will help keep visitors on your site and improve your search rankings."
 msgstr ""
 
-#: templates/backend/dashboard.php:1339
+#: templates/backend/dashboard.php:1356
 msgid "Moderate Performance:"
 msgstr ""
 
-#: templates/backend/dashboard.php:1340
+#: templates/backend/dashboard.php:1357
 msgid "Your site load time is acceptable but could be improved. Aim for under 2 seconds for the best user experience and better search engine rankings."
 msgstr ""
 
-#: templates/backend/dashboard.php:1344
+#: templates/backend/dashboard.php:1361
 msgid "To improve load time:"
 msgstr ""
 
-#: templates/backend/dashboard.php:1347
+#: templates/backend/dashboard.php:1364
 msgid "Address the slow plugins and themes listed above"
 msgstr ""
 
-#: templates/backend/dashboard.php:1350
+#: templates/backend/dashboard.php:1367
 msgid "Use a caching plugin to speed up page delivery"
 msgstr ""
 
-#: templates/backend/dashboard.php:1351
+#: templates/backend/dashboard.php:1368
 msgid "Optimize images and reduce their file sizes"
 msgstr ""
 
-#: templates/backend/dashboard.php:1356
+#: templates/backend/dashboard.php:1373
 msgid "Use a Content Delivery Network (CDN) to serve content faster"
 msgstr ""
 
-#: templates/backend/dashboard.php:1359
+#: templates/backend/dashboard.php:1376
 msgid "Minimize the number of active plugins and remove unused ones"
 msgstr ""
 
-#: templates/backend/dashboard.php:1379
+#: templates/backend/dashboard.php:1396
 msgid "Quick Tips to Improve Your Site Performance"
 msgstr ""
 
-#: templates/backend/dashboard.php:1381
+#: templates/backend/dashboard.php:1398
 msgid "Actionable advice to make your site faster and more efficient"
 msgstr ""
 
-#: templates/backend/dashboard.php:1395
+#: templates/backend/dashboard.php:1412
 msgid "Optimize Images"
 msgstr ""
 
-#: templates/backend/dashboard.php:1398
+#: templates/backend/dashboard.php:1415
 msgid "Large images slow down your site. Use image optimization plugins or compress images before uploading."
 msgstr ""
 
-#: templates/backend/dashboard.php:1408
+#: templates/backend/dashboard.php:1425
 msgid "Review Plugins"
 msgstr ""
 
-#: templates/backend/dashboard.php:1411
+#: templates/backend/dashboard.php:1428
 msgid "Deactivate and delete plugins you don't use. Each plugin uses resources even when inactive."
 msgstr ""
 
-#: templates/backend/dashboard.php:1421
+#: templates/backend/dashboard.php:1438
 msgid "Use Caching"
 msgstr ""
 
-#: templates/backend/dashboard.php:1424
+#: templates/backend/dashboard.php:1441
 msgid "Install a caching plugin to store frequently accessed pages and make them load faster."
 msgstr ""
 
-#: templates/backend/dashboard.php:1434
+#: templates/backend/dashboard.php:1451
 msgid "Keep Updated"
 msgstr ""
 
-#: templates/backend/dashboard.php:1437
+#: templates/backend/dashboard.php:1454
 msgid "Keep WordPress, themes, and plugins updated. Updates often include performance improvements."
 msgstr ""
 
-#: templates/backend/dashboard.php:1447
+#: templates/backend/dashboard.php:1464
 msgid "Quality Hosting"
 msgstr ""
 
-#: templates/backend/dashboard.php:1450
+#: templates/backend/dashboard.php:1467
 msgid "Choose a reliable hosting provider with good performance. Cheap hosting often means slow sites."
 msgstr ""
 
-#: templates/backend/dashboard.php:1460
+#: templates/backend/dashboard.php:1477
 msgid "Monitor Regularly"
 msgstr ""
 
-#: templates/backend/dashboard.php:1463
+#: templates/backend/dashboard.php:1480
 msgid "Check this dashboard regularly to catch performance issues early before they become problems."
 msgstr ""
 
-#: templates/backend/dashboard.php:1486
+#: templates/backend/dashboard.php:1503
 msgid "Site Insights"
 msgstr ""
 
-#: templates/backend/dashboard.php:1495
+#: templates/backend/dashboard.php:1512
 msgid "Live"
 msgstr ""
 
-#: templates/backend/dashboard.php:1496
-#: templates/backend/dashboard.php:1533
-#: templates/backend/dashboard.php:1578
+#: templates/backend/dashboard.php:1513
+#: templates/backend/dashboard.php:1550
+#: templates/backend/dashboard.php:1595
 #: templates/backend/settings.php:38
-#: templates/easy/views/system.php:161
+#: templates/easy/views/system.php:163
 msgid "Inactive"
 msgstr ""
 
-#: templates/backend/dashboard.php:1528
+#: templates/backend/dashboard.php:1545
 msgid "Plugin Activity Score"
 msgstr ""
 
-#: templates/backend/dashboard.php:1533
-#: templates/backend/dashboard.php:1578
-#: templates/backend/settings.php:38
-#: templates/backend/settings.php:471
-#: templates/easy/views/resource-load.php:176
-#: templates/easy/views/system.php:152
-msgid "Active"
-msgstr ""
-
-#: templates/backend/dashboard.php:1573
+#: templates/backend/dashboard.php:1590
 msgid "External Requests Score"
 msgstr ""
 
-#: templates/backend/dashboard.php:1637
-#: templates/easy/views/security.php:189
+#: templates/backend/dashboard.php:1654
+#: templates/easy/views/security.php:215
 msgid "Error Log"
 msgstr ""
 
 #. translators: %d: fatal error count
-#: templates/backend/dashboard.php:1648
+#: templates/backend/dashboard.php:1665
 #, php-format
 msgid "%d error"
 msgid_plural "%d errors"
@@ -2219,276 +2646,289 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: warning count
-#: templates/backend/dashboard.php:1655
+#: templates/backend/dashboard.php:1672
 #, php-format
 msgid "%d warning"
 msgid_plural "%d warns"
 msgstr[0] ""
 msgstr[1] ""
 
-#: templates/backend/dashboard.php:1662
+#: templates/backend/dashboard.php:1679
 msgid ", details in settings."
 msgstr ""
 
-#: templates/backend/dashboard.php:1667
-#: templates/backend/settings.php:354
+#: templates/backend/dashboard.php:1684
+#: templates/backend/settings.php:355
 msgid "No errors in the last 2 days"
 msgstr ""
 
-#: templates/backend/dashboard.php:1705
-#: templates/backend/dashboard.php:1905
+#: templates/backend/dashboard.php:1722
+#: templates/backend/dashboard.php:1922
 msgid "PageSpeed Insights"
 msgstr ""
 
-#: templates/backend/dashboard.php:1707
-#: templates/backend/dashboard.php:1907
+#: templates/backend/dashboard.php:1724
+#: templates/backend/dashboard.php:1924
 msgid "Google PageSpeed performance analysis"
 msgstr ""
 
-#: templates/backend/dashboard.php:1742
+#: templates/backend/dashboard.php:1759
 #: templates/easy/views/insights.php:126
 msgid "Accessibility"
 msgstr ""
 
-#: templates/backend/dashboard.php:1746
+#: templates/backend/dashboard.php:1763
 #: templates/easy/views/insights.php:130
 msgid "Best Practices"
 msgstr ""
 
-#: templates/backend/dashboard.php:1750
+#: templates/backend/dashboard.php:1767
 #: templates/easy/views/insights.php:134
 msgid "SEO"
 msgstr ""
 
-#: templates/backend/dashboard.php:1802
+#: templates/backend/dashboard.php:1819
 msgid "Core Web Vitals"
 msgstr ""
 
-#: templates/backend/dashboard.php:1811
+#: templates/backend/dashboard.php:1828
 msgid "First Contentful Paint"
 msgstr ""
 
-#: templates/backend/dashboard.php:1815
+#: templates/backend/dashboard.php:1832
 msgid "Largest Contentful Paint"
 msgstr ""
 
-#: templates/backend/dashboard.php:1819
+#: templates/backend/dashboard.php:1836
 msgid "Total Blocking Time"
 msgstr ""
 
-#: templates/backend/dashboard.php:1823
+#: templates/backend/dashboard.php:1840
 msgid "Cumulative Layout Shift"
 msgstr ""
 
-#: templates/backend/dashboard.php:1827
+#: templates/backend/dashboard.php:1844
 msgid "Speed Index"
 msgstr ""
 
-#: templates/backend/dashboard.php:1831
+#: templates/backend/dashboard.php:1848
 msgid "Time to Interactive"
 msgstr ""
 
-#: templates/backend/dashboard.php:1883
-#: templates/backend/dashboard.php:1887
+#: templates/backend/dashboard.php:1900
+#: templates/backend/dashboard.php:1904
 msgid "Page Screenshot"
 msgstr ""
 
-#: templates/backend/dashboard.php:1918
+#: templates/backend/dashboard.php:1935
 msgid "Analyzing Your Site"
 msgstr ""
 
-#: templates/backend/dashboard.php:1920
+#: templates/backend/dashboard.php:1937
 msgid "SitePulse is collecting performance data."
 msgstr ""
 
-#: templates/backend/dashboard.php:1921
+#: templates/backend/dashboard.php:1938
 msgid "Come back tomorrow for your detailed PageSpeed report!"
 msgstr ""
 
-#: templates/backend/dashboard.php:2194
+#: templates/backend/dashboard.php:2217
 msgid "Plugins/Themes Hooks"
 msgstr ""
 
-#: templates/backend/dashboard.php:2196
-msgid "Performance impact from plugins and themes"
+#: templates/backend/dashboard.php:2219
+#: templates/backend/resource_load.php:42
+msgid "Time each plugin and theme adds to a page load, over the last 24 hours"
 msgstr ""
 
-#: templates/backend/dashboard.php:2203
-#: templates/backend/dashboard.php:2625
+#: templates/backend/dashboard.php:2226
+#: templates/backend/dashboard.php:2658
 #: templates/backend/resource_load.php:48
 #: templates/easy/views/performance.php:97
 #: templates/easy/views/performance.php:233
 msgid "Plugins"
 msgstr ""
 
-#: templates/backend/dashboard.php:2231
+#: templates/backend/dashboard.php:2254
 #: templates/backend/resource_load.php:76
-msgid "No plugin or theme activity detected. Please enable the monitor tracker to start collecting data."
+msgid "No plugin or theme activity in the last 24 hours. Make sure the Performance Monitor is on, then visit a few pages of your site."
 msgstr ""
 
-#: templates/backend/dashboard.php:2282
-#: templates/backend/dashboard.php:2567
+#: templates/backend/dashboard.php:2296
+#: templates/backend/resource_load.php:116
+msgid "Own time per page load"
+msgstr ""
+
+#: templates/backend/dashboard.php:2305
 #: templates/backend/resource_load.php:136
-#: templates/backend/resource_load.php:242
-msgid "Avg"
+msgid "Avg per call"
 msgstr ""
 
-#: templates/backend/dashboard.php:2287
+#: templates/backend/dashboard.php:2310
 #: templates/backend/resource_load.php:140
-#: templates/easy/views/resource-load.php:130
+#: templates/easy/views/resource-load.php:128
 msgid "Calls"
 msgstr ""
 
-#: templates/backend/dashboard.php:2302
-#: templates/backend/dashboard.php:2406
+#: templates/backend/dashboard.php:2325
+#: templates/backend/dashboard.php:2429
 msgid "View full report"
 msgstr ""
 
-#: templates/backend/dashboard.php:2318
+#: templates/backend/dashboard.php:2341
 msgid "API / cURL Requests"
 msgstr ""
 
-#: templates/backend/dashboard.php:2320
+#: templates/backend/dashboard.php:2343
 msgid "Remote connections and external requests"
 msgstr ""
 
-#: templates/backend/dashboard.php:2507
+#: templates/backend/dashboard.php:2372
+msgid "No slow external requests in the last 24 hours."
+msgstr ""
+
+#: templates/backend/dashboard.php:2540
 #: templates/backend/resource_load.php:170
 msgid "Disk Write Test"
 msgstr ""
 
-#: templates/backend/dashboard.php:2509
+#: templates/backend/dashboard.php:2542
 #: templates/backend/resource_load.php:171
 msgid "Performance of writing to disk (log directory)"
 msgstr ""
 
-#: templates/backend/dashboard.php:2517
+#: templates/backend/dashboard.php:2550
 #: templates/backend/resource_load.php:177
 msgid "Avg (ms)"
 msgstr ""
 
-#: templates/backend/dashboard.php:2521
+#: templates/backend/dashboard.php:2554
 #: templates/backend/resource_load.php:181
 msgid "OK"
 msgstr ""
 
-#: templates/backend/dashboard.php:2521
+#: templates/backend/dashboard.php:2554
 #: templates/backend/resource_load.php:181
-#: templates/easy/views/system.php:129
+#: templates/easy/views/system.php:131
 msgid "FAIL"
 msgstr ""
 
-#: templates/backend/dashboard.php:2537
+#: templates/backend/dashboard.php:2570
 #: templates/backend/resource_load.php:197
 msgid "Directory"
 msgstr ""
 
-#: templates/backend/dashboard.php:2547
+#: templates/backend/dashboard.php:2580
 #: templates/backend/resource_load.php:207
 msgid "Test Results"
 msgstr ""
 
-#: templates/backend/dashboard.php:2549
+#: templates/backend/dashboard.php:2582
 #: templates/backend/resource_load.php:209
 msgid "Iterations"
 msgstr ""
 
-#: templates/backend/dashboard.php:2552
+#: templates/backend/dashboard.php:2585
 #: templates/backend/resource_load.php:211
 msgid "File Size"
 msgstr ""
 
-#: templates/backend/dashboard.php:2561
+#: templates/backend/dashboard.php:2594
 #: templates/backend/resource_load.php:236
 msgid "Summary"
 msgstr ""
 
-#: templates/backend/dashboard.php:2573
+#: templates/backend/dashboard.php:2600
+#: templates/backend/resource_load.php:242
+msgid "Avg"
+msgstr ""
+
+#: templates/backend/dashboard.php:2606
 #: templates/backend/resource_load.php:246
 msgid "Min"
 msgstr ""
 
-#: templates/backend/dashboard.php:2579
+#: templates/backend/dashboard.php:2612
 #: templates/backend/resource_load.php:250
 msgid "Max"
 msgstr ""
 
-#: templates/backend/dashboard.php:2585
+#: templates/backend/dashboard.php:2618
 #: templates/backend/resource_load.php:254
 msgid "Total Written"
 msgstr ""
 
-#: templates/backend/dashboard.php:2616
+#: templates/backend/dashboard.php:2649
 msgid "Top Plugins Load"
 msgstr ""
 
-#: templates/backend/dashboard.php:2618
+#: templates/backend/dashboard.php:2651
 msgid "RAM and loading time per plugin"
 msgstr ""
 
-#: templates/backend/dashboard.php:2634
+#: templates/backend/dashboard.php:2667
 msgid "Manually collect fresh plugin performance data"
 msgstr ""
 
-#: templates/backend/dashboard.php:2636
+#: templates/backend/dashboard.php:2669
 msgid "Collect Data"
 msgstr ""
 
-#: templates/backend/dashboard.php:2675
+#: templates/backend/dashboard.php:2708
 msgid "v"
 msgstr ""
 
-#: templates/backend/dashboard.php:2707
+#: templates/backend/dashboard.php:2740
 msgid "Slow Query Test"
 msgstr ""
 
-#: templates/backend/dashboard.php:2709
+#: templates/backend/dashboard.php:2742
 msgid "MySQL queries & autoloaded options"
 msgstr ""
 
-#: templates/backend/dashboard.php:2717
-#: templates/easy/views/home.php:834
+#: templates/backend/dashboard.php:2750
+#: templates/easy/views/home.php:837
 msgid "Queries"
 msgstr ""
 
-#: templates/backend/dashboard.php:2722
-#: templates/easy/views/home.php:836
+#: templates/backend/dashboard.php:2755
+#: templates/easy/views/home.php:839
 msgid "ON"
 msgstr ""
 
-#: templates/backend/dashboard.php:2722
-#: templates/easy/views/home.php:836
+#: templates/backend/dashboard.php:2755
+#: templates/easy/views/home.php:839
 msgid "OFF"
 msgstr ""
 
-#: templates/backend/dashboard.php:2738
-#: templates/easy/views/home.php:843
+#: templates/backend/dashboard.php:2771
+#: templates/easy/views/home.php:846
 msgid "Slow Queries"
 msgstr ""
 
-#: templates/backend/dashboard.php:2742
-#: templates/easy/views/home.php:846
+#: templates/backend/dashboard.php:2775
+#: templates/easy/views/home.php:849
 msgid "Autoload Options"
 msgstr ""
 
-#: templates/backend/dashboard.php:2756
+#: templates/backend/dashboard.php:2789
 msgid "Error:"
 msgstr ""
 
-#: templates/backend/dashboard.php:2762
+#: templates/backend/dashboard.php:2795
 msgid "Fix Issue"
 msgstr ""
 
-#: templates/backend/dashboard.php:2798
+#: templates/backend/dashboard.php:2831
 msgid "No slow queries detected."
 msgstr ""
 
-#: templates/backend/dashboard.php:2811
-#: templates/easy/views/home.php:892
+#: templates/backend/dashboard.php:2844
+#: templates/easy/views/home.php:895
 msgid "Loading autoloaded options..."
 msgstr ""
 
-#: templates/backend/dashboard.php:2821
+#: templates/backend/dashboard.php:2854
 msgid "Refresh"
 msgstr ""
 
@@ -2505,9 +2945,9 @@ msgid "Snapshot:"
 msgstr ""
 
 #: templates/backend/header.php:49
-#: templates/easy/views/resource-load.php:188
-#: templates/easy/views/security.php:144
-#: templates/easy/views/security.php:167
+#: templates/easy/views/resource-load.php:192
+#: templates/easy/views/security.php:146
+#: templates/easy/views/security.php:164
 #: templates/easy/views/system.php:50
 msgid "Unknown"
 msgstr ""
@@ -2694,16 +3134,142 @@ msgstr ""
 msgid "Finish and open dashboard"
 msgstr ""
 
+#: templates/backend/remote_connection.php:18
+msgid "Connect this site to your SitePulse dashboard"
+msgstr ""
+
+#: templates/backend/remote_connection.php:20
+msgid "Turn on Cloud Services so this site can connect to your SitePulse dashboard."
+msgstr ""
+
+#: templates/backend/remote_connection.php:22
+msgid "This site has a SitePulse Pro license, so it already appears in the account that owns the license."
+msgstr ""
+
+#. translators: 1: plan name, 2: date
+#: templates/backend/remote_connection.php:30
+#, php-format
+msgid "Connected to a SitePulse account (%1$s plan) by SitePulse since %2$s."
+msgstr ""
+
+#. translators: 1: account email (masked), 2: plan name, 3: date
+#: templates/backend/remote_connection.php:32
+#, php-format
+msgid "Connected to %1$s (%2$s plan) since %3$s."
+msgstr ""
+
+#: templates/backend/remote_connection.php:39
+msgid "Copy this connection key."
+msgstr ""
+
+#: templates/backend/remote_connection.php:40
+msgid "In your SitePulse dashboard, open Remote Management and choose Connect a site."
+msgstr ""
+
+#. translators: %s: this site's address, such as example.com
+#: templates/backend/remote_connection.php:42
+#, php-format
+msgid "Enter this site's address (%s) and the key. SitePulse sets the site up at once; a key works once."
+msgstr ""
+
+#: templates/backend/remote_connection.php:47
+msgid "Copied"
+msgstr ""
+
+#: templates/backend/remote_connection.php:47
+msgid "Copy"
+msgstr ""
+
+#: templates/backend/remote_connection.php:49
+msgid "Your SitePulse dashboard used the key. Updating…"
+msgstr ""
+
+#: templates/backend/remote_connection.php:49
+msgid "Waiting for your SitePulse dashboard. This page updates by itself once you enter the key there."
+msgstr ""
+
+#: templates/backend/remote_connection.php:51
+msgid "Get a connection key and enter it in your SitePulse dashboard to manage this site from there: its updates, and its backups with UpdraftPlus or BackWPup."
+msgstr ""
+
+#: templates/backend/remote_connection.php:57
+msgid "Get connection key"
+msgstr ""
+
+#: templates/backend/remote_connection.php:57
+msgid "Get a new key"
+msgstr ""
+
+#: templates/backend/remote_connection.php:58
+msgid "Check connection"
+msgstr ""
+
+#: templates/backend/remote_connection.php:60
+msgid "Disconnect from SitePulse accounts"
+msgstr ""
+
+#. translators: %s: how long ago, such as "5 mins ago"
+#: templates/backend/remote_connection.php:65
+#, php-format
+msgid "Checked %s."
+msgstr ""
+
+#: templates/backend/remote_connection.php:77
+msgid "Change the license this site uses"
+msgstr ""
+
+#: templates/backend/remote_connection.php:81
+msgid "Set the site's SitePulse license"
+msgstr ""
+
+#: templates/backend/remote_connection.php:84
+#: templates/backend/remote_management.php:38
+#: templates/easy/partials/remote-management.php:46
+msgid "Save"
+msgstr ""
+
+#: templates/backend/remote_connection.php:86
+msgid "Your SitePulse dashboard shows the license of each of your sites. The site checks in with the license you enter, and keeps it only if SitePulse accepts it."
+msgstr ""
+
+#: templates/backend/remote_management.php:23
+#: templates/easy/partials/remote-management.php:17
+msgid "Remote Management"
+msgstr ""
+
+#: templates/backend/remote_management.php:28
+#: templates/easy/partials/remote-management.php:28
+msgid "Backup plugin:"
+msgstr ""
+
+#: templates/backend/remote_management.php:29
+#: templates/easy/partials/remote-management.php:30
+msgid "Last check-in:"
+msgstr ""
+
+#: templates/backend/remote_management.php:36
+msgid "Block remote management on this site"
+msgstr ""
+
+#: templates/backend/remote_management.php:43
+msgid "Once you set this site up in your SitePulse dashboard with its connection key, the dashboard can show the updates of this site and update plugins, themes and WordPress, each checked so a broken update is rolled back. With UpdraftPlus or BackWPup active, it can also show the backups, start or cancel a backup, apply backup settings saved there, and back up before each update. Updates come from WordPress.org or a plugin's own updater, as in wp-admin. It restores a backup only when you undo a safe update there, and never deletes backups. Blocking it here always wins."
+msgstr ""
+
+#: templates/backend/remote_management.php:44
+msgid "While PageSpeed & AI Reports is on, this site checks in with api.sitepulse.me every hour, and every 5 minutes while remote management is on. It sends plugin and theme names, versions and available updates, the WordPress, PHP and database versions, the backup schedules and recent backups (dates, sizes, storage types), the time plugins, themes and WordPress take per page load, PHP fatal errors (message, file and line), and whether this server can reach its own wp-admin. It never sends backup files, passwords, storage credentials or site content."
+msgstr ""
+
+#: templates/backend/remote_management.php:49
+#: templates/easy/partials/remote-management.php:55
+msgid "Activity"
+msgstr ""
+
 #: templates/backend/resource_load.php:12
 msgid "Clear Load Events"
 msgstr ""
 
 #: templates/backend/resource_load.php:29
-msgid "These numbers cover your whole site. To see what slows down one particular page, use Page Analysis."
-msgstr ""
-
-#: templates/backend/resource_load.php:42
-msgid "Performance impact of plugins and themes on your site"
+msgid "These numbers cover your whole site over the last 24 hours. To see what slows down one particular page, use Page Analysis."
 msgstr ""
 
 #: templates/backend/resource_load.php:123
@@ -2785,7 +3351,7 @@ msgid "Enabled"
 msgstr ""
 
 #: templates/backend/settings.php:123
-#: templates/backend/settings.php:471
+#: templates/backend/settings.php:472
 msgid "Disabled"
 msgstr ""
 
@@ -2917,80 +3483,88 @@ msgstr ""
 msgid "%d scheduled events"
 msgstr ""
 
-#: templates/backend/settings.php:316
+#: templates/backend/settings.php:317
 msgid "Error Log & List below"
 msgstr ""
 
 #. translators: %1$d: current error count, %2$d: total error count
-#: templates/backend/settings.php:326
+#: templates/backend/settings.php:327
 #, php-format
 msgid "%1$d errors (last 2 days), %2$d total"
 msgstr ""
 
 #. translators: %s: last error date
-#: templates/backend/settings.php:333
+#: templates/backend/settings.php:334
 #, php-format
 msgid "Last error: %s"
 msgstr ""
 
-#: templates/backend/settings.php:369
+#: templates/backend/settings.php:370
 msgid "PHP Version"
 msgstr ""
 
-#: templates/backend/settings.php:379
-#: templates/easy/views/home.php:644
+#: templates/backend/settings.php:380
+#: templates/easy/views/home.php:647
 msgid "WordPress Version"
 msgstr ""
 
-#: templates/backend/settings.php:389
+#: templates/backend/settings.php:390
 msgid "Active Theme"
 msgstr ""
 
 #. translators: %d: number of remaining plugins
-#: templates/backend/settings.php:413
+#: templates/backend/settings.php:414
 #, php-format
 msgid "... and %d more"
 msgstr ""
 
-#: templates/backend/settings.php:418
+#: templates/backend/settings.php:419
 msgid "No active plugins found."
 msgstr ""
 
-#: templates/backend/settings.php:434
+#: templates/backend/settings.php:435
 msgid "N/A"
 msgstr ""
 
-#: templates/backend/settings.php:456
+#: templates/backend/settings.php:457
 msgid "Whitelabel"
 msgstr ""
 
-#: templates/backend/settings.php:457
+#: templates/backend/settings.php:458
 msgid "Custom branding from your license"
 msgstr ""
 
-#: templates/backend/settings.php:467
+#: templates/backend/settings.php:468
 msgid "Whitelabel Status"
 msgstr ""
 
-#: templates/backend/settings.php:481
+#: templates/backend/settings.php:482
 msgid "Company Name"
 msgstr ""
 
-#: templates/backend/settings.php:493
+#: templates/backend/settings.php:494
 msgid "Plugin Name"
 msgstr ""
 
-#: templates/backend/settings.php:505
-#: templates/backend/settings.php:508
+#: templates/backend/settings.php:506
+#: templates/backend/settings.php:509
 msgid "Custom Logo"
 msgstr ""
 
-#: templates/backend/settings.php:519
+#: templates/backend/settings.php:520
 msgid "Last Updated"
 msgstr ""
 
-#: templates/backend/settings.php:534
+#: templates/backend/settings.php:535
 msgid "No whitelabel data received from API. Contact your provider to enable custom branding."
+msgstr ""
+
+#: templates/easy/partials/admin-access.php:22
+msgid "wp-admin Access"
+msgstr ""
+
+#: templates/easy/partials/admin-access.php:31
+msgid "Every hour, this server opens its own wp-admin and login page, the way WordPress checks an edited plugin for errors. Updates from your SitePulse dashboard need this to check the site after each update."
 msgstr ""
 
 #: templates/easy/partials/pet-assistant.php:53
@@ -3206,293 +3780,313 @@ msgstr ""
 msgid "%d slow items total. Fix the top 3 for 80%% of the gain."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:314
+#: templates/easy/partials/pet-assistant.php:315
 #, php-format
 msgid "Heaviest plugin: \"%s\" (%sms). Consider a lighter alternative."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:321
+#: templates/easy/partials/pet-assistant.php:322
 #, php-format
 msgid "Load time: %ss. A caching plugin can cut this by 50-80%%."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:330
+#: templates/easy/partials/pet-assistant.php:331
 #, php-format
 msgid "%d hooks tracked. Look for items above 500ms."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:335
+#: templates/easy/partials/pet-assistant.php:336
 msgid "One page feels slow? Page Analysis shows what runs on that page only."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:339
+#: templates/easy/partials/pet-assistant.php:340
 msgid "Sort by \"Time\" to find slowest items first."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:346
+#: templates/easy/partials/pet-assistant.php:347
 msgid "Start with the pages that earn money: product, cart and checkout."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:350
+#: templates/easy/partials/pet-assistant.php:351
 msgid "Re-run an analysis after changing a plugin to see the difference."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:366
+#: templates/easy/partials/pet-assistant.php:367
 #, php-format
 msgid "%d vulnerability(ies) found! Update affected plugins now."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:371
+#: templates/easy/partials/pet-assistant.php:372
 msgid "No known vulnerabilities. You're up to date!"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:381
+#: templates/easy/partials/pet-assistant.php:382
 #, php-format
 msgid "%d fatal error(s). Deactivate the plugin causing them."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:387
+#: templates/easy/partials/pet-assistant.php:388
 #, php-format
 msgid "%d warnings in log. Update everything to latest versions."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:394
+#: templates/easy/partials/pet-assistant.php:395
 msgid "All clear! No errors, no vulnerabilities."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:405
+#: templates/easy/partials/pet-assistant.php:406
 #, php-format
 msgid "Score: %d/100 (poor). Visitors experience slow loading."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:410
+#: templates/easy/partials/pet-assistant.php:411
 #, php-format
 msgid "Score: %d/100. Compress images and reduce JavaScript."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:415
+#: templates/easy/partials/pet-assistant.php:416
 #, php-format
 msgid "Score: %d/100 — top tier! Most WP sites score 30-60."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:423
+#: templates/easy/partials/pet-assistant.php:424
 #, php-format
 msgid "LCP: %s — compress your hero image or add lazy loading."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:429
+#: templates/easy/partials/pet-assistant.php:430
 msgid "TBT is high — defer non-essential JavaScript."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:435
+#: templates/easy/partials/pet-assistant.php:436
 #, php-format
 msgid "%d Google-recommended fixes below. Start with the first one."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:441
+#: templates/easy/partials/pet-assistant.php:442
 msgid "No data yet. Average time to show data is 4-8 hours."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:450
+#: templates/easy/partials/pet-assistant.php:451
 #, php-format
 msgid "%d slow connection(s). Slow services delay your whole site."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:457
+#: templates/easy/partials/pet-assistant.php:458
 #, php-format
 msgid "Slowest: %s. Disable if non-essential."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:463
+#: templates/easy/partials/pet-assistant.php:464
 msgid "All connections healthy. No action needed."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:468
+#: templates/easy/partials/pet-assistant.php:469
 msgid "No external request data yet."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:479
+#: templates/easy/partials/pet-assistant.php:480
 #, php-format
 msgid "PHP %s is outdated. Upgrade to 8.0+ for 20-30%% speed boost."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:484
+#: templates/easy/partials/pet-assistant.php:485
 #, php-format
 msgid "PHP %s — good. PHP 8.2+ available for extra speed."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:489
+#: templates/easy/partials/pet-assistant.php:490
 #, php-format
 msgid "PHP %s — latest and fastest."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:498
+#: templates/easy/partials/pet-assistant.php:499
 #, php-format
 msgid "SSL mismatch: server sees \"%1$s\" instead of \"%2$s\". Ask hosting to fix /etc/hosts."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:506
+#: templates/easy/partials/pet-assistant.php:507
 msgid "SSL loopback failing — cron and internal requests are broken."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:512
+#: templates/easy/partials/pet-assistant.php:513
 msgid "Outbound SSL failing — updates and API calls blocked."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:517
+#: templates/easy/partials/pet-assistant.php:518
 msgid "Share this info with support teams when reporting issues."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:525
+#: templates/easy/partials/pet-assistant.php:526
 msgid "External API is off. Enable it for AI-powered diagnostics."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:531
+#: templates/easy/partials/pet-assistant.php:532
 msgid "Alerts disabled. Turn on to get emailed when speed drops."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:544
+#: templates/easy/partials/pet-assistant.php:545
 msgid "📍 Dashboard"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:545
+#: templates/easy/partials/pet-assistant.php:546
 msgid "Your site's health at a glance — overall score, speed, memory, and errors."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:546
+#: templates/easy/partials/pet-assistant.php:547
 msgid "Check this weekly to catch issues early."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:549
+#: templates/easy/partials/pet-assistant.php:550
 msgid "📍 Performance"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:550
+#: templates/easy/partials/pet-assistant.php:551
 msgid "Shows which plugins and hooks are slowing your site down."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:551
+#: templates/easy/partials/pet-assistant.php:552
 msgid "Items in red or above 500ms are your main bottlenecks."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:554
+#: templates/easy/partials/pet-assistant.php:555
 msgid "📍 Plugin Activity"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:555
+#: templates/easy/partials/pet-assistant.php:556
 msgid "Step-by-step breakdown of everything that runs during a page load."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:556
+#: templates/easy/partials/pet-assistant.php:557
 msgid "Sort by Time column to find the slowest items."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:559
+#: templates/easy/partials/pet-assistant.php:560
 msgid "📍 Security Center"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:560
+#: templates/easy/partials/pet-assistant.php:561
 msgid "Scans plugins and themes for known vulnerabilities and tracks errors."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:561
+#: templates/easy/partials/pet-assistant.php:562
 msgid "Keep everything updated — it's the #1 security measure."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:564
+#: templates/easy/partials/pet-assistant.php:565
 msgid "📍 PageSpeed Insights"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:565
+#: templates/easy/partials/pet-assistant.php:566
 msgid "Google Lighthouse scores showing how fast your site feels to real visitors."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:566
+#: templates/easy/partials/pet-assistant.php:567
 msgid "Aim for 80+. Check the Opportunities section for fixes."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:569
+#: templates/easy/partials/pet-assistant.php:570
 msgid "📍 External Requests"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:570
+#: templates/easy/partials/pet-assistant.php:571
 msgid "External connections your site makes — payment, email, analytics services."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:571
+#: templates/easy/partials/pet-assistant.php:572
 msgid "Slow or failing connections can delay your entire page load."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:574
+#: templates/easy/partials/pet-assistant.php:575
 msgid "📍 System Info"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:575
+#: templates/easy/partials/pet-assistant.php:576
 msgid "Server specs, PHP version, WordPress version, and environment details."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:576
+#: templates/easy/partials/pet-assistant.php:577
 msgid "Share this with support teams when reporting hosting issues."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:579
+#: templates/easy/partials/pet-assistant.php:580
 msgid "📍 Settings"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:580
+#: templates/easy/partials/pet-assistant.php:581
 msgid "Control monitoring, alerts, and SitePulse features."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:581
+#: templates/easy/partials/pet-assistant.php:582
 msgid "Enable alerts to get notified when performance drops."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:591
+#: templates/easy/partials/pet-assistant.php:592
 msgid "Dr. Pulse — Site Doctor"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:645
+#: templates/easy/partials/pet-assistant.php:646
 msgid "Dr. Pulse"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:646
+#: templates/easy/partials/pet-assistant.php:647
 msgid "Site Health Specialist"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:655
+#: templates/easy/partials/pet-assistant.php:656
 msgid "HEALTH"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:662
+#: templates/easy/partials/pet-assistant.php:663
 msgid "SPEED"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:669
+#: templates/easy/partials/pet-assistant.php:670
 msgid "MEM"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:676
+#: templates/easy/partials/pet-assistant.php:677
 msgid "ERRORS"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:698
+#: templates/easy/partials/pet-assistant.php:699
 msgid "My Findings"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:720
+#: templates/easy/partials/pet-assistant.php:721
 msgid "General Health"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:754
+#: templates/easy/partials/pet-assistant.php:755
 msgid "All clear — no issues found."
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:760
+#: templates/easy/partials/pet-assistant.php:761
 msgid "AI Report"
 msgstr ""
 
-#: templates/easy/partials/pet-assistant.php:778
+#: templates/easy/partials/pet-assistant.php:779
 msgid "Monitoring..."
+msgstr ""
+
+#: templates/easy/partials/remote-management.php:22
+msgid "Updates & Backups from Your Dashboard"
+msgstr ""
+
+#: templates/easy/partials/remote-management.php:38
+msgid "Block Remote Management"
+msgstr ""
+
+#: templates/easy/partials/remote-management.php:39
+msgid "Your SitePulse dashboard cannot see or manage the backups and updates of this site"
+msgstr ""
+
+#: templates/easy/partials/remote-management.php:50
+msgid "While remote management is on, your SitePulse dashboard can update plugins, themes and WordPress, with a check that rolls back a broken update. With UpdraftPlus or BackWPup active, it can also start or cancel a backup, apply backup settings saved there, and back up before each update. It restores a backup only when you undo a safe update there, and never deletes backups."
+msgstr ""
+
+#: templates/easy/partials/remote-management.php:51
+msgid "While Cloud Services are on, this site checks in with api.sitepulse.me every hour, and every 5 minutes while remote management is on. It sends plugin and theme names, versions and available updates, the WordPress, PHP and database versions, the backup schedules and recent backups (dates, sizes, storage types), the time plugins, themes and WordPress take per page load, PHP fatal errors (message, file and line), and whether this server can reach its own wp-admin. It never sends backup files, passwords, storage credentials or site content."
 msgstr ""
 
 #: templates/easy/partials/score-ring.php:29
@@ -3575,7 +4169,7 @@ msgid "Destination"
 msgstr ""
 
 #: templates/easy/views/api-monitor.php:124
-#: templates/easy/views/resource-load.php:126
+#: templates/easy/views/resource-load.php:124
 msgid "Source"
 msgstr ""
 
@@ -3671,252 +4265,262 @@ msgstr ""
 msgid "Something went wrong while checking your site. Please try again."
 msgstr ""
 
-#: templates/easy/views/home.php:198
+#: templates/easy/views/home.php:201
 msgid "Try Again"
 msgstr ""
 
-#: templates/easy/views/home.php:213
+#: templates/easy/views/home.php:216
 msgid "Healthy"
 msgstr ""
 
-#: templates/easy/views/home.php:215
+#: templates/easy/views/home.php:218
 msgid "Critical"
 msgstr ""
 
-#: templates/easy/views/home.php:216
+#: templates/easy/views/home.php:219
 msgid "Analyzed"
 msgstr ""
 
-#: templates/easy/views/home.php:249
+#: templates/easy/views/home.php:252
 msgid "Overall"
 msgstr ""
 
-#: templates/easy/views/home.php:276
+#: templates/easy/views/home.php:279
 msgid "QUICK WINS"
 msgstr ""
 
-#: templates/easy/views/home.php:301
+#: templates/easy/views/home.php:304
 msgid "ACTION ITEMS"
 msgstr ""
 
-#: templates/easy/views/home.php:331
+#: templates/easy/views/home.php:334
 msgid "Problem:"
 msgstr ""
 
-#: templates/easy/views/home.php:334
+#: templates/easy/views/home.php:337
 msgid "Fix:"
 msgstr ""
 
-#: templates/easy/views/home.php:365
+#: templates/easy/views/home.php:368
 msgid "SYSTEM TWEAKS"
 msgstr ""
 
-#: templates/easy/views/home.php:381
+#: templates/easy/views/home.php:384
 msgid "INSIGHTS"
 msgstr ""
 
-#: templates/easy/views/home.php:404
+#: templates/easy/views/home.php:407
 msgid "PLUGINS TO REVIEW"
 msgstr ""
 
-#: templates/easy/views/home.php:426
+#: templates/easy/views/home.php:429
 msgid "Alternative:"
 msgstr ""
 
-#: templates/easy/views/home.php:435
+#: templates/easy/views/home.php:438
 msgid "RECOMMENDED PLUGINS"
 msgstr ""
 
-#: templates/easy/views/home.php:460
+#: templates/easy/views/home.php:463
 msgid "Hosting Note"
 msgstr ""
 
-#: templates/easy/views/home.php:473
+#: templates/easy/views/home.php:476
 msgid "RECOMMENDATIONS"
 msgstr ""
 
-#: templates/easy/views/home.php:492
+#: templates/easy/views/home.php:495
 msgid "AI can make mistakes - always double-check recommendations."
 msgstr ""
 
-#: templates/easy/views/home.php:496
+#: templates/easy/views/home.php:499
 msgid "Hello! I'm your AI assistant. I can check your site for speed issues, security concerns, and setup problems — then give you clear steps to fix them."
 msgstr ""
 
-#: templates/easy/views/home.php:497
+#: templates/easy/views/home.php:500
 msgid "Ready for a full checkup?"
 msgstr ""
 
-#: templates/easy/views/home.php:507
+#: templates/easy/views/home.php:510
 msgid "Last check:"
 msgstr ""
 
-#: templates/easy/views/home.php:515
+#: templates/easy/views/home.php:518
 msgid "Run New Checkup"
 msgstr ""
 
-#: templates/easy/views/home.php:515
+#: templates/easy/views/home.php:518
 msgid "Start Checkup"
 msgstr ""
 
-#: templates/easy/views/home.php:525
+#: templates/easy/views/home.php:528
 msgid "Key Numbers"
 msgstr ""
 
-#: templates/easy/views/home.php:574
+#: templates/easy/views/home.php:577
 msgid "Errors (2 days)"
 msgstr ""
 
-#: templates/easy/views/home.php:618
+#: templates/easy/views/home.php:621
 msgid "Your Site's Foundation"
 msgstr ""
 
-#: templates/easy/views/home.php:620
+#: templates/easy/views/home.php:623
 msgid "The essential building blocks your site needs to run well"
 msgstr ""
 
-#: templates/easy/views/home.php:623
+#: templates/easy/views/home.php:626
 msgid "Looking Good"
 msgstr ""
 
-#: templates/easy/views/home.php:632
+#: templates/easy/views/home.php:635
 msgid "Server Language"
 msgstr ""
 
-#: templates/easy/views/home.php:636
+#: templates/easy/views/home.php:639
 msgid "Update Recommended"
 msgstr ""
 
-#: templates/easy/views/home.php:648
+#: templates/easy/views/home.php:651
 msgid "Outdated"
 msgstr ""
 
-#: templates/easy/views/home.php:656
+#: templates/easy/views/home.php:659
 msgid "Secure Connection (SSL)"
 msgstr ""
 
-#: templates/easy/views/home.php:657
+#: templates/easy/views/home.php:660
 msgid "The padlock icon visitors see in their browser"
 msgstr ""
 
-#: templates/easy/views/home.php:660
+#: templates/easy/views/home.php:663
 msgid "Secure"
 msgstr ""
 
-#: templates/easy/views/home.php:660
+#: templates/easy/views/home.php:663
 msgid "Not Secure"
 msgstr ""
 
-#: templates/easy/views/home.php:668
+#: templates/easy/views/home.php:671
 msgid "Available Memory"
 msgstr ""
 
-#: templates/easy/views/home.php:672
+#: templates/easy/views/home.php:675
 msgid "Plenty of Room"
 msgstr ""
 
-#: templates/easy/views/home.php:672
+#: templates/easy/views/home.php:675
 msgid "Running Low"
 msgstr ""
 
-#: templates/easy/views/home.php:684
+#: templates/easy/views/home.php:687
 msgid "Website Speed"
 msgstr ""
 
-#: templates/easy/views/home.php:686
+#: templates/easy/views/home.php:689
 msgid "How fast your website loads for visitors"
 msgstr ""
 
-#: templates/easy/views/home.php:726
+#: templates/easy/views/home.php:729
 msgid "BIGGEST IMPROVEMENT"
 msgstr ""
 
-#: templates/easy/views/home.php:733
+#: templates/easy/views/home.php:736
 msgid "Potential savings:"
 msgstr ""
 
-#: templates/easy/views/home.php:743
+#: templates/easy/views/home.php:746
 #: templates/easy/views/insights.php:33
 #: templates/easy/views/performance.php:291
 msgid "No Speed Data Yet"
 msgstr ""
 
-#: templates/easy/views/home.php:744
+#: templates/easy/views/home.php:747
 #: templates/easy/views/insights.php:34
 msgid "Wait 4-8 hours for your first speed test result. The test is automatically performed every 24 hours."
 msgstr ""
 
-#: templates/easy/views/home.php:766
+#: templates/easy/views/home.php:769
 msgid "Queries and Alerts"
 msgstr ""
 
-#: templates/easy/views/home.php:774
+#: templates/easy/views/home.php:777
 msgid "Speed Warnings"
 msgstr ""
 
-#: templates/easy/views/home.php:776
-msgid "Plugins and connections that are slowing things down"
+#: templates/easy/views/home.php:779
+msgid "Plugins and themes that slowed down page loads in the last 24 hours"
 msgstr ""
 
-#: templates/easy/views/home.php:813
-#: templates/easy/views/security.php:36
+#: templates/easy/views/home.php:816
+#: templates/easy/views/security.php:37
 msgid "All Clear"
 msgstr ""
 
-#: templates/easy/views/home.php:814
+#: templates/easy/views/home.php:817
 msgid "Everything is running smoothly! No speed issues found."
 msgstr ""
 
-#: templates/easy/views/home.php:821
+#: templates/easy/views/home.php:824
 msgid "View all"
 msgstr ""
 
-#: templates/easy/views/home.php:830
+#: templates/easy/views/home.php:833
 msgid "Database & Speed Checks"
 msgstr ""
 
-#: templates/easy/views/home.php:831
+#: templates/easy/views/home.php:834
 msgid "Database lookups and site settings"
 msgstr ""
 
-#: templates/easy/views/home.php:854
+#: templates/easy/views/home.php:857
 msgid "Slow query collection is currently unavailable."
 msgstr ""
 
-#: templates/easy/views/home.php:858
+#: templates/easy/views/home.php:861
 msgid "Enable SAVEQUERIES"
 msgstr ""
 
-#: templates/easy/views/home.php:885
+#: templates/easy/views/home.php:888
 msgid "No slow queries detected"
 msgstr ""
 
-#: templates/easy/views/home.php:975
+#: templates/easy/views/home.php:978
 msgid "Speed Test Details"
 msgstr ""
 
-#: templates/easy/views/home.php:976
+#: templates/easy/views/home.php:979
 msgid "Speed scores & improvement tips"
 msgstr ""
 
 #. translators: %d: number of API events
-#: templates/easy/views/home.php:988
+#: templates/easy/views/home.php:991
 #, php-format
 msgid "%d requests captured"
 msgstr ""
 
-#: templates/easy/views/home.php:999
+#: templates/easy/views/home.php:1002
 msgid "Security Center"
 msgstr ""
 
 #. translators: %d: number of vulnerabilities
-#: templates/easy/views/home.php:1005
+#: templates/easy/views/home.php:1008
 #, php-format
-msgid "%d vulnerabilities found"
+msgid "%d vulnerability found"
+msgid_plural "%d vulnerabilities found"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/easy/views/home.php:1010
+msgid "Vulnerability scan in progress"
 msgstr ""
 
-#: templates/easy/views/home.php:1006
+#: templates/easy/views/home.php:1012
 msgid "No issues detected"
+msgstr ""
+
+#: templates/easy/views/home.php:1014
+msgid "Not scanned yet"
 msgstr ""
 
 #: templates/easy/views/insights.php:21
@@ -4012,7 +4616,7 @@ msgid "Your page is well optimized!"
 msgstr ""
 
 #: templates/easy/views/insights.php:270
-#: templates/easy/views/security.php:238
+#: templates/easy/views/security.php:262
 #: templates/easy/views/system.php:43
 msgid "Technical Details"
 msgstr ""
@@ -4065,12 +4669,6 @@ msgstr ""
 msgid "The latest result for each page you analyzed."
 msgstr ""
 
-#. translators: %s: human-readable time difference
-#: templates/easy/views/page-analysis.php:117
-#, php-format
-msgid "%s ago"
-msgstr ""
-
 #: templates/easy/views/performance.php:22
 msgid "Find out what's slowing your site down and how to speed it up"
 msgstr ""
@@ -4092,7 +4690,7 @@ msgid "Slow Plugins & Themes"
 msgstr ""
 
 #: templates/easy/views/performance.php:135
-msgid "Items taking longer than half a second to load"
+msgid "Code that added over half a second to page loads in the last 24 hours"
 msgstr ""
 
 #: templates/easy/views/performance.php:161
@@ -4128,7 +4726,7 @@ msgid "Slowest Plugins"
 msgstr ""
 
 #: templates/easy/views/performance.php:230
-msgid "Memory and loading time for each plugin"
+msgid "Loading time of each plugin, slowest first; the average covers the last 24 hours"
 msgstr ""
 
 #: templates/easy/views/performance.php:236
@@ -4172,7 +4770,7 @@ msgid "Statistics"
 msgstr ""
 
 #: templates/easy/views/resource-load.php:73
-msgid "Actions Recorded"
+msgid "Actions in the Last 24 Hours"
 msgstr ""
 
 #: templates/easy/views/resource-load.php:81
@@ -4186,128 +4784,150 @@ msgstr ""
 #. translators: %d: number of seconds
 #: templates/easy/views/resource-load.php:98
 #, php-format
-msgid "Active means the callback ran recently; Inactive means it has not run in the last %d seconds."
+msgid "Figures cover the last 24 hours, slowest first. Active means the callback ran recently; Inactive means it has not run in the last %d seconds."
 msgstr ""
 
 #: templates/easy/views/resource-load.php:108
 msgid "Activity Details"
 msgstr ""
 
-#: templates/easy/views/resource-load.php:128
+#: templates/easy/views/resource-load.php:126
 msgid "File"
 msgstr ""
 
-#: templates/easy/views/resource-load.php:129
+#: templates/easy/views/resource-load.php:127
 msgid "Signature"
 msgstr ""
 
-#: templates/easy/views/resource-load.php:131
+#: templates/easy/views/resource-load.php:129
+msgid "Time spent in this code itself on each page load it ran on"
+msgstr ""
+
+#: templates/easy/views/resource-load.php:129
+msgid "Per Page Load"
+msgstr ""
+
+#: templates/easy/views/resource-load.php:130
 msgid "Current Load Time"
 msgstr ""
 
-#: templates/easy/views/resource-load.php:132
+#: templates/easy/views/resource-load.php:131
 msgid "Avg Time"
 msgstr ""
 
-#: templates/easy/views/resource-load.php:134
+#: templates/easy/views/resource-load.php:133
 msgid "Last run"
 msgstr ""
 
-#: templates/easy/views/resource-load.php:180
+#: templates/easy/views/resource-load.php:184
 msgid "Inactive since "
 msgstr ""
 
-#: templates/easy/views/resource-load.php:223
-msgid "No Activity Recorded Yet"
+#: templates/easy/views/resource-load.php:227
+msgid "No Activity in the Last 24 Hours"
 msgstr ""
 
-#: templates/easy/views/resource-load.php:224
-msgid "Turn on the Performance Monitor to start tracking what happens behind the scenes."
-msgstr ""
-
-#: templates/easy/views/security.php:28
-msgid "Security & Stability"
+#: templates/easy/views/resource-load.php:228
+msgid "Make sure the Performance Monitor is on, then visit a few pages of your site to see what runs behind the scenes."
 msgstr ""
 
 #: templates/easy/views/security.php:29
+msgid "Security & Stability"
+msgstr ""
+
+#: templates/easy/views/security.php:30
 msgid "Check for threats, bugs, and error logs to keep your site safe"
 msgstr ""
 
-#: templates/easy/views/security.php:35
+#: templates/easy/views/security.php:36
 msgid "Issues Detected"
 msgstr ""
 
-#: templates/easy/views/security.php:51
+#: templates/easy/views/security.php:52
 msgid "Stability"
 msgstr ""
 
-#: templates/easy/views/security.php:64
+#: templates/easy/views/security.php:65
 msgid "Fatal Errors"
 msgstr ""
 
-#: templates/easy/views/security.php:74
+#: templates/easy/views/security.php:75
 msgid "Warnings"
 msgstr ""
 
-#: templates/easy/views/security.php:84
+#: templates/easy/views/security.php:85
 msgid "Total Errors"
 msgstr ""
 
-#: templates/easy/views/security.php:100
+#: templates/easy/views/security.php:101
 msgid "Threats & Errors"
 msgstr ""
 
-#: templates/easy/views/security.php:108
+#: templates/easy/views/security.php:109
 msgid "Known Threats"
 msgstr ""
 
 #. translators: %s: last check time
-#: templates/easy/views/security.php:113
+#: templates/easy/views/security.php:114
 #, php-format
 msgid "Last checked: %s"
 msgstr ""
 
-#: templates/easy/views/security.php:159
+#. translators: %s: when the scan was queued
+#: templates/easy/views/security.php:136
+#, php-format
+msgid "Your site has been in the queue for a vulnerability scan since %s. Results are usually ready within 30 minutes: click \"Scan for Threats\" to see them."
+msgstr ""
+
+#: templates/easy/views/security.php:179
 msgid "Patch:"
 msgstr ""
 
-#: templates/easy/views/security.php:164
+#: templates/easy/views/security.php:184
 msgid "Details"
 msgstr ""
 
-#: templates/easy/views/security.php:173
+#: templates/easy/views/security.php:193
 msgid "No Threats Found"
 msgstr ""
 
-#: templates/easy/views/security.php:174
+#: templates/easy/views/security.php:194
 msgid "All your plugins and themes are currently safe."
 msgstr ""
 
-#: templates/easy/views/security.php:180
+#: templates/easy/views/security.php:199
+msgid "Not Scanned Yet"
+msgstr ""
+
+#: templates/easy/views/security.php:200
+msgid "Click \"Scan for Threats\" to check your plugins, themes and WordPress version against known vulnerabilities."
+msgstr ""
+
+#: templates/easy/views/security.php:206
 msgid "Scan for Threats"
 msgstr ""
 
-#: templates/easy/views/security.php:190
+#: templates/easy/views/security.php:216
 msgid "Recent errors and warnings from your site"
 msgstr ""
 
-#: templates/easy/views/security.php:221
+#: templates/easy/views/security.php:245
 msgid "Unknown error"
 msgstr ""
 
-#: templates/easy/views/security.php:234
+#: templates/easy/views/security.php:258
 msgid "View Details"
 msgstr ""
 
-#: templates/easy/views/security.php:258
+#: templates/easy/views/security.php:282
 msgid "Everything Looks Good!"
 msgstr ""
 
-#: templates/easy/views/security.php:259
+#: templates/easy/views/security.php:283
 msgid "No errors or warnings have been found."
 msgstr ""
 
-#: templates/easy/views/security.php:267
+#: templates/easy/views/security.php:291
 msgid "Clear Error Log"
 msgstr ""
 
@@ -4471,50 +5091,50 @@ msgstr ""
 msgid "No"
 msgstr ""
 
-#: templates/easy/views/system.php:99
+#: templates/easy/views/system.php:101
 msgid "Advanced Info"
 msgstr ""
 
-#: templates/easy/views/system.php:106
+#: templates/easy/views/system.php:108
 msgid "Storage Speed Test"
 msgstr ""
 
-#: templates/easy/views/system.php:113
+#: templates/easy/views/system.php:115
 msgid "Average Write Speed"
 msgstr ""
 
-#: templates/easy/views/system.php:117
+#: templates/easy/views/system.php:119
 msgid "Test Rounds"
 msgstr ""
 
-#: templates/easy/views/system.php:120
-#: templates/easy/views/system.php:135
+#: templates/easy/views/system.php:122
+#: templates/easy/views/system.php:137
 #, php-format
 msgid "Directory: %s"
 msgstr ""
 
-#: templates/easy/views/system.php:123
+#: templates/easy/views/system.php:125
 #, php-format
 msgid "Min/Max: %1$s ms / %2$s ms"
 msgstr ""
 
-#: templates/easy/views/system.php:132
+#: templates/easy/views/system.php:134
 #, php-format
 msgid "Error: %s"
 msgstr ""
 
-#: templates/easy/views/system.php:138
+#: templates/easy/views/system.php:140
 msgid "Storage speed test hasn't run yet."
 msgstr ""
 
-#: templates/easy/views/system.php:146
+#: templates/easy/views/system.php:148
 msgid "Custom Branding"
 msgstr ""
 
-#: templates/easy/views/system.php:155
+#: templates/easy/views/system.php:157
 msgid "Custom Name"
 msgstr ""
 
-#: templates/easy/views/system.php:163
+#: templates/easy/views/system.php:165
 msgid "Custom branding is not enabled."
 msgstr ""

@@ -14,6 +14,11 @@ final class ErrorHandlerVariantsTest extends Sitepulse_Test_Case {
         Sitepulse_Error_Handler::set_recovery_email('recovery@example.test');
         $this->assertSame($data['mail'][0], Sitepulse_Error_Handler::prevent_wordpress_fatal_error_wp_mail($data['mail'][0]), 'The plugin must not block its own generated recovery notification.'); $this->assertStringContainsString('Fatal Error', $data['mail'][0]['subject']);
     }
+    public function test_exceptions_reach_wordpress_fatal_error_check_and_are_logged_once(): void {
+        $result = $this->variant('scraping_exception'); $this->assertSame(255, $result['status'], $result['error']); $data = json_decode($result['output'], true); $this->assertIsArray($data, $result['output']);
+        $this->assertSame(E_ERROR, $data['last']['type'], 'WordPress reads the error PHP reports at shutdown.'); $this->assertStringContainsString('Uncaught Error: Call to undefined function sitepulse_removed_function()', $data['last']['message']);
+        $this->assertSame(1, $data['log']['total_count']); $this->assertSame('Fatal Error', $data['log']['errors'][0]['type']); $this->assertTrue($data['log']['errors'][0]['is_fatal']); $this->assertCount(1, $data['mail']);
+    }
     public function test_shutdown_without_error_does_not_log_or_notify(): void {
         $result = $this->variant('shutdown_without_error'); $this->assertSame(0, $result['status']); $data = json_decode($result['output'], true); $this->assertFalse($data['log']); $this->assertSame(array(), $data['mail']);
     }

@@ -6,7 +6,7 @@
 
 ## Build, Test, and Development Commands
 
-There is no build step; the browser assets ship pre-built. Install development dependencies with `composer install` and `npm ci`. Run PHP tests with `composer test` and JavaScript tests with `npm test`. See `tests/README.md` for focused runs, coverage, and harness boundaries. For a manual runtime check, load `blueprint.json` in WordPress Playground and use its demo WordPress site.
+There is no build step; the browser assets ship pre-built (`composer build-zip` only packs the release zip). Install development dependencies with `composer install` and `npm ci`. Run PHP tests with `composer test` and JavaScript tests with `npm test`. See `tests/README.md` for focused runs, coverage, and harness boundaries. For a manual runtime check, load `blueprint.json` in WordPress Playground and use its demo WordPress site.
 
 ## Coding Style & Naming Conventions
 

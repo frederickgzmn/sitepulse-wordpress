@@ -1,0 +1,35 @@
+# A WordPress site running this plugin, for development: ./sitepulse-dev start (see ./sitepulse-dev help).
+# WordPress lives in .lando/wordpress (ignored by git); the plugin's folder is mounted into it.
+name: sitepulse-plugin
+# Do not copy your SSH keys into the containers.
+keys: false
+
+proxy:
+  appserver:
+    - sitepulse-plugin.lndo.site
+
+services:
+  appserver:
+    type: php:8.3
+    via: apache:2.4
+    webroot: .lando/wordpress
+    ssl: false
+    xdebug: false
+    build_as_root:
+      - curl -fsSL -o /usr/local/bin/wp https://github.com/wp-cli/wp-cli/releases/download/v2.12.0/wp-cli-2.12.0.phar && chmod +x /usr/local/bin/wp
+    overrides:
+      volumes:
+        # A mount, not a symlink: a symlink to /app from inside /app is a loop for backup plugins.
+        - .:/app/.lando/wordpress/wp-content/plugins/sitepulse
+  database:
+    type: mysql:8.0
+    creds:
+      user: wordpress
+      password: wordpress
+      database: wordpress
+
+tooling:
+  wp:
+    service: appserver
+    description: Runs WP-CLI on the plugin's development site
+    cmd: wp --path=/app/.lando/wordpress

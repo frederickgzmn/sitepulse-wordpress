@@ -389,7 +389,7 @@
     };
 
     // Initialize when DOM is ready
-    $(document).ready(function () {
+    $(function () {
         // Only initialize on the plugins page
         if (typeof SitePulseDeactivationData !== 'undefined') {
             SitePulseDeactivation.init();

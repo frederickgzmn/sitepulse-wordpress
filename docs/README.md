@@ -38,7 +38,7 @@ The PHP suite executes the production classes, functions, loader, uninstall scri
 | Onboarding and Easy Mode | Completion, reset, redirect gates, interface choice, Easy Mode default, per-user preferences, getting-started checklist, permissions, AJAX validation |
 | Utilities and branding | Unit formatting, sensitive URL parameters, paths, branding sanitization and fallbacks |
 | Analytics | Event allowlist, property sanitization, payloads, permission/nonce checks |
-| Profilers and tracking | Enablement, source classification, aggregation, exclusive (self) timing, thresholds, event storage |
+| Profilers and tracking | Enablement, source classification, aggregation, exclusive (self) timing, 24-hour activity windows and retention, thresholds, event storage |
 | Page Analysis | URL validation, one-time tokens, isolated per-request samples, loopback and browser-visit fallback, report findings, history, pause/resume monitoring |
 | REST | Registered routes, permissions, nonces, malformed requests, settings/flags, statistics, API responses and autoload changes |
 | API and cron | Report payloads, response errors, licenses, caching, diagnostic states, scheduling, locks and fallback behavior |

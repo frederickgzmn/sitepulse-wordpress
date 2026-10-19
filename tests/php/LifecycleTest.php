@@ -59,6 +59,10 @@ final class LifecycleTest extends Sitepulse_Test_Case {
         $this->assertSame(array('analysis' => true, 'profiler' => true, 'sample_hook' => PHP_INT_MAX, 'persist_hook' => 10, 'toggle' => true), $result);
     }
 
+    public function test_the_loader_starts_the_wp_admin_check(): void {
+        $this->assertSame(array('option' => 'sitepulse_admin_access', 'cron' => 10, 'schedule' => 10, 'button' => 10), $this->runLifecycle(array('mode' => 'admin_access')));
+    }
+
     public function test_paused_monitoring_notice_offers_one_click_resume(): void {
         $result = $this->runLifecycle(array('mode' => 'notice', 'enabled' => false, 'dismissed' => false, 'paused' => true));
         $this->assertStringContainsString('notice-info', $result['notice']); $this->assertStringContainsString('Your settings and history are kept.', $result['notice']);
@@ -73,7 +77,7 @@ final class LifecycleTest extends Sitepulse_Test_Case {
     }
 
     public function test_uninstall_removes_settings_and_dismissals_but_preserves_other_plugins(): void {
-        $result = $this->runLifecycle(array('mode' => 'uninstall', 'options' => array('sitepulse_settings' => array('cron_disabled' => true), 'sitepulse_profiler_stats' => array('data'), 'sitepulse_curl_api_events' => array('data'), 'sitepulse_onboarding_completed' => true, 'sitepulse_page_analyses' => array(array('id' => 'a')), 'sitepulse_monitoring_paused' => 1, 'sitepulse_schema_version' => 2, 'sitepulse_error_log' => array('entry'), 'sitepulse_plugin_profiler_stats' => array('data'), 'sitepulse_plugin_profiler_current_time' => 'now', 'sitepulse_plugin_profiler_total_time' => 12, 'unrelated' => 'keep')));
+        $result = $this->runLifecycle(array('mode' => 'uninstall', 'options' => array('sitepulse_settings' => array('cron_disabled' => true), 'sitepulse_profiler_stats' => array('data'), 'sitepulse_curl_api_events' => array('data'), 'sitepulse_onboarding_completed' => true, 'sitepulse_page_analyses' => array(array('id' => 'a')), 'sitepulse_monitoring_paused' => 1, 'sitepulse_schema_version' => 2, 'sitepulse_error_log' => array('entry'), 'sitepulse_plugin_profiler_stats' => array('data'), 'sitepulse_plugin_profiler_current_time' => 'now', 'sitepulse_plugin_profiler_total_time' => 12, 'sitepulse_remote_state' => array('active' => true), 'sitepulse_remote_events' => array(array('id' => 'x')), 'sitepulse_remote_log' => array(array('time' => 1, 'message' => 'm')), 'sitepulse_remote_update_job' => array('command' => 'x'), 'sitepulse_remote_recovery_job' => array('command' => 'y'), 'sitepulse_remote_undone' => array('plugin:seo/seo.php' => array('version' => '1.1')), 'sitepulse_remote_activity' => array('watches' => array()), 'sitepulse_remote_key' => 'rk_x', 'sitepulse_remote_connection' => array('key' => 'spc_x'), 'sitepulse_admin_access' => array('last' => array('reachable' => true)), 'unrelated' => 'keep')));
         $this->assertSame(array('unrelated' => 'keep'), $result['options']);
         $this->assertSame(array('unrelated' => 'keep'), $result['user_meta'][1]);
         $this->assertFalse($result['redirect']); $this->assertSame(array(), $result['transients']);

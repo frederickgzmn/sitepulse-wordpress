@@ -168,6 +168,11 @@ class Sitepulse_CurLoader {
         $host = strtolower( $host );
         $path = strtolower( wp_parse_url( $url, PHP_URL_PATH ) ?: '' );
 
+        // The SitePulse API, wherever SITEPULSE_API_BASE points it.
+        if ( class_exists( 'Sitepulse_Api_Service' ) && strtolower( Sitepulse_Api_Service::api_host() ) === $host ) {
+            return 'SitePulse (API)';
+        }
+
         // Map of host patterns to service/plugin names
         $host_map = array(
             // WordPress Core
@@ -287,6 +292,12 @@ class Sitepulse_CurLoader {
         $events = array_filter((array) get_option(SITEPULSE_CURL_API_KEY, []), 'is_array');
         // Missing and null fields read as their defaults.
         return array_map(static fn($event) => array_merge(self::EVENT_DEFAULTS, array_filter($event, static fn($value) => null !== $value)), $events);
+    }
+
+    /** Events of the last 24 hours, oldest first; warnings, scores and reports describe only these. */
+    public static function get_recent_events(): array {
+        $since = time() - Sitepulse_Profiler::RECENT_SECONDS;
+        return array_values(array_filter(self::get_events(), static fn($event) => (int) $event['ts'] >= $since));
     }
 
     private static function compact_backtrace(): array {

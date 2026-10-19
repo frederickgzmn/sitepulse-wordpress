@@ -28,7 +28,7 @@ final class StoredDataRobustnessTest extends Sitepulse_Test_Case {
                 'sitepulse_profiler_stats', 'sitepulse_curl_api_events', 'sitepulse_plugin_profiler_stats', 'sitepulse_error_log',
                 'sitepulse_vulnerabilities_list', 'sitepulse_pagespeed_report', 'sitepulse_ai_diagnostic_report', 'sitepulse_settings',
                 'sitepulse_whitelabel', 'sitepulse_page_analyses', 'sitepulse_profiler_current_time', 'sitepulse_last_vulnerability_check',
-                'sitepulse_plugin_profiler_total_time',
+                'sitepulse_plugin_profiler_total_time', 'sitepulse_admin_access',
             ), 'corrupt') + array('sitepulse_ai_diagnostic_status' => 'completed');
         }
         if ($scenario === 'nested') {
@@ -44,6 +44,7 @@ final class StoredDataRobustnessTest extends Sitepulse_Test_Case {
                 'sitepulse_settings' => array('external_api_enabled' => null),
                 'sitepulse_whitelabel' => array('enabled' => true, 'plugin_name' => null),
                 'sitepulse_page_analyses' => array(array('id' => null, 'url' => null, 'created_at' => null, 'samples' => 'corrupt')),
+                'sitepulse_admin_access' => array('last' => array('reachable' => null, 'checked_at' => null), 'previous' => array('reachable' => true, 'checked_at' => array())),
             );
         }
         return array(
@@ -63,6 +64,8 @@ final class StoredDataRobustnessTest extends Sitepulse_Test_Case {
             'sitepulse_settings' => array('legacy_key' => 1),
             'sitepulse_whitelabel' => array('enabled' => true),
             'sitepulse_page_analyses' => array(array('id' => 'broken')),
+            // A result with only some of its fields.
+            'sitepulse_admin_access' => array('last' => array('reachable' => false, 'checked_at' => '2026-01-01T11:00:00Z'), 'previous' => array('reachable' => true, 'checked_at' => 'not-a-date')),
         );
     }
 
@@ -98,7 +101,7 @@ final class StoredDataRobustnessTest extends Sitepulse_Test_Case {
         });
 
         $this->assertSame(array(), $problems);
-        if ($method === 'toolbar') { $this->assertSame(array('wpsp', 'wpsp_dashboard', 'wpsp_analyze_page', 'wpsp_monitoring'), $bar->nodes); }
+        if ($method === 'toolbar') { $this->assertSame(array('wpsp', 'wpsp_dashboard', 'wpsp_analyze_page', 'wpsp_monitoring', 'wpsp_wp_admin'), $bar->nodes); }
         else { $this->assertNotSame('', trim($html)); }
     }
 

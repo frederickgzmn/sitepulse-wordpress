@@ -271,6 +271,29 @@
     letter-spacing: .02em;
 }
 
+/* wp-admin cannot be reached from the site's own server */
+#wp-admin-bar-wpsp .wshp-wp-admin-down {
+    display: inline-block;
+    height: 16px;
+    line-height: 16px;
+    font-size: 10px;
+    padding: 0 6px;
+    margin-left: 6px;
+    border-radius: 7px;
+    background: #dc3545;
+    color: #fff;
+    font-weight: 700;
+}
+
+#wp-admin-bar-wpsp .wshp-wp-admin-success > .ab-item {
+    color: #7ee2a8 !important;
+}
+
+#wp-admin-bar-wpsp .wshp-wp-admin-danger > .ab-item {
+    color: #ff8b8b !important;
+    font-weight: 600;
+}
+
 /* "Analyze this page" stands out as the main action */
 #wp-admin-bar-wpsp .wshp-analyze > .ab-item {
     color: #8fe9ff !important;

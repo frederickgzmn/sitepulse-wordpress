@@ -32,6 +32,8 @@ final class Sitepulse_Test_WP {
     public static $redirects = array();
     public static $redirect_throws = true;
     public static $option_writes = array();
+    /** Whether WordPress loads an option on every request, for options saved with an autoload setting; others are loaded. */
+    public static $autoload = array();
     public static $cache_deletes = array();
     public static $is_singular = false;
     public static $is_home = false;
@@ -56,6 +58,15 @@ final class Sitepulse_Test_WP {
     public static $document_title = '';
     public static $referer = false;
     public static $admin_bar_showing = true;
+    public static $site_transients = array();
+    public static $core_updates = false;
+    public static $translation_updates = array();
+    public static $filesystem_method = 'direct';
+    public static $themes = array();
+    public static $current_actions = array();
+    public static $timezone_string = 'UTC';
+    /** Answers requests before the queue; returning null falls back to the queue. */
+    public static $http_responder = null;
     public static function rememberClassDefaults($class) {
         // PHP 7.4 reflection returns the current static values, not their
         // declared defaults. Capture each class before tests can mutate it.
@@ -91,6 +102,8 @@ final class Sitepulse_Test_WP {
     }
     public static function http($url, $args) {
         self::$http_requests[] = array('url' => $url, 'args' => $args);
+        $answer = self::$http_responder ? (self::$http_responder)($url, $args) : null;
+        if (null !== $answer) { return $answer; }
         if (!self::$http_queue) { throw new RuntimeException('Unexpected HTTP request: ' . $url); }
         $response = array_shift(self::$http_queue);
         return is_callable($response) ? $response($url, $args) : $response;
@@ -188,18 +201,28 @@ function apply_filters($hook, $value, ...$args) {
 function do_action($hook, ...$args) {
     global $wp_filter; Sitepulse_Test_WP::$actions[$hook] = (Sitepulse_Test_WP::$actions[$hook] ?? 0) + 1;
     $priorities = $wp_filter[$hook]->callbacks ?? array(); ksort($priorities);
-    foreach ($priorities as $callbacks) { foreach ($callbacks as $entry) { ($entry['function'])(...array_slice($args, 0, $entry['accepted_args'])); } }
+    Sitepulse_Test_WP::$current_actions[] = $hook;
+    try { foreach ($priorities as $callbacks) { foreach ($callbacks as $entry) { ($entry['function'])(...array_slice($args, 0, $entry['accepted_args'])); } } }
+    finally { array_pop(Sitepulse_Test_WP::$current_actions); }
 }
 function did_action($hook) { return Sitepulse_Test_WP::$actions[$hook] ?? 0; }
+function doing_action($hook = null) { return $hook === null ? (bool) Sitepulse_Test_WP::$current_actions : in_array($hook, Sitepulse_Test_WP::$current_actions, true); }
 function __return_false() { return false; }
 function __return_true() { return true; }
 function __return_empty_array() { return array(); }
+function __return_zero() { return 0; }
 function get_option($key, $default = false) { $pre = apply_filters('pre_option_' . $key, false, $key, $default); return $pre !== false ? $pre : (array_key_exists($key, Sitepulse_Test_WP::$options) ? Sitepulse_Test_WP::$options[$key] : $default); }
-function update_option($key, $value, $autoload = null) { $old = get_option($key); Sitepulse_Test_WP::$options[$key] = $value; Sitepulse_Test_WP::$option_writes[] = array('key' => $key, 'value' => $value, 'autoload' => $autoload); return $old !== $value; }
+function update_option($key, $value, $autoload = null) {
+    $exists = array_key_exists($key, Sitepulse_Test_WP::$options); $old = get_option($key);
+    Sitepulse_Test_WP::$options[$key] = $value; Sitepulse_Test_WP::$option_writes[] = array('key' => $key, 'value' => $value, 'autoload' => $autoload);
+    // Like WordPress, a new option or a changed value takes the autoload setting given; an unchanged value keeps its own.
+    if (null !== $autoload && (!$exists || $old !== $value)) { Sitepulse_Test_WP::$autoload[$key] = !in_array($autoload, array(false, 'no', 'off'), true); }
+    return $old !== $value;
+}
 function add_option($key, $value = '', $deprecated = '', $autoload = true) { if (array_key_exists($key, Sitepulse_Test_WP::$options)) { return false; } return update_option($key, $value, $autoload); }
-function delete_option($key) { $found = array_key_exists($key, Sitepulse_Test_WP::$options); unset(Sitepulse_Test_WP::$options[$key]); return $found; }
+function delete_option($key) { $found = array_key_exists($key, Sitepulse_Test_WP::$options); unset(Sitepulse_Test_WP::$options[$key], Sitepulse_Test_WP::$autoload[$key]); return $found; }
 function get_site_option($key, $default = false) { return Sitepulse_Test_WP::$site_options[$key] ?? $default; }
-function wp_load_alloptions() { return Sitepulse_Test_WP::$options; }
+function wp_load_alloptions() { return array_diff_key(Sitepulse_Test_WP::$options, array_filter(Sitepulse_Test_WP::$autoload, static function ($autoload) { return !$autoload; })); }
 function set_transient($key, $value, $expiration = 0) { Sitepulse_Test_WP::$transients[$key] = $value; Sitepulse_Test_WP::$transient_expirations[$key] = $expiration; return true; }
 function get_transient($key) { return Sitepulse_Test_WP::$transients[$key] ?? false; }
 function delete_transient($key) { $found = isset(Sitepulse_Test_WP::$transients[$key]); unset(Sitepulse_Test_WP::$transients[$key], Sitepulse_Test_WP::$transient_expirations[$key]); return $found; }
@@ -213,7 +236,7 @@ function get_current_screen() { return Sitepulse_Test_WP::$screen; }
 function is_admin() { return Sitepulse_Test_WP::$is_admin; }
 function is_multisite() { return Sitepulse_Test_WP::$multisite; }
 function wp_doing_ajax() { return Sitepulse_Test_WP::$doing_ajax; }
-function wp_doing_cron() { return Sitepulse_Test_WP::$doing_cron; }
+function wp_doing_cron() { return apply_filters('wp_doing_cron', Sitepulse_Test_WP::$doing_cron); }
 function get_the_ID() { return Sitepulse_Test_WP::$post_id; }
 function get_post_status($id) { return Sitepulse_Test_WP::$posts[$id]['post_status'] ?? false; }
 if (!in_array('get_plugins', $GLOBALS['sitepulse_test_omitted_wp_functions'] ?? array(), true)) { function get_plugins() { return Sitepulse_Test_WP::$plugins; } }
@@ -222,8 +245,16 @@ function plugin_basename($file) { $file = wp_normalize_path($file); if (defined(
 function get_theme_root() { return WP_CONTENT_DIR . '/themes'; }
 if (!in_array('get_stylesheet', $GLOBALS['sitepulse_test_omitted_wp_functions'] ?? array(), true)) { function get_stylesheet() { return Sitepulse_Test_WP::$theme['stylesheet']; } }
 if (!in_array('get_template', $GLOBALS['sitepulse_test_omitted_wp_functions'] ?? array(), true)) { function get_template() { return Sitepulse_Test_WP::$theme['template']; } }
-class Sitepulse_Test_Theme { public function get_stylesheet() { return get_stylesheet(); }  public function get($key) { return Sitepulse_Test_WP::$theme[$key] ?? ''; } public function exists() { return true; } }
-function wp_get_theme($slug = '') { return new Sitepulse_Test_Theme(); }
+/** The active theme by default; installed themes come from Sitepulse_Test_WP::$themes (stylesheet => headers). */
+class Sitepulse_Test_Theme {
+    private $stylesheet;
+    public function __construct($stylesheet = null) { $this->stylesheet = $stylesheet; }
+    public function get_stylesheet() { return $this->stylesheet ?? get_stylesheet(); }
+    public function get($key) { return ($this->stylesheet === null ? Sitepulse_Test_WP::$theme : Sitepulse_Test_WP::$themes[$this->stylesheet])[$key] ?? ''; }
+    public function exists() { return true; }
+}
+function wp_get_theme($slug = '') { return new Sitepulse_Test_Theme(isset(Sitepulse_Test_WP::$themes[$slug]) ? $slug : null); }
+function wp_get_themes($args = array()) { $themes = array(); foreach (array_keys(Sitepulse_Test_WP::$themes) as $stylesheet) { $themes[$stylesheet] = new Sitepulse_Test_Theme($stylesheet); } return $themes; }
 function wp_upload_dir() { return array('basedir' => WP_CONTENT_DIR . '/uploads', 'baseurl' => 'https://example.test/wp-content/uploads', 'path' => WP_CONTENT_DIR . '/uploads', 'url' => 'https://example.test/wp-content/uploads', 'subdir' => '', 'error' => false); }
 function wp_parse_args($args, $defaults = array()) { if (is_object($args)) { $args = get_object_vars($args); } elseif (!is_array($args)) { parse_str((string) $args, $args); } return array_merge($defaults, $args); }
 function wp_normalize_path($path) { return str_replace('\\', '/', (string) $path); }
@@ -251,6 +282,7 @@ function get_bloginfo($show = '', $filter = 'raw') { return array('version' => '
 function home_url($path = '', $scheme = null) { return Sitepulse_Test_WP::$home_url . ($path === '' ? '' : '/' . ltrim($path, '/')); }
 function site_url($path = '', $scheme = null) { return home_url($path, $scheme); }
 function admin_url($path = '', $scheme = 'admin') { return home_url('/wp-admin/' . ltrim($path, '/')); }
+function wp_login_url($redirect = '', $force_reauth = false) { return apply_filters('login_url', site_url('wp-login.php', 'login'), $redirect, $force_reauth); }
 function rest_url($path = '', $scheme = 'rest') { return home_url('/wp-json/' . ltrim($path, '/')); }
 function wp_create_nonce($action = -1) { return 'nonce-' . $action; }
 function wp_verify_nonce($nonce, $action = -1) { return Sitepulse_Test_WP::$nonce_valid && $nonce === wp_create_nonce($action) ? 1 : false; }
@@ -261,9 +293,14 @@ function wp_die($message = '', $title = '', $args = array()) { throw new Sitepul
 function wp_safe_redirect($url, $status = 302) { Sitepulse_Test_WP::$redirects[] = array('url' => $url, 'status' => $status); if (Sitepulse_Test_WP::$redirect_throws) { throw new Sitepulse_Test_Redirect($url, $status); } return true; }
 function wp_remote_post($url, $args = array()) { return Sitepulse_Test_WP::http($url, array_merge(array('method' => 'POST'), $args)); }
 function wp_remote_get($url, $args = array()) { return Sitepulse_Test_WP::http($url, array_merge(array('method' => 'GET'), $args)); }
+function wp_remote_head($url, $args = array()) { return Sitepulse_Test_WP::http($url, array_merge(array('method' => 'HEAD'), $args)); }
 function wp_remote_request($url, $args = array()) { return Sitepulse_Test_WP::http($url, $args); }
 function wp_remote_retrieve_response_code($response) { return is_wp_error($response) ? '' : ($response['response']['code'] ?? ''); }
 function wp_remote_retrieve_body($response) { return is_wp_error($response) ? '' : ($response['body'] ?? ''); }
+function wp_remote_retrieve_header($response, $header) {
+    foreach ((is_wp_error($response) ? array() : ($response['headers'] ?? array())) as $name => $value) { if (strtolower($name) === strtolower($header)) { return $value; } }
+    return '';
+}
 function is_wp_error($value) { return $value instanceof WP_Error; }
 function rest_ensure_response($value) { return $value instanceof WP_REST_Response || is_wp_error($value) ? $value : new WP_REST_Response($value); }
 function register_rest_route($namespace, $route, $args, $override = false) { Sitepulse_Test_WP::$routes['/' . trim($namespace, '/') . '/' . ltrim($route, '/')] = $args; return true; }
@@ -271,6 +308,7 @@ function _get_cron_array() { return Sitepulse_Test_WP::$cron; }
 function wp_next_scheduled($hook, $args = array()) { $event = wp_get_scheduled_event($hook, $args); return $event ? $event->timestamp : false; }
 function wp_get_scheduled_event($hook, $args = array(), $timestamp = null) { foreach (Sitepulse_Test_WP::$scheduled as $event) { if ($event->hook === $hook && $event->args === $args && ($timestamp === null || $timestamp === $event->timestamp)) { return $event; } } return false; }
 function wp_schedule_event($timestamp, $recurrence, $hook, $args = array(), $wp_error = false) { Sitepulse_Test_WP::$scheduled[] = (object) array('timestamp' => $timestamp, 'schedule' => $recurrence, 'hook' => $hook, 'args' => $args, 'interval' => wp_get_schedules()[$recurrence]['interval'] ?? 0); return true; }
+function wp_schedule_single_event($timestamp, $hook, $args = array(), $wp_error = false) { Sitepulse_Test_WP::$scheduled[] = (object) array('timestamp' => $timestamp, 'schedule' => false, 'hook' => $hook, 'args' => $args); return true; }
 function wp_unschedule_event($timestamp, $hook, $args = array(), $wp_error = false) { Sitepulse_Test_WP::$scheduled = array_values(array_filter(Sitepulse_Test_WP::$scheduled, static function ($event) use ($timestamp, $hook, $args) { return !($event->hook === $hook && $event->timestamp === $timestamp && $event->args === $args); })); return true; }
 function wp_clear_scheduled_hook($hook, $args = array(), $wp_error = false) { $count = 0; foreach (Sitepulse_Test_WP::$scheduled as $event) { if ($event->hook === $hook && $event->args === $args) { wp_unschedule_event($event->timestamp, $hook, $args); $count++; } } return $count; }
 function wp_get_schedules() { return apply_filters('cron_schedules', array('hourly' => array('interval' => 3600, 'display' => 'Hourly'), 'daily' => array('interval' => 86400, 'display' => 'Daily'))); }
@@ -281,7 +319,9 @@ function wp_localize_script($handle, $object_name, $l10n) { Sitepulse_Test_WP::$
 function add_submenu_page($parent_slug, $page_title, $menu_title, $capability, $menu_slug, $callback = '', $position = null) { Sitepulse_Test_WP::$menus[$menu_slug] = compact('parent_slug', 'page_title', 'menu_title', 'capability', 'callback'); return 'admin_page_' . $menu_slug; }
 function add_menu_page($page_title, $menu_title, $capability, $menu_slug, $callback = '', $icon_url = '', $position = null) { Sitepulse_Test_WP::$menus[$menu_slug] = compact('page_title', 'menu_title', 'capability', 'callback', 'icon_url', 'position'); return 'toplevel_page_' . $menu_slug; }
 function WP_Filesystem($args = false, $context = false, $allow_relaxed_file_ownership = false) { $GLOBALS['wp_filesystem'] = Sitepulse_Test_WP::$filesystem_factory ? call_user_func(Sitepulse_Test_WP::$filesystem_factory) : new Sitepulse_Test_Filesystem(); return (bool) $GLOBALS['wp_filesystem']; }
+function maybe_unserialize($data) { return is_string($data) && preg_match('/^(a|O|s|i|d|b):|^N;/', $data) ? unserialize($data) : $data; }
 function wp_cache_delete($key, $group = '') { Sitepulse_Test_WP::$cache_deletes[] = array($key, $group); return true; }
+function wp_cache_flush() { Sitepulse_Test_WP::$cache_deletes[] = array('*', 'flush'); return true; }
 
 function is_email($email) { return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : false; }
 function delete_metadata($meta_type, $object_id, $meta_key, $meta_value = '', $delete_all = false) {
@@ -330,3 +370,32 @@ function wp_get_referer() { return !empty($_REQUEST['_wp_http_referer']) ? wp_un
 function sitepulse_test_post_type($name, $singular) { return (object) array('name' => $name, 'labels' => (object) array('singular_name' => $singular)); }
 function is_admin_bar_showing() { return Sitepulse_Test_WP::$admin_bar_showing; }
 function untrailingslashit($value) { return rtrim((string) $value, '/\\'); }
+
+/** Update, filesystem and metadata boundaries used by remote management. */
+function get_site_transient($key) { return Sitepulse_Test_WP::$site_transients[$key] ?? false; }
+function get_core_updates($options = array()) { return Sitepulse_Test_WP::$core_updates; }
+function wp_get_translation_updates() { return Sitepulse_Test_WP::$translation_updates; }
+function wp_is_file_mod_allowed($context) { return apply_filters('file_mod_allowed', !defined('DISALLOW_FILE_MODS') || !DISALLOW_FILE_MODS, $context); }
+function get_filesystem_method($args = array(), $context = '', $allow_relaxed_file_ownership = false) { return Sitepulse_Test_WP::$filesystem_method; }
+function is_plugin_active($plugin) { return in_array($plugin, (array) get_option('active_plugins', array()), true); }
+function wp_generate_uuid4() {
+    $bytes = random_bytes(16); $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40); $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
+}
+/** Header parsing with WordPress semantics: the first "Name: value" line wins, comment closers are trimmed. */
+function get_file_data($file, $default_headers, $context = '') {
+    $data = (string) file_get_contents($file, false, null, 0, 8192); $headers = array();
+    foreach ($default_headers as $field => $name) {
+        $headers[$field] = preg_match('/^(?:[ \t]*<\?php)?[ \t\/*#@]*' . preg_quote($name, '/') . ':(.*)$/mi', $data, $match) ? trim(preg_replace('/\s*(?:\*\/|\?>).*/', '', $match[1])) : '';
+    }
+    return $headers;
+}
+function update_site_option($key, $value) { Sitepulse_Test_WP::$site_options[$key] = $value; return true; }
+function trailingslashit($value) { return untrailingslashit($value) . '/'; }
+function wp_delete_file($file) { if (is_file($file)) { unlink($file); } }
+function wp_timezone_string() { return Sitepulse_Test_WP::$timezone_string; }
+function wp_rand($min = 0, $max = 0) { return random_int($min, $max ?: 2147483647); }
+function wp_clean_plugins_cache($clear_update_cache = true) { Sitepulse_Test_WP::$cache_deletes[] = array('plugins', 'plugins'); }
+function wp_clean_themes_cache($clear_update_cache = true) { Sitepulse_Test_WP::$cache_deletes[] = array('themes', 'themes'); }
+function wp_update_plugins($extra_stats = array()) { Sitepulse_Test_WP::$cache_deletes[] = array('update_plugins', 'fetched'); }
+function wp_update_themes($extra_stats = array()) { Sitepulse_Test_WP::$cache_deletes[] = array('update_themes', 'fetched'); }

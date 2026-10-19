@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       SitePulse - Performance Monitor and AI Diagnostics
  * Description:       SitePulse gives you real-time insights into your WordPress site’s performance, slow queries, and bottlenecks - so you can keep your site fast, healthy, and optimized.
- * Version:           1.4.6
+ * Version:           1.5.0
  * Author:            Frederic Guzman
  * Author URI:        https://www.nilbug.com
  * Text Domain:       sitepulse
@@ -40,7 +40,7 @@ if ( ! defined( 'SITEPULSE_STRESS_MODE' ) ) {
 	define( 'SITEPULSE_STRESS_MODE', false );
 }
 
-define( 'SITEPULSE_VERSION',               '1.4.6' );
+define( 'SITEPULSE_VERSION',               '1.5.0' );
 define( 'SITEPULSE_NAME',                  'SitePulse' );
 define( 'SITEPULSE_SLUG',                  'sitepulse' );
 define( 'SITEPULSE_PREFIX',                'wpsp' );
@@ -73,6 +73,9 @@ define( 'SITEPULSE_CURL_API_KEY',               'sitepulse_curl_api_events' );
 define( 'SITEPULSE_CURL_API_ENABLED',       	  'sitepulse_curl_api_enabled' );
 define( 'SITEPULSE_CURL_API_SLUG',          	  'curl_api' );
 define( 'SITEPULSE_CURL_API_DEFAULT_THRESHOLD', 1 );
+
+// wp-admin reachability: the last check, and the one before it that found the opposite
+define( 'SITEPULSE_ADMIN_ACCESS_OPTION',        'sitepulse_admin_access' );
 
 // Load error handler FIRST to catch any errors during plugin loading
 require_once SITEPULSE_CLASS_PATH . 'error_handler.php';
@@ -206,6 +209,19 @@ require_once SITEPULSE_PATH . 'inc/cron_fallback.php';
 // Load AI diagnostic cron manager (works with both free and pro)
 require_once SITEPULSE_PATH . 'inc/ai_diagnostic_cron.php';
 
+// Remote management of backups and updates from the SitePulse dashboard.
+require_once SITEPULSE_CLASS_PATH . 'remote_client.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_backups.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_inventory.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_events.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_health.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_activity.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_updates.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_recovery.php';
+require_once SITEPULSE_CLASS_PATH . 'remote_management.php';
+// Whether the site's own server can reach its wp-admin.
+require_once SITEPULSE_CLASS_PATH . 'admin_access.php';
+
 class Sitepulse_Loader {
 	/**
 	 * Version of the stored data layout; raise it when an update needs to migrate data.
@@ -255,6 +271,12 @@ class Sitepulse_Loader {
 
 		// Pause/resume monitoring from the toolbar
 		Sitepulse_Monitoring::init();
+
+		// Backups and updates managed from the SitePulse dashboard
+		Sitepulse_Remote_Management::init();
+
+		// Hourly check that the site's own server can reach its wp-admin
+		Sitepulse_Admin_Access::init();
 
 		// Initialize Easy Mode (toggleable dashboard experience)
 		if ( class_exists( 'Sitepulse_Easy_Mode' ) ) {
@@ -316,6 +338,14 @@ class Sitepulse_Loader {
 		if ( class_exists( 'Sitepulse_AI_Diagnostic_Cron' ) ) {
 			Sitepulse_AI_Diagnostic_Cron::unschedule();
 		}
+
+		// Stop checking in with the SitePulse dashboard and running its updates
+		Sitepulse_Remote_Management::unschedule();
+		Sitepulse_Remote_Updates::unschedule();
+		Sitepulse_Remote_Recovery::unschedule();
+
+		// Stop checking that wp-admin can be reached
+		Sitepulse_Admin_Access::unschedule();
 	}
 
 	/**

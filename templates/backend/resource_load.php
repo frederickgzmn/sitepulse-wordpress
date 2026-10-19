@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
   <div class="sp-pa-pointer">
     <span class="dashicons dashicons-search" aria-hidden="true"></span>
-    <span><?php echo esc_html__( 'These numbers cover your whole site. To see what slows down one particular page, use Page Analysis.', 'sitepulse' ); ?></span>
+    <span><?php echo esc_html__( 'These numbers cover your whole site over the last 24 hours. To see what slows down one particular page, use Page Analysis.', 'sitepulse' ); ?></span>
     <a href="<?php echo esc_url( Sitepulse_Page_Analysis::admin_link() ); ?>"><?php echo esc_html__( 'Analyze a page', 'sitepulse' ); ?> &rarr;</a>
   </div>
 
@@ -39,7 +39,7 @@ if ( ! defined( 'ABSPATH' ) ) {
               <span class="dashicons dashicons-admin-plugins"></span>
               <div>
                 <strong><?php echo esc_html__( 'Plugin Activity', 'sitepulse' ); ?></strong>
-                <div class="sp-widget-subtitle"><?php echo esc_html__( 'Performance impact of plugins and themes on your site', 'sitepulse' ); ?></div>
+                <div class="sp-widget-subtitle"><?php echo esc_html__( 'Time each plugin and theme adds to a page load, over the last 24 hours', 'sitepulse' ); ?></div>
               </div>
             </div>
             <div class="sp-widget-stats">
@@ -61,11 +61,11 @@ if ( ! defined( 'ABSPATH' ) ) {
           <div class="sp-widget-content">
             <div class="sp-details-list">
               <?php
-              // Sort by total time desc by default
+              // Slowest first: own time per page load over the last 24 hours
               $stats = array_values($stats);
 
               usort($stats, function($a, $b) {
-                  return $b['total_ms'] <=> $a['total_ms'];
+                  return $b['load_ms'] <=> $a['load_ms'];
               });
 
               if ( empty( $stats ) && round( count( $stats ) ) == 0 ) {
@@ -73,7 +73,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <div class="sp-detail-item sp-empty-state">
                   <div class="sp-detail-content">
                     <span class="dashicons dashicons-info"></span>
-                    <span><?php echo esc_html__( 'No plugin or theme activity detected. Please enable the monitor tracker to start collecting data.', 'sitepulse' ); ?></span>
+                    <span><?php echo esc_html__( 'No plugin or theme activity in the last 24 hours. Make sure the Performance Monitor is on, then visit a few pages of your site.', 'sitepulse' ); ?></span>
                   </div>
                 </div>
                 <?php
@@ -81,8 +81,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
               foreach ( $stats as $stat ) :
                 if ( ! empty( $stat ) ) {
-                  $avg = $stat['calls'] ? ($stat['total_ms'] / $stat['calls']) : 0;
-                  $time_ms = $stat['total_ms'];
+                  $avg = $stat['avg_ms'];
+                  $time_ms = $stat['load_ms'];
                   
                   // Determine performance color
                   if ($time_ms > 1000) {
@@ -113,7 +113,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                         </div>
                       </div>
                       <div class="sp-detail-metrics">
-                        <div class="sp-metric-badge" style="--metric-color: <?php echo esc_attr( $perf_color ); ?>">
+                        <div class="sp-metric-badge" style="--metric-color: <?php echo esc_attr( $perf_color ); ?>" title="<?php echo esc_attr__( 'Own time per page load', 'sitepulse' ); ?>">
                           <span class="sp-metric-value"><?php echo esc_html( number_format( $time_ms, 0 ) ); ?></span>
                           <span class="sp-metric-unit">ms</span>
                         </div>
@@ -133,7 +133,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <div class="sp-detail-secondary">
                       <div class="sp-detail-stats">
                         <span class="sp-stat">
-                          <span class="sp-stat-label"><?php echo esc_html__( 'Avg', 'sitepulse' ); ?>:</span>
+                          <span class="sp-stat-label"><?php echo esc_html__( 'Avg per call', 'sitepulse' ); ?>:</span>
                           <span class="sp-stat-value"><?php echo esc_html( number_format( $avg, 2 ) ); ?> ms</span>
                         </span>
                         <span class="sp-stat">

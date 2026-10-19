@@ -272,6 +272,95 @@ test('pending diagnostic retries a failed status check and stops polling when co
   assertRest(network.fetch.find(call => call.url.endsWith('/ai_diagnostic/status')), 'ai_diagnostic/status', {});
 });
 
+test('a queued vulnerability scan says when to check again, as text', async t => {
+  const { $, flush } = await setup(t, vulnerabilitiesHtml, {
+    fetch: () => jsonResponse({ success: true, data: { vuln_wait: true, message: 'Queued <b>for 30 minutes</b>' } })
+  });
+  $('.sp-check-vulnerabilities-btn').first().trigger('click');
+  await flush();
+  assert.equal($('.sp-vulnerabilities-results b, .sitepulse-alert b').length, 0);
+  assert.match($('.sp-vulnerabilities-results .alert-warning').text(), /Queued <b>for 30 minutes<\/b>/);
+  assert.match($('.sitepulse-alert-info').text(), /Queued <b>for 30 minutes<\/b>/);
+});
+
+for (const [label, data, css] of [
+  ['queued', { vuln_wait: true, message: 'Your site is in the queue' }, 'info'],
+  ['completed', { vuln_wait: false, message: 'No known vulnerabilities found.', vulnerabilities: [], timestamp: 'Oct 4' }, 'success']
+]) {
+  test(`Easy Mode says a scan is ${label} and reloads to show it`, async t => {
+    const { $, flush, clock, navigation } = await setup(t, '<button class="sp-check-vulnerabilities-btn">Scan</button><div class="sp-vulnerabilities-results" data-sp-reload-on-results="1"></div>', {
+      fetch: () => jsonResponse({ success: true, data })
+    });
+    $('.sp-check-vulnerabilities-btn').trigger('click');
+    await flush();
+    assert.equal($(`.sitepulse-alert-${css}`).text(), data.message);
+    assert.equal($('.sp-vulnerabilities-results').text(), data.message);
+    navigation.expected = 1;
+    await clock.advance(2000);
+    assert.equal(navigation.attempts, 1);
+  });
+}
+
+test('a refused vulnerability scan shows the reason as text', async t => {
+  const { $, flush } = await setup(t, vulnerabilitiesHtml, { fetch: () => jsonResponse({ success: false, data: { message: 'Limit <i>reached</i>' } }) });
+  $('.sp-check-vulnerabilities-btn').first().trigger('click');
+  await flush();
+  assert.equal($('.sp-vulnerabilities-results i, .sitepulse-alert i').length, 0);
+  assert.match($('.sp-vulnerabilities-results .alert-warning').text(), /Scan failed: Limit <i>reached<\/i>/);
+  assert.match($('.sitepulse-alert-warning').text(), /Limit <i>reached<\/i>/);
+});
+
+for (const code of ['rest_cookie_invalid_nonce', 'invalid_nonce']) {
+  test(`an expired session (${code}) asks to reload the page`, async t => {
+    const { $, flush } = await setup(t, vulnerabilitiesHtml, { fetch: () => jsonResponse({ code, message: 'Cookie check failed' }, 403) });
+    $('.sp-check-vulnerabilities-btn').first().trigger('click');
+    await flush();
+    assert.equal($('.sp-vulnerabilities-results .alert-danger').text(), 'Error: Your session has expired. Reload the page and try again.');
+  });
+}
+
+test('a failed AI request shows its reason, keeps the button usable and reloads to offer a retry', async t => {
+  const { $, flush, clock, navigation } = await setup(t, '<button class="sp-request-ai-diagnostic-btn">Diagnose</button>', {
+    fetch: () => jsonResponse({ success: false, data: { status: 'failed', message: 'The AI diagnosis failed: <b>quota</b>' } })
+  });
+  $('.sp-request-ai-diagnostic-btn').trigger('click');
+  await flush();
+  assert.equal($('.sitepulse-alert-danger').text(), 'The AI diagnosis failed: <b>quota</b>');
+  assert.equal($('.sp-request-ai-diagnostic-btn').prop('disabled'), false);
+  assert.equal(clock.pendingIntervals().includes(60000), false);
+  navigation.expected = 1;
+  await clock.advance(3000);
+  assert.equal(navigation.attempts, 1);
+});
+
+test('a refused AI request explains why as text and restores the button', async t => {
+  const { $, flush } = await setup(t, '<button class="sp-request-ai-diagnostic-btn">Diagnose</button>', {
+    fetch: () => jsonResponse({ success: false, data: { status: null, message: 'This site is not registered with SitePulse yet: <i>refused</i>' } })
+  });
+  $('.sp-request-ai-diagnostic-btn').trigger('click');
+  await flush();
+  assert.equal($('.sitepulse-alert-warning').text(), 'This site is not registered with SitePulse yet: <i>refused</i>');
+  assert.equal($('.sp-request-ai-diagnostic-btn').prop('disabled'), false);
+});
+
+for (const [status, answer, css, text] of [
+  ['failed', { success: false, data: { status: 'failed', message: 'The AI diagnosis failed: quota exceeded' } }, 'danger', 'The AI diagnosis failed: quota exceeded'],
+  ['failed without a reason', { success: false, data: { status: 'failed' } }, 'danger', 'AI Diagnostic failed. Please try again.'],
+  ['none', { success: true, data: { status: 'none' } }, 'info', 'No AI diagnostic is in progress any more. You can request a new one.']
+]) {
+  test(`polling stops and reloads when the diagnostic is ${status}`, async t => {
+    const { $, clock, navigation } = await setup(t, '<div class="sp-ai-diagnostic-widget" data-status="pending"></div>', {
+      fetch: call => call.url.endsWith('/memory_checker/check') ? jsonResponse(memoryResponse) : jsonResponse(answer)
+    });
+    await clock.advance(60000);
+    assert.equal(clock.pendingIntervals().includes(60000), false);
+    assert.equal($(`.sitepulse-alert-${css}`).text(), text);
+    navigation.expected = 1;
+    await clock.advance(2000);
+    assert.equal(navigation.attempts, 1);
+  });
+}
+
 const autoloadHtml = `
   <button class="sp-section-toggle" data-section="sp-autoload-section">Autoload</button>
   <button class="sp-section-toggle" data-section="sp-slow-queries-section">Queries</button>

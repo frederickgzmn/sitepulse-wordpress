@@ -25,3 +25,6 @@ coverage.xml
 /web.config
 Thumbs.db
 graphify-out/cache
+
+# Lando development site (./sitepulse-dev): WordPress and its state.
+/.lando/
