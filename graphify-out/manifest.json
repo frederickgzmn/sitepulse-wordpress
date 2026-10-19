@@ -858,9 +858,9 @@
     "semantic_hash": ""
   },
   "docs/KNOWN_DEFECTS.md": {
-    "mtime": 1792369844.3915837,
-    "seen": 1792369894.2134316,
-    "ast_hash": "7e655e267a5d44808c2e8e443a3041bd",
+    "mtime": 1792374066.2020333,
+    "seen": 1792374340.4338927,
+    "ast_hash": "93d91d8e3fd1d93dd1eaf61be01da06e",
     "semantic_hash": ""
   },
   "docs/README.md": {
@@ -1008,9 +1008,9 @@
     "semantic_hash": ""
   },
   "class/remote_client.php": {
-    "mtime": 1792369843.9618015,
-    "seen": 1792369894.2132714,
-    "ast_hash": "a543c46b005878fe9950f77e6d7c8f0c",
+    "mtime": 1792373280.164486,
+    "seen": 1792374340.433658,
+    "ast_hash": "0f2f90aefbe9073a0117ddb5fe38dac6",
     "semantic_hash": ""
   },
   "class/remote_events.php": {
@@ -1026,9 +1026,9 @@
     "semantic_hash": ""
   },
   "class/remote_management.php": {
-    "mtime": 1792369844.3913991,
-    "seen": 1792369894.2132752,
-    "ast_hash": "04219535141c78dbe1f8112dd3a18939",
+    "mtime": 1792373957.9167817,
+    "seen": 1792374340.4336665,
+    "ast_hash": "83c0237b8bee530b78096ea8ce59e1e1",
     "semantic_hash": ""
   },
   "templates/backend/remote_management.php": {
@@ -1050,9 +1050,9 @@
     "semantic_hash": ""
   },
   "tests/php/RemoteClientTest.php": {
-    "mtime": 1792369844.01991,
-    "seen": 1792369894.2133837,
-    "ast_hash": "779e123170606bc900bf9f7aa04e5afd",
+    "mtime": 1792373347.9229114,
+    "seen": 1792374340.4338293,
+    "ast_hash": "aed3a97e5d59318cf770bc0a570e67de",
     "semantic_hash": ""
   },
   "tests/php/RemoteEventsTest.php": {
@@ -1068,9 +1068,9 @@
     "semantic_hash": ""
   },
   "tests/php/RemoteManagementTest.php": {
-    "mtime": 1792369844.4090166,
-    "seen": 1792369894.2133875,
-    "ast_hash": "0d2032c62206ecee06f04a3ed2359de3",
+    "mtime": 1792373995.752336,
+    "seen": 1792374340.4338353,
+    "ast_hash": "a323f91edaeb887406fc4143db49dd6c",
     "semantic_hash": ""
   },
   "tests/php/RemoteVariantsTest.php": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "tests/php/Support/RemoteManagement.php": {
-    "mtime": 1792369844.0222428,
-    "seen": 1792369894.213402,
-    "ast_hash": "d64bdffc501fa0d13b7404e797ede4e4",
+    "mtime": 1792373951.9246435,
+    "seen": 1792374340.433856,
+    "ast_hash": "36661457f6dbb2b2eba0ca03b89cf3d2",
     "semantic_hash": ""
   },
   "tests/php/fixtures/remote-variants.php": {
@@ -1092,9 +1092,9 @@
     "semantic_hash": ""
   },
   "docs/remote-management.md": {
-    "mtime": 1792369844.061912,
-    "seen": 1792369894.2134345,
-    "ast_hash": "598880a533c7b81f2d9d9d428ac063d2",
+    "mtime": 1792374306.7470813,
+    "seen": 1792374340.433895,
+    "ast_hash": "e8fb6628fe36ef33aa807de699a7051b",
     "semantic_hash": ""
   },
   "tests/php/RemoteBackupCommandsTest.php": {
@@ -1134,15 +1134,15 @@
     "semantic_hash": ""
   },
   "scripts/remote-api-mock.php": {
-    "mtime": 1792369844.0106387,
-    "seen": 1792369894.213294,
-    "ast_hash": "0c232975fa500ee16c0d3db7afc1f949",
+    "mtime": 1792374029.645451,
+    "seen": 1792374340.4336965,
+    "ast_hash": "004976e0f6d220b3dee470b273cd511e",
     "semantic_hash": ""
   },
   "tests/php/RemoteApiMockTest.php": {
-    "mtime": 1792369844.0189157,
-    "seen": 1792369894.2133806,
-    "ast_hash": "ca72f7d9f9b0089f7857bf93e97f6383",
+    "mtime": 1792374038.3497612,
+    "seen": 1792374340.4338253,
+    "ast_hash": "967e5352b858757230c46a18166835f1",
     "semantic_hash": ""
   },
   "tests/php/ApiBaseTest.php": {
@@ -1164,15 +1164,15 @@
     "semantic_hash": ""
   },
   "templates/backend/remote_connection.php": {
-    "mtime": 1792369844.0118537,
-    "seen": 1792369894.2133014,
-    "ast_hash": "f417315f93c4ccb5733a087071b63fbc",
+    "mtime": 1792373889.3859417,
+    "seen": 1792374340.433709,
+    "ast_hash": "0fef64b088cff0bf8d34eeda9f504434",
     "semantic_hash": ""
   },
   "tests/php/RemoteConnectionTest.php": {
-    "mtime": 1792369844.4088278,
-    "seen": 1792369894.2133844,
-    "ast_hash": "ac05fdd057140fbfd73981890842e0a8",
+    "mtime": 1792373967.5647492,
+    "seen": 1792374340.4338307,
+    "ast_hash": "cea2566566b9e3553013b9a50f2ccc6b",
     "semantic_hash": ""
   },
   "assets/js/remote-connection.js": {
