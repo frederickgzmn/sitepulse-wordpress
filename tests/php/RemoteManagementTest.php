@@ -442,21 +442,32 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         update_option(Sitepulse_Remote_Management::STATE_OPTION, array('check_in_seconds' => 300));
         $this->queue(sitepulse_test_remote_response(array('success' => false), 401), sitepulse_test_remote_response(array('success' => false), 401), sitepulse_test_remote_response(array('success' => false), 403), new WP_Error('http_request_failed', 'cURL error 6: could not resolve host'), $this->answer(self::IDLE));
 
+        $refused = "SitePulse refused this site's request (HTTP %d). Check the server's date and time, and that Cloud Services are on; if the site's license changed, disconnect and connect again.";
+        $unreachable = 'SitePulse could not be reached from this server (cURL error 6: could not resolve host). Check that the server can reach api.sitepulse.me, then try again.';
+
         Sitepulse_Remote_Management::check_in();
         $this->assertEqualsWithDelta(time() + 300, $this->nextCheckIn(), 2);
         $this->assertSame('http_401', Sitepulse_Remote_Management::state()['last_error']);
+        $this->assertSame(sprintf($refused, 401), Sitepulse_Remote_Management::state()['last_error_message']);
+        // The status says why, on both dashboards.
+        $this->assertSame('The last check-in with SitePulse failed: ' . sprintf($refused, 401), Sitepulse_Remote_Management::view_data()['message']);
+        foreach (array('advanced', 'easy') as $context) {
+            ob_start(); Sitepulse_Remote_Management::render_settings($context); $html = ob_get_clean();
+            $this->assertStringContainsString('The last check-in with SitePulse failed: SitePulse refused this site&#039;s request (HTTP 401). Check the server&#039;s date and time,', $html);
+        }
         Sitepulse_Remote_Management::check_in();
         Sitepulse_Remote_Management::check_in();
         Sitepulse_Remote_Management::check_in();
+        $this->assertSame('The last check-in with SitePulse failed: ' . $unreachable, Sitepulse_Remote_Management::view_data()['message']);
 
         $this->assertSame(array(
-            'Check-in with SitePulse failed: SitePulse did not accept the signature of this site. Check that the server clock is correct and that the site address has not changed.',
-            'Check-in with SitePulse failed: The SitePulse license of this site is not active.',
-            'Check-in with SitePulse failed: cURL error 6: could not resolve host',
+            'Check-in with SitePulse failed: ' . sprintf($refused, 401),
+            'Check-in with SitePulse failed: ' . sprintf($refused, 403),
+            'Check-in with SitePulse failed: ' . $unreachable,
         ), $this->messages());
 
         Sitepulse_Remote_Management::check_in();
-        $this->assertSame('', Sitepulse_Remote_Management::state()['last_error']);
+        $this->assertSame(array('', ''), array(Sitepulse_Remote_Management::state()['last_error'], Sitepulse_Remote_Management::state()['last_error_message']));
     }
 
     public function test_events_are_recorded_only_while_managed_and_the_queue_is_bounded(): void {
@@ -570,7 +581,9 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
             'no license yet' => array(static function () {}, 'off', 'neutral', $notManaged),
             'license removed' => array(static function () use ($active) { update_option(Sitepulse_Remote_Management::STATE_OPTION, $active + array('last_error' => 'http_403')); }, 'off', 'neutral', $notManaged),
             'blocked' => array(static function () use ($licensed) { $licensed(); update_option('sitepulse_settings', array('remote_management_blocked' => true)); }, 'blocked', 'warning', 'Blocked: the SitePulse dashboard cannot see or manage the updates and backups of this site.'),
-            'failed check-in' => array(static function () use ($ready) { $ready(array('last_error' => 'http_500', 'last_check_in' => 5, 'active' => true)); }, 'error', 'danger', 'The last check-in with SitePulse failed. See the activity below.'),
+            'failed check-in' => array(static function () use ($ready) { $ready(array('last_error' => 'http_500', 'last_error_message' => 'SitePulse is having trouble right now (HTTP 500). Please try again in a few minutes.', 'last_check_in' => 5, 'active' => true)); }, 'error', 'danger', 'The last check-in with SitePulse failed: SitePulse is having trouble right now (HTTP 500). Please try again in a few minutes.'),
+            // Stored before the state kept the reason.
+            'failed check-in, without its reason' => array(static function () use ($ready) { $ready(array('last_error' => 'http_500', 'last_check_in' => 5, 'active' => true)); }, 'error', 'danger', 'The last check-in with SitePulse failed. See the activity below.'),
             'not set up' => array(static function () use ($ready) { $ready(); }, 'off', 'neutral', $notManaged),
             'switched off' => array(static function () use ($ready) { $ready(array('last_check_in' => 5)); }, 'off', 'neutral', $notManaged),
             'active, with backups' => array(static function () use ($ready, $active) { $ready($active); }, 'active', 'success', 'Active: your SitePulse dashboard manages the updates and backups of this site.'),
