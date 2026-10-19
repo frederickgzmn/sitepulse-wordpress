@@ -645,12 +645,12 @@ jQuery(function ($) {
     toggleEmailModeRow();
 
     // On change event
-    $('#sitepulse_email_blocking_enabled').change(function () {
+    $('#sitepulse_email_blocking_enabled').on('change', function () {
         toggleEmailModeRow();
     });
 
     // Add confirmation for dangerous operations
-    $('#sitepulse_cron_disabled').change(function () {
+    $('#sitepulse_cron_disabled').on('change', function () {
         if ($(this).is(':checked')) {
             if (!confirm(SitePulse.cron_confirm_message)) {
                 $(this).prop('checked', false);
@@ -658,7 +658,7 @@ jQuery(function ($) {
         }
     });
 
-    $('#sitepulse_email_blocking_enabled').change(function () {
+    $('#sitepulse_email_blocking_enabled').on('change', function () {
         if ($(this).is(':checked')) {
             if (!confirm(SitePulse.email_blocking_confirm_message)) {
                 $(this).prop('checked', false);

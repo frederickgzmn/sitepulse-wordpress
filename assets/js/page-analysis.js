@@ -378,7 +378,7 @@
         self.$intro.prop('hidden', true);
         self.$progress.find('.sp-pa-fallback').prop('hidden', true);
 
-        return run($.trim(url), {
+        return run(String(url).trim(), {
             progress: function (text, percent) {
                 self.progress(text, percent);
             },
