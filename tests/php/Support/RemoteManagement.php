@@ -186,6 +186,23 @@ function sitepulse_test_remote_response($body = array('success' => true), $statu
     };
 }
 
+/**
+ * The API's answer to a refused site request for each of its codes (unsigned, as the API sends
+ * it), with the sentence the settings show for it.
+ */
+function sitepulse_test_remote_refusals() {
+    $refusal = static function ($code, $message, $status) {
+        return Sitepulse_Test_WP::response(array('success' => false, 'error' => $code, 'message' => $message), $status);
+    };
+    return array(
+        'invalid_signature' => array($refusal('invalid_signature', 'Invalid signature.', 401), "SitePulse does not accept this site's key: the site's license or address no longer matches SitePulse's record for this domain. Enter the license your SitePulse dashboard shows for this site below, then press Check connection."),
+        'request_expired' => array($refusal('request_expired', 'Request expired.', 401), "SitePulse rejected the request because this server's clock is more than 5 minutes off. Fix the server's date and time, then try again."),
+        'request_replayed' => array($refusal('request_replayed', 'This request was already received.', 401), 'SitePulse had already received this request. Please try again.'),
+        'malformed_headers' => array($refusal('malformed_headers', 'Missing or malformed signature headers.', 401), 'The request reached SitePulse without its signature headers: a proxy or firewall on this server strips them.'),
+        'site_blocked' => array($refusal('site_blocked', 'This license is not active.', 403), "SitePulse has blocked this site's license. Contact SitePulse support."),
+    );
+}
+
 /** Decoded body of the nth request sent to the API. */
 function sitepulse_test_remote_request_body($index) { return json_decode(Sitepulse_Test_WP::$http_requests[$index]['args']['body'], true); }
 

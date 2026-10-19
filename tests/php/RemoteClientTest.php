@@ -73,6 +73,30 @@ final class RemoteClientTest extends Sitepulse_Test_Case {
         );
     }
 
+    public function test_an_http_error_carries_the_reason_the_api_gives(): void {
+        Sitepulse_Test_WP::$http_queue = array(
+            Sitepulse_Test_WP::response(array('success' => false, 'error' => 'invalid_signature', 'message' => 'Invalid signature.'), 401),
+            // The sentence is kept to 200 characters, here two-byte ones.
+            Sitepulse_Test_WP::response(array('success' => false, 'error' => 'site_blocked', 'message' => str_repeat('é', 250)), 403),
+            Sitepulse_Test_WP::response('<html>Bad gateway</html>', 502),
+            Sitepulse_Test_WP::response('"Unauthorized"', 401),
+            Sitepulse_Test_WP::response(array('success' => false, 'error' => array('invalid_signature'), 'message' => 401), 401),
+            Sitepulse_Test_WP::response(array('success' => false, 'error' => '', 'message' => ''), 429),
+        );
+        $error = function (): array {
+            $error = $this->client()->post('check-in', array());
+            return array($error->get_error_code(), $error->get_error_message(), $error->get_error_data());
+        };
+        $none = array('error' => null, 'message' => null);
+
+        $this->assertSame(array('http_401', 'HTTP 401', array('error' => 'invalid_signature', 'message' => 'Invalid signature.')), $error());
+        $this->assertSame(array('http_403', 'HTTP 403', array('error' => 'site_blocked', 'message' => str_repeat('é', 200))), $error());
+        $this->assertSame(array('http_502', 'HTTP 502', $none), $error(), 'Not JSON.');
+        $this->assertSame(array('http_401', 'HTTP 401', $none), $error(), 'Not an object.');
+        $this->assertSame(array('http_401', 'HTTP 401', $none), $error(), 'Not strings.');
+        $this->assertSame(array('http_429', 'HTTP 429', $none), $error(), 'Empty.');
+    }
+
     public function test_network_failure_keeps_the_transport_message(): void {
         Sitepulse_Test_WP::$http_queue[] = new WP_Error('http_request_failed', 'cURL error 28: timed out');
         $this->assertSame('cURL error 28: timed out', $this->client()->post('check-in', array())->get_error_message());

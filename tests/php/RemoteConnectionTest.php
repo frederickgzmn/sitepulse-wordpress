@@ -20,7 +20,7 @@ final class RemoteConnectionTest extends Sitepulse_Test_Case {
 
     protected function tearDown(): void {
         Sitepulse_Test_Backups::reset();
-        unset($_POST['sitepulse_connection'], $_REQUEST['nonce'], $GLOBALS['wpdb']);
+        unset($_POST['sitepulse_connection'], $_POST['sitepulse_license'], $_REQUEST['nonce'], $GLOBALS['wpdb']);
         parent::tearDown();
     }
 
@@ -203,7 +203,7 @@ final class RemoteConnectionTest extends Sitepulse_Test_Case {
             );
         };
 
-        return array(
+        $failures = array(
             'this server cannot reach SitePulse' => array(
                 new WP_Error('http_request_failed', $kept . ' and the rest of a long reason'),
                 'SitePulse could not be reached from this server (' . $kept . '). Check that the server can reach api.sitepulse.me, then try again.',
@@ -241,7 +241,15 @@ final class RemoteConnectionTest extends Sitepulse_Test_Case {
                 "SitePulse's answer could not be understood. Please try again in a moment.",
                 'SitePulse&#039;s answer could not be understood. Please try again in a moment.',
             ),
+            // Without the API's reason, a refusal keeps the general sentence.
+            'a refusal that is not JSON' => array_merge(array(Sitepulse_Test_WP::response('<html>401 Unauthorized</html>', 401)), array_slice($refused(401), 1)),
+            'a refusal code this version does not know' => array_merge(array(Sitepulse_Test_WP::response(array('success' => false, 'error' => 'license_on_fire', 'message' => 'Something new.'), 403)), array_slice($refused(403), 1)),
         );
+        // The API says why it refused the site: the settings say what to fix.
+        foreach (sitepulse_test_remote_refusals() as $code => list($response, $sentence)) {
+            $failures["refused: $code"] = array($response, $sentence, str_replace("'", '&#039;', $sentence));
+        }
+        return $failures;
     }
 
     public function test_a_failure_the_client_does_not_report_keeps_the_general_sentence(): void {
@@ -250,6 +258,177 @@ final class RemoteConnectionTest extends Sitepulse_Test_Case {
 
         $this->assertSame('SitePulse could not be reached. Please try again in a moment.', $message->invoke(null, new WP_Error('http_request_failed', 'timeout')));
         $this->assertSame('SitePulse could not be reached. Please try again in a moment.', $message->invoke(null, new WP_Error('http_', 'HTTP')));
+    }
+
+    private const LICENSE = '1A2B-3C4D-5E6F-7A8B-9C0D';
+    private const CLOSED = '<details style="margin: 8px 0 0;">';
+    private const OPEN = '<details style="margin: 8px 0 0;" open>';
+
+    /** Enter a license in the connection box and save it. */
+    private function saveLicense(?string $license): void {
+        if (null !== $license) { $_POST['sitepulse_license'] = $license; }
+        $this->press('license');
+    }
+
+    /** A site that works with its license and a key the dashboard rotated, as SitePulse last saw it. */
+    private function rotated(): array {
+        $previous = array(
+            'sitepulse_license_key' => SITEPULSE_TEST_LICENSE,
+            Sitepulse_Remote_Management::KEY_OPTION => 'rk_' . str_repeat('k', 40),
+            Sitepulse_Remote_Management::STATE_OPTION => array('active' => false, 'last_check_in' => 5, 'last_error' => ''),
+        );
+        foreach ($previous as $option => $value) { update_option($option, $value); }
+        return $previous;
+    }
+
+    public function test_the_license_form_is_closed_until_sitepulse_refuses_the_license(): void {
+        $this->connect();
+        foreach (array('advanced', 'easy') as $context) {
+            $html = $this->render($context);
+            $this->assertStringContainsString(self::CLOSED . '<summary>Change the license this site uses</summary>', preg_replace('/>\s+</', '><', $html));
+            $this->assertStringContainsString('<label for="sitepulse-license" style="display: block; margin: 0 0 4px;">Set the site&#039;s SitePulse license</label>', $html);
+            $this->assertStringContainsString('<input type="text" id="sitepulse-license" name="sitepulse_license" class="regular-text code" required pattern="[0-9A-Fa-f]{4}(?:-[0-9A-Fa-f]{4}){4}" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" />', $html);
+            $this->assertStringContainsString('value="license" class="' . ('easy' === $context ? 'sp-btn sp-btn-outline sp-btn-sm' : 'button') . '">Save</button>', $html);
+            $this->assertStringNotContainsString(SITEPULSE_TEST_LICENSE, $html, 'The license is never shown.');
+        }
+
+        // SitePulse refuses the site's key: the form opens on both dashboards.
+        Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_refusals()['invalid_signature'][0];
+        $this->press('status');
+        $this->assertSame('invalid_signature', $this->stored()['error_code']);
+        foreach (array('advanced', 'easy') as $context) {
+            $html = $this->render($context);
+            $this->assertStringContainsString(self::OPEN, $html);
+            $this->assertStringContainsString('Enter the license your SitePulse dashboard shows for this site below, then press Check connection.', $html);
+        }
+
+        // Another refusal does not ask for the license.
+        Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_refusals()['request_expired'][0];
+        $this->press('status');
+        $this->assertSame('request_expired', $this->stored()['error_code']);
+        $this->assertStringContainsString(self::CLOSED, $this->render());
+
+        // Neither does a site that cannot connect, which has no form.
+        update_option(Sitepulse_Remote_Management::CONNECTION_OPTION, array('connectable' => false, 'error_code' => 'invalid_signature'));
+        $this->assertStringNotContainsString('sitepulse_license', $this->render());
+    }
+
+    public function test_a_license_sitepulse_accepts_replaces_the_old_one_and_its_rotated_key(): void {
+        $this->rotated();
+        update_option(Sitepulse_Remote_Management::CONNECTION_OPTION, array('error' => 'Refused.', 'error_code' => 'invalid_signature', 'key' => 'spc_kept'));
+        Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_response(array('success' => true, 'remote_management' => array('enabled' => false, 'active' => false), 'commands' => array()), 200, array('license' => self::LICENSE));
+
+        $this->saveLicense(' 1a2b-3c4d-5e6f-7a8b-9c0d ');
+
+        // The check-in was signed with the new license, not the rotated key.
+        $this->assertSame(array('check-in'), $this->endpoints());
+        $headers = Sitepulse_Test_WP::$http_requests[0]['args']['headers'];
+        $this->assertSame(Sitepulse_Remote_Client::request_signature('POST', '/api/website/remote/check-in', 'example.test', $headers['X-SitePulse-Timestamp'], $headers['X-SitePulse-Nonce'], Sitepulse_Test_WP::$http_requests[0]['args']['body'], self::LICENSE), $headers['X-SitePulse-Signature']);
+        $this->assertSame(array(self::LICENSE, false), array(get_option('sitepulse_license_key'), get_option(Sitepulse_Remote_Management::KEY_OPTION)));
+        $this->assertSame(array('', '', 'The license was saved and the site checked in.', 'spc_kept'), array($this->stored()['error'], $this->stored()['error_code'], $this->stored()['notice'], $this->stored()['key']));
+        $this->assertSame(array('The SitePulse license of this site was changed in its settings.'), array_column(Sitepulse_Remote_Management::log_entries(), 'message'));
+        $this->assertEqualsWithDelta(time(), Sitepulse_Remote_Management::state()['last_check_in'], 2);
+        foreach (array('advanced', 'easy') as $context) {
+            $html = $this->render($context);
+            $this->assertStringContainsString('<p style="color: #00a32a; margin: 6px 0 0;">The license was saved and the site checked in.</p>', $html);
+            $this->assertStringContainsString(self::CLOSED, $html);
+            $this->assertStringNotContainsString('color: #b32d2e', $html);
+        }
+
+        // The next button replaces the notice, here with an error.
+        Sitepulse_Test_WP::$http_queue[] = new WP_Error('http_request_failed', 'timeout');
+        $this->press('status');
+        $this->assertSame(array('', 'SitePulse could not be reached from this server (timeout). Check that the server can reach api.sitepulse.me, then try again.'), array($this->stored()['notice'], $this->stored()['error']));
+        $this->assertStringNotContainsString('The license was saved', $this->render());
+    }
+
+    /**
+     * @dataProvider refusedLicenses
+     * @param WP_Error|array|callable $response SitePulse's answer to the check-in with the new license.
+     */
+    public function test_a_license_sitepulse_does_not_accept_is_not_kept($response, string $error): void {
+        $previous = $this->rotated();
+        update_option(Sitepulse_Remote_Management::CONNECTION_OPTION, array('notice' => 'The license was saved and the site checked in.'));
+        Sitepulse_Test_WP::$http_queue[] = $response;
+
+        $this->saveLicense(self::LICENSE);
+
+        // The site keeps the license, key and state it worked with.
+        $this->assertSame(array('check-in'), $this->endpoints());
+        foreach ($previous as $option => $value) { $this->assertSame($value, get_option($option), $option); }
+        $this->assertSame(array($error, 'license', ''), array($this->stored()['error'], $this->stored()['error_code'], $this->stored()['notice']));
+        $this->assertStringStartsWith('Check-in with SitePulse failed: ', Sitepulse_Remote_Management::log_entries()[0]['message']);
+        foreach (array('advanced', 'easy') as $context) {
+            $html = $this->render($context);
+            $this->assertStringContainsString('<p style="color: #b32d2e; margin: 6px 0 0;">' . esc_html($error) . '</p>', $html);
+            $this->assertStringContainsString(self::OPEN, $html, 'The form stays open to try again.');
+            $this->assertStringNotContainsString('color: #00a32a', $html);
+        }
+    }
+
+    public static function refusedLicenses(): array {
+        return array(
+            'the license does not match' => array(sitepulse_test_remote_refusals()['invalid_signature'][0], 'SitePulse does not accept that license for this site, so it was not saved. Enter the license your SitePulse dashboard shows for this site.'),
+            'SitePulse cannot be reached' => array(new WP_Error('http_request_failed', 'cURL error 28'), 'The license was not saved: SitePulse could not check it. SitePulse could not be reached from this server (cURL error 28). Check that the server can reach api.sitepulse.me, then try again.'),
+            'the clock is off' => array(sitepulse_test_remote_refusals()['request_expired'][0], "The license was not saved: SitePulse could not check it. SitePulse rejected the request because this server's clock is more than 5 minutes off. Fix the server's date and time, then try again."),
+        );
+    }
+
+    public function test_a_site_without_a_license_stays_without_one_when_sitepulse_refuses_it(): void {
+        Sitepulse_Test_WP::$http_queue[] = sitepulse_test_remote_refusals()['invalid_signature'][0];
+
+        $this->saveLicense(self::LICENSE);
+
+        $this->assertSame(array(false, false, false), array(get_option('sitepulse_license_key'), get_option(Sitepulse_Remote_Management::KEY_OPTION), get_option(Sitepulse_Remote_Management::STATE_OPTION)));
+        $this->assertSame('license', $this->stored()['error_code']);
+    }
+
+    /** @dataProvider malformedLicenses */
+    public function test_a_license_in_another_format_is_refused_without_asking_sitepulse(?string $license): void {
+        $previous = $this->rotated();
+
+        $this->saveLicense($license);
+
+        $this->assertSame(array(), Sitepulse_Test_WP::$http_requests);
+        foreach ($previous as $option => $value) { $this->assertSame($value, get_option($option), $option); }
+        $error = 'That is not a SitePulse license. A license is five groups of four characters (0 to 9 and A to F) separated by dashes, such as 1A2B-3C4D-5E6F-7A8B-9C0D.';
+        $this->assertSame(array($error, 'license'), array($this->stored()['error'], $this->stored()['error_code']));
+        foreach (array('advanced', 'easy') as $context) {
+            $html = $this->render($context);
+            $this->assertStringContainsString('<p style="color: #b32d2e; margin: 6px 0 0;">' . $error . '</p>', $html);
+            $this->assertStringContainsString(self::OPEN, $html);
+        }
+    }
+
+    public static function malformedLicenses(): array {
+        return array(
+            'no field' => array(null),
+            'empty' => array(''),
+            'four groups' => array('1A2B-3C4D-5E6F-7A8B'),
+            'not hexadecimal' => array('1A2B-3C4D-5E6F-7A8B-9C0G'),
+            'six groups' => array('1A2B-3C4D-5E6F-7A8B-9C0D-1234'),
+            'a test license' => array(SITEPULSE_TEST_LICENSE),
+        );
+    }
+
+    public function test_only_administrators_with_a_valid_nonce_and_cloud_services_may_set_the_license(): void {
+        $previous = $this->rotated();
+        $_POST['sitepulse_license'] = self::LICENSE;
+        $_POST['sitepulse_connection'] = 'license';
+
+        Sitepulse_Test_WP::$capabilities['manage_options'] = false;
+        try { Sitepulse_Remote_Management::handle_connection_form(); $this->fail('Expected wp_die.'); } catch (Sitepulse_Test_Die $die) { $this->assertStringContainsString('sufficient permissions', $die->getMessage()); }
+        Sitepulse_Test_WP::$capabilities['manage_options'] = true;
+        $_REQUEST['_wpnonce'] = 'forged';
+        try { Sitepulse_Remote_Management::handle_connection_form(); $this->fail('Expected wp_die.'); } catch (Sitepulse_Test_Die $die) { $this->assertStringContainsString('expired', $die->getMessage()); }
+        $_REQUEST['_wpnonce'] = self::NONCE;
+        update_option('sitepulse_settings', array('external_api_enabled' => false));
+        $previous['sitepulse_settings'] = get_option('sitepulse_settings');
+        $this->press('license');
+
+        $this->assertSame(array(), Sitepulse_Test_WP::$http_requests);
+        foreach ($previous as $option => $value) { $this->assertSame($value, get_option($option), $option); }
+        $this->assertFalse(get_option(Sitepulse_Remote_Management::CONNECTION_OPTION));
     }
 
     public function test_explains_a_pro_site_and_a_site_that_cannot_connect(): void {

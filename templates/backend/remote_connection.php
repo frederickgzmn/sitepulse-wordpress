@@ -68,4 +68,23 @@ $sp_waiting    = $sp_connection['available'] && $sp_connection['connectable'] &&
 	<?php if ( '' !== $sp_connection['error'] ) : ?>
 		<p style="color: #b32d2e; margin: 6px 0 0;"><?php echo esc_html( $sp_connection['error'] ); ?></p>
 	<?php endif; ?>
+	<?php if ( '' !== $sp_connection['notice'] ) : ?>
+		<p style="color: #00a32a; margin: 6px 0 0;"><?php echo esc_html( $sp_connection['notice'] ); ?></p>
+	<?php endif; ?>
+	<?php if ( $sp_connection['available'] && $sp_connection['connectable'] ) : ?>
+		<?php // Open when SitePulse refuses the site's license, so the fix is at hand. ?>
+		<details style="margin: 8px 0 0;"<?php if ( $sp_connection['license_open'] ) : ?> open<?php endif; ?>>
+			<summary><?php echo esc_html__( 'Change the license this site uses', 'sitepulse' ); ?></summary>
+			<form method="post" action="<?php echo esc_url( $sp_remote['action'] ); ?>" style="margin: 8px 0 0;">
+				<input type="hidden" name="action" value="<?php echo esc_attr( $sp_connection['nonce_action'] ); ?>" />
+				<?php wp_nonce_field( $sp_connection['nonce_action'] ); ?>
+				<label for="sitepulse-license" style="display: block; margin: 0 0 4px;"><?php echo esc_html__( 'Set the site\'s SitePulse license', 'sitepulse' ); ?></label>
+				<span style="display: flex; gap: 8px; flex-wrap: wrap;">
+					<input type="text" id="sitepulse-license" name="sitepulse_license" class="regular-text code" required pattern="<?php echo esc_attr( $sp_connection['license_pattern'] ); ?>" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" />
+					<button type="submit" name="sitepulse_connection" value="license" class="<?php echo esc_attr( $sp_connection['button'] ); ?>"><?php echo esc_html__( 'Save', 'sitepulse' ); ?></button>
+				</span>
+				<span class="description" style="display: block; margin: 6px 0 0;"><?php echo esc_html__( 'Your SitePulse dashboard shows the license of each of your sites. The site checks in with the license you enter, and keeps it only if SitePulse accepts it.', 'sitepulse' ); ?></span>
+			</form>
+		</details>
+	<?php endif; ?>
 </div>

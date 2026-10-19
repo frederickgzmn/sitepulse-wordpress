@@ -48,6 +48,20 @@ example.com
 
 The API finds the site by its normalized domain, verifies the signature against the stored license, and rejects a request (HTTP 401) when the signature is wrong, the timestamp is more than 300 seconds away from its clock, or the nonce was already used in the last 10 minutes. A site that is blocked or cancelled on the API side gets HTTP 403.
 
+A rejected request is answered `{ "success": false, "error": "<code>", "message": "<sentence>" }`, so the plugin can say what is wrong rather than only "HTTP 401":
+
+| `error` | Status | Meaning |
+|---|---|---|
+| `malformed_headers` | 401 | The `X-SitePulse-*` headers are missing or malformed (a proxy on the site's server strips them) |
+| `request_expired` | 401 | The timestamp is more than 300 seconds away from the API's clock: the site's server clock is off |
+| `invalid_signature` | 401 | No site with that domain signs with that key: the site's license or signing key does not match the API's record for the domain (a cloned or moved site, a restored database, a changed license) |
+| `request_replayed` | 401 | The nonce was already used in the last 10 minutes |
+| `site_blocked` | 403 | The site's license is blocked or cancelled on the API side |
+
+The API also writes each rejection to its log (`Remote management: request rejected`, a warning with the domain, the path, the code, the client address and whether the domain is a known site), at most once per domain and code every 10 minutes, so a misconfigured site that checks in every 5 minutes does not flood the log.
+
+The plugin shows the reason in its connection box and check-in status: for `invalid_signature` it tells the administrator to set the site's SitePulse license to the one the dashboard shows for the site (its settings page lists it) and press Check connection, since with a non-matching key the site cannot disconnect or re-register by itself (`website-request` refuses a known domain without its license).
+
 ### API → site
 
 Every response carries:

@@ -60,6 +60,12 @@ class Sitepulse_Remote_Management {
 	/** Version of the request bodies. */
 	const SCHEMA = 1;
 
+	/** A SitePulse license: five groups of four hexadecimal characters, as a regular expression without delimiters (also the field's pattern attribute). */
+	const LICENSE_PATTERN = '[0-9A-Fa-f]{4}(?:-[0-9A-Fa-f]{4}){4}';
+
+	/** The API's codes for a refused site request (see "Signing" in docs/remote-management.md). */
+	const REFUSALS = array( 'malformed_headers', 'request_expired', 'invalid_signature', 'request_replayed', 'site_blocked' );
+
 	/** What this version runs beyond the base commands, reported at check-in: the API offers safe updates only to sites that report safe_update. */
 	const FEATURES = array( 'safe_update' );
 
@@ -94,6 +100,7 @@ class Sitepulse_Remote_Management {
 		'last_woken'         => 0,
 		'last_error'         => '',
 		'last_error_message' => '',
+		'last_refusal'       => '',
 		'inventory_sent_at'  => 0,
 		'inventory_due'      => false,
 		'provider'           => null,
@@ -302,14 +309,16 @@ class Sitepulse_Remote_Management {
 		$response            = $client->post( 'check-in', $payload );
 
 		if ( is_wp_error( $response ) ) {
-			$reason = self::connection_error_message( $response );
+			$reason  = self::connection_error_message( $response );
+			$refusal = self::refusal( $response );
 			// Log a problem once, not at every check-in.
-			if ( $state['last_error'] !== $response->get_error_code() ) {
+			if ( $state['last_error'] !== $response->get_error_code() || $state['last_refusal'] !== $refusal ) {
 				/* translators: %s: why the check-in failed */
 				self::log( sprintf( __( 'Check-in with SitePulse failed: %s', 'sitepulse' ), $reason ) );
 			}
 			$state['last_error']         = $response->get_error_code();
 			$state['last_error_message'] = $reason;
+			$state['last_refusal']       = $refusal;
 			self::save_state( $state );
 			self::schedule_next( (int) $state['check_in_seconds'] );
 			return;
@@ -325,6 +334,7 @@ class Sitepulse_Remote_Management {
 		$state['last_check_in']     = time();
 		$state['last_error']        = '';
 		$state['last_error_message'] = '';
+		$state['last_refusal']       = '';
 
 		// The backup plugin picked in the dashboard applies from this check-in on.
 		$preferred                   = $remote['backup_provider'] ?? null;
@@ -433,8 +443,9 @@ class Sitepulse_Remote_Management {
 	}
 
 	/**
-	 * The connection buttons: get a connection key, check the connection, or disconnect the site
-	 * from its SitePulse accounts (see "Connecting a site to an account" in docs/remote-management.md).
+	 * The connection buttons: get a connection key, check the connection, disconnect the site
+	 * from its SitePulse accounts (see "Connecting a site to an account" in docs/remote-management.md),
+	 * or set the site's license.
 	 */
 	public static function handle_connection_form() {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -444,9 +455,12 @@ class Sitepulse_Remote_Management {
 		check_admin_referer( self::CONNECTION_ACTION );
 
 		$operation = isset( $_POST['sitepulse_connection'] ) ? sanitize_key( wp_unslash( $_POST['sitepulse_connection'] ) ) : '';
-		// Only asking for a key registers a site; the other buttons need its license.
-		$allowed = 'key' === $operation ? self::can_register() : self::can_connect();
-		if ( in_array( $operation, array( 'key', 'status', 'disconnect' ), true ) && $allowed ) {
+		// Asking for a key registers a site and a license can be set without one; the other buttons need it.
+		$allowed = in_array( $operation, array( 'key', 'license' ), true ) ? self::can_register() : self::can_connect();
+		if ( 'license' === $operation && $allowed ) {
+			$license = isset( $_POST['sitepulse_license'] ) ? sanitize_text_field( wp_unslash( $_POST['sitepulse_license'] ) ) : '';
+			update_option( self::CONNECTION_OPTION, self::license_request( $license ), false );
+		} elseif ( in_array( $operation, array( 'key', 'status', 'disconnect' ), true ) && $allowed ) {
 			update_option( self::CONNECTION_OPTION, self::connection_request( $operation ), false );
 		}
 
@@ -464,7 +478,7 @@ class Sitepulse_Remote_Management {
 	 * @return array
 	 */
 	private static function connection_request( $operation ) {
-		$stored = self::connection();
+		$stored = array_merge( self::connection(), array( 'error_code' => '', 'notice' => '' ) );
 		if ( 'key' === $operation ) {
 			$license = Sitepulse_Api_Service::ensure_registered();
 			if ( empty( $license['success'] ) ) {
@@ -481,7 +495,8 @@ class Sitepulse_Remote_Management {
 		);
 		$response  = ( new Sitepulse_Remote_Client( self::signing_key() ) )->post( $endpoints[ $operation ], array() );
 		if ( is_wp_error( $response ) ) {
-			$stored['error'] = self::connection_error_message( $response );
+			$stored['error']      = self::connection_error_message( $response );
+			$stored['error_code'] = self::refusal( $response );
 			return $stored;
 		}
 
@@ -492,6 +507,56 @@ class Sitepulse_Remote_Management {
 		if ( 'key' !== $operation ) {
 			self::check_in();
 		}
+		return $stored;
+	}
+
+	/**
+	 * Set the site's license from the connection box, for a site whose license no longer matches
+	 * SitePulse's record for its domain: such a site cannot disconnect or register again by itself.
+	 * The site checks in with the new license, without the key the dashboard may have rotated (it
+	 * was issued with the old license). The license is kept only when SitePulse accepts it: after a
+	 * refusal, the license, the key and the state go back to what they were, so a wrong license
+	 * never stops a site that worked.
+	 *
+	 * @param string $license The license entered.
+	 * @return array The connection to store.
+	 */
+	private static function license_request( $license ) {
+		$stored  = array_merge( self::connection(), array( 'error_code' => 'license', 'notice' => '' ) );
+		$license = strtoupper( trim( $license ) );
+		if ( 1 !== preg_match( '/^' . self::LICENSE_PATTERN . '$/D', $license ) ) {
+			$stored['error'] = __( 'That is not a SitePulse license. A license is five groups of four characters (0 to 9 and A to F) separated by dashes, such as 1A2B-3C4D-5E6F-7A8B-9C0D.', 'sitepulse' );
+			return $stored;
+		}
+
+		$previous = array();
+		foreach ( array( 'sitepulse_license_key', self::KEY_OPTION, self::STATE_OPTION ) as $option ) {
+			$previous[ $option ] = get_option( $option );
+		}
+		update_option( 'sitepulse_license_key', $license, false );
+		delete_option( self::KEY_OPTION );
+		self::check_in();
+
+		$state = self::state();
+		if ( '' === $state['last_error'] ) {
+			self::log( __( 'The SitePulse license of this site was changed in its settings.', 'sitepulse' ) );
+			$stored['error']      = '';
+			$stored['error_code'] = '';
+			$stored['notice']     = __( 'The license was saved and the site checked in.', 'sitepulse' );
+			return $stored;
+		}
+
+		foreach ( $previous as $option => $value ) {
+			if ( false === $value ) {
+				delete_option( $option );
+			} else {
+				update_option( $option, $value, false );
+			}
+		}
+		$stored['error'] = 'invalid_signature' === $state['last_refusal']
+			? __( 'SitePulse does not accept that license for this site, so it was not saved. Enter the license your SitePulse dashboard shows for this site.', 'sitepulse' )
+			/* translators: %s: why the check-in failed */
+			: sprintf( __( 'The license was not saved: SitePulse could not check it. %s', 'sitepulse' ), $state['last_error_message'] );
 		return $stored;
 	}
 
@@ -550,6 +615,9 @@ class Sitepulse_Remote_Management {
 				'connections' => array(),
 				'checked_at'  => 0,
 				'error'       => '',
+				// What the error is about: one of the API's refusal codes, license, or empty.
+				'error_code'  => '',
+				'notice'      => '',
 			),
 			is_array( $stored ) ? $stored : array()
 		);
@@ -587,6 +655,8 @@ class Sitepulse_Remote_Management {
 			'connections' => $connections,
 			'checked_at'  => time(),
 			'error'       => '',
+			'error_code'  => '',
+			'notice'      => '',
 		);
 	}
 
@@ -681,12 +751,12 @@ class Sitepulse_Remote_Management {
 		$stored = self::connection();
 
 		return array(
-			'available'    => self::can_register(),
-			'connectable'  => (bool) $stored['connectable'],
-			'key'          => (string) $stored['key'],
-			'managed'      => self::is_active(),
-			'domain'       => (string) wp_parse_url( home_url(), PHP_URL_HOST ),
-			'connections'  => array_map(
+			'available'       => self::can_register(),
+			'connectable'     => (bool) $stored['connectable'],
+			'key'             => (string) $stored['key'],
+			'managed'         => self::is_active(),
+			'domain'          => (string) wp_parse_url( home_url(), PHP_URL_HOST ),
+			'connections'     => array_map(
 				static function ( $connection ) use ( $format ) {
 					$time = strtotime( (string) $connection['connected_at'] );
 					return array(
@@ -699,10 +769,14 @@ class Sitepulse_Remote_Management {
 				$stored['connections']
 			),
 			/* translators: %s: human-readable time difference */
-			'checked'      => $stored['checked_at'] ? sprintf( __( '%s ago', 'sitepulse' ), human_time_diff( (int) $stored['checked_at'], time() ) ) : '',
-			'error'        => (string) $stored['error'],
-			'nonce_action' => self::CONNECTION_ACTION,
-			'poll'         => array(
+			'checked'         => $stored['checked_at'] ? sprintf( __( '%s ago', 'sitepulse' ), human_time_diff( (int) $stored['checked_at'], time() ) ) : '',
+			'error'           => (string) $stored['error'],
+			'notice'          => (string) $stored['notice'],
+			// A site whose license SitePulse refuses is asked for it: the license form starts open.
+			'license_open'    => in_array( $stored['error_code'], array( 'invalid_signature', 'license' ), true ) || 'invalid_signature' === self::state()['last_refusal'],
+			'license_pattern' => self::LICENSE_PATTERN,
+			'nonce_action'    => self::CONNECTION_ACTION,
+			'poll'            => array(
 				'url'    => admin_url( 'admin-ajax.php' ),
 				'action' => self::POLL_ACTION,
 				'nonce'  => wp_create_nonce( self::POLL_ACTION ),
@@ -1093,9 +1167,9 @@ class Sitepulse_Remote_Management {
 
 	/**
 	 * Why a request to SitePulse failed, in words that say where the problem is: this server
-	 * cannot reach SitePulse, SitePulse has trouble, or SitePulse refused the site. WordPress's
-	 * own reason for a request that could not be sent is kept to 160 characters; the settings
-	 * escape it when they show it.
+	 * cannot reach SitePulse, SitePulse has trouble, or SitePulse refused the site (and, when the
+	 * API names its reason, what to fix). WordPress's own reason for a request that could not be
+	 * sent is kept to 160 characters; the settings escape it when they show it.
 	 *
 	 * @param WP_Error $error Error of Sitepulse_Remote_Client::post().
 	 * @return string
@@ -1116,6 +1190,20 @@ class Sitepulse_Remote_Management {
 			return __( 'SitePulse could not be reached. Please try again in a moment.', 'sitepulse' );
 		}
 
+		// The API's code for a refused request says what to fix; its own sentence is neither
+		// signed nor translated, so the settings say it in their words.
+		$refusal = self::refusal( $error );
+		if ( '' !== $refusal ) {
+			$refusals = array(
+				'invalid_signature' => __( 'SitePulse does not accept this site\'s key: the site\'s license or address no longer matches SitePulse\'s record for this domain. Enter the license your SitePulse dashboard shows for this site below, then press Check connection.', 'sitepulse' ),
+				'request_expired'   => __( 'SitePulse rejected the request because this server\'s clock is more than 5 minutes off. Fix the server\'s date and time, then try again.', 'sitepulse' ),
+				'request_replayed'  => __( 'SitePulse had already received this request. Please try again.', 'sitepulse' ),
+				'malformed_headers' => __( 'The request reached SitePulse without its signature headers: a proxy or firewall on this server strips them.', 'sitepulse' ),
+				'site_blocked'      => __( 'SitePulse has blocked this site\'s license. Contact SitePulse support.', 'sitepulse' ),
+			);
+			return $refusals[ $refusal ];
+		}
+
 		$status = (int) $match[1];
 		if ( $status >= 500 ) {
 			/* translators: %d: HTTP status code, such as 503 */
@@ -1131,6 +1219,16 @@ class Sitepulse_Remote_Management {
 		}
 		/* translators: %d: HTTP status code */
 		return sprintf( __( 'SitePulse answered HTTP %d. Please try again in a moment.', 'sitepulse' ), $status );
+	}
+
+	/**
+	 * @param WP_Error $error Error of Sitepulse_Remote_Client::post().
+	 * @return string The API's code for a refused request (one of REFUSALS), empty when it gave none.
+	 */
+	private static function refusal( WP_Error $error ) {
+		$data = $error->get_error_data();
+		$code = is_array( $data ) ? ( $data['error'] ?? '' ) : '';
+		return in_array( $code, self::REFUSALS, true ) ? $code : '';
 	}
 
 	/**

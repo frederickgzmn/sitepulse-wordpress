@@ -97,8 +97,19 @@ foreach ( array_filter( array( $state['key'], $state['pending_key'] ) ) as $cand
 		$key = $candidate;
 	}
 }
-if ( '' === $domain || ! ctype_digit( $timestamp ) || abs( time() - (int) $timestamp ) > 300 || 1 !== preg_match( '/^[a-f0-9]{32}$/', $nonce ) || null === $key || in_array( $nonce, $state['nonces'], true ) ) {
-	$json( array( 'success' => false, 'message' => 'Invalid signature.' ), 401 );
+// Refused as the API refuses, with the code of the first problem found.
+$refusal = null;
+if ( '' === $domain || 1 !== preg_match( '/^[a-f0-9]{32}$/', $nonce ) || 1 !== preg_match( '/^[a-f0-9]{64}$/', $provided ) ) {
+	$refusal = array( 'malformed_headers', 'Missing or malformed signature headers.' );
+} elseif ( ! ctype_digit( $timestamp ) || abs( time() - (int) $timestamp ) > 300 ) {
+	$refusal = array( 'request_expired', 'Request expired.' );
+} elseif ( null === $key ) {
+	$refusal = array( 'invalid_signature', 'Invalid signature.' );
+} elseif ( in_array( $nonce, $state['nonces'], true ) ) {
+	$refusal = array( 'request_replayed', 'This request was already received.' );
+}
+if ( null !== $refusal ) {
+	$json( array( 'success' => false, 'error' => $refusal[0], 'message' => $refusal[1] ), 401 );
 	return true;
 }
 $state['nonces'] = array_slice( array_merge( $state['nonces'], array( $nonce ) ), -200 );

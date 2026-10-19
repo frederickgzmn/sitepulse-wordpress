@@ -58,6 +58,19 @@ final class RemoteApiMockTest extends Sitepulse_Test_Case {
 
     private function mock(string $path): array { return json_decode((string) file_get_contents($this->base . $path), true); }
 
+    /** POST a check-in to the mock with these headers: its status and decoded body. */
+    private function raw(array $headers, string $body = '{}'): array {
+        $lines = array('Content-Type: application/json');
+        foreach ($headers as $name => $value) { $lines[] = "$name: $value"; }
+        $answer = file_get_contents($this->base . '/api/website/remote/check-in', false, stream_context_create(array('http' => array('method' => 'POST', 'header' => implode("\r\n", $lines), 'content' => $body, 'ignore_errors' => true))));
+        return array((int) explode(' ', $http_response_header[0])[1], json_decode((string) $answer, true));
+    }
+
+    /** Headers of a check-in signed with the license at this time and nonce. */
+    private function signed(int $timestamp, string $nonce, string $body = '{}'): array {
+        return array('X-SitePulse-Domain' => 'example.test', 'X-SitePulse-Timestamp' => (string) $timestamp, 'X-SitePulse-Nonce' => $nonce, 'X-SitePulse-Signature' => Sitepulse_Remote_Client::request_signature('POST', '/api/website/remote/check-in', 'example.test', (string) $timestamp, $nonce, $body, SITEPULSE_TEST_LICENSE));
+    }
+
     public function test_the_plugin_checks_in_runs_queued_commands_and_reports_to_the_mock(): void {
         $command = $this->mock('/mock/queue?type=refresh_inventory&args=' . rawurlencode('{}'));
         $this->assertMatchesRegularExpression('/^[0-9A-HJKMNP-TV-Z]{26}$/', $command['id']);
@@ -92,7 +105,8 @@ final class RemoteApiMockTest extends Sitepulse_Test_Case {
     }
 
     public function test_the_mock_refuses_what_the_api_refuses(): void {
-        $this->assertSame('http_401', (new Sitepulse_Remote_Client('sk_some_other_license'))->post('check-in', array('schema' => 1))->get_error_code());
+        $refused = (new Sitepulse_Remote_Client('sk_some_other_license'))->post('check-in', array('schema' => 1));
+        $this->assertSame(array('http_401', array('error' => 'invalid_signature', 'message' => 'Invalid signature.')), array($refused->get_error_code(), $refused->get_error_data()));
         $this->assertSame('http_409', (new Sitepulse_Remote_Client(SITEPULSE_TEST_LICENSE))->post('key', array('schema' => 1))->get_error_code(), 'No rotation is pending.');
         $this->assertSame('http_404', (new Sitepulse_Remote_Client(SITEPULSE_TEST_LICENSE))->post('unknown', array())->get_error_code());
         $this->assertFalse(@file_get_contents($this->base . '/api/website/remote/check-in'), 'Only signed POST requests reach the endpoints.');
@@ -101,6 +115,25 @@ final class RemoteApiMockTest extends Sitepulse_Test_Case {
         $event = array('id' => '6f1d0c3e-6c0a-4a43-9a52-0d8f3a6b2c11', 'type' => 'plugin.activated', 'occurred_at' => '2026-10-15T18:00:00Z', 'data' => array());
         $this->assertSame(1, $client->post('events', array('events' => array($event, 'not an event')))['accepted']);
         $this->assertSame(0, $client->post('events', array('events' => array($event)))['accepted'], 'A retried event is not stored twice.');
+    }
+
+    public function test_the_mock_says_why_it_refuses_a_request_as_the_api_does(): void {
+        $refused = static function (string $error, string $message): array { return array(401, array('success' => false, 'error' => $error, 'message' => $message)); };
+        $nonce = str_repeat('a', 32);
+
+        $this->assertSame($refused('malformed_headers', 'Missing or malformed signature headers.'), $this->raw(array()));
+        $this->assertSame($refused('malformed_headers', 'Missing or malformed signature headers.'), $this->raw(array('X-SitePulse-Signature' => 'not hex') + $this->signed(time(), $nonce)));
+        $this->assertSame($refused('request_expired', 'Request expired.'), $this->raw($this->signed(time() - 600, $nonce)));
+        $this->assertSame($refused('request_expired', 'Request expired.'), $this->raw(array('X-SitePulse-Timestamp' => '') + $this->signed(time(), $nonce)));
+        $this->assertSame($refused('invalid_signature', 'Invalid signature.'), $this->raw($this->signed(time(), $nonce), '{"schema":1}'));
+        $this->assertSame(200, $this->raw($this->signed(time(), $nonce))[0]);
+        $this->assertSame($refused('request_replayed', 'This request was already received.'), $this->raw($this->signed(time(), $nonce)));
+
+        // A site whose license the mock does not know is told to enter the right one.
+        update_option('sitepulse_license_key', 'sk_some_other_license');
+        Sitepulse_Remote_Management::check_in();
+        $state = Sitepulse_Remote_Management::state();
+        $this->assertSame(array('http_401', 'invalid_signature', sitepulse_test_remote_refusals()['invalid_signature'][1]), array($state['last_error'], $state['last_refusal'], $state['last_error_message']));
     }
 
     public function test_a_key_rotated_in_the_mock_is_confirmed_and_kept(): void {

@@ -502,6 +502,59 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         $this->assertSame(array('', ''), array(Sitepulse_Remote_Management::state()['last_error'], Sitepulse_Remote_Management::state()['last_error_message']));
     }
 
+    /**
+     * @dataProvider refusedCheckIns
+     * @param array $response The API's refusal.
+     */
+    public function test_a_refused_check_in_says_what_to_fix(array $response, string $sentence): void {
+        $this->connect();
+        $this->queue($response);
+
+        Sitepulse_Remote_Management::check_in();
+
+        $state = Sitepulse_Remote_Management::state();
+        $refusal = json_decode($response['body'], true)['error'] ?? '';
+        $this->assertSame(array('http_' . $response['response']['code'], $sentence, $refusal), array($state['last_error'], $state['last_error_message'], $state['last_refusal']));
+        $this->assertSame(array('Check-in with SitePulse failed: ' . $sentence), $this->messages());
+        $this->assertSame(array('error', 'The last check-in with SitePulse failed: ' . $sentence), array(Sitepulse_Remote_Management::view_data()['status'], Sitepulse_Remote_Management::view_data()['message']));
+        // Only a refused license opens the license form, whose sentence says "below".
+        $this->assertSame('invalid_signature' === $refusal, Sitepulse_Remote_Management::view_data()['connection']['license_open']);
+        foreach (array('advanced', 'easy') as $context) {
+            ob_start(); Sitepulse_Remote_Management::render_settings($context); $html = ob_get_clean();
+            $this->assertStringContainsString('The last check-in with SitePulse failed: ' . str_replace("'", '&#039;', $sentence), $html);
+            $this->assertStringContainsString('invalid_signature' === $refusal ? '<details style="margin: 8px 0 0;" open>' : '<details style="margin: 8px 0 0;">', $html);
+            $this->assertStringContainsString('>Activity</summary>', $html);
+        }
+    }
+
+    public function test_a_new_reason_for_the_same_status_is_logged_and_a_successful_check_in_forgets_it(): void {
+        $this->connect();
+        $refusals = sitepulse_test_remote_refusals();
+        $this->queue($refusals['request_expired'][0], $refusals['request_expired'][0], $refusals['invalid_signature'][0], $this->answer(self::IDLE));
+
+        Sitepulse_Remote_Management::check_in();
+        Sitepulse_Remote_Management::check_in();
+        Sitepulse_Remote_Management::check_in();
+
+        $this->assertSame(array('Check-in with SitePulse failed: ' . $refusals['request_expired'][1], 'Check-in with SitePulse failed: ' . $refusals['invalid_signature'][1]), $this->messages());
+        Sitepulse_Remote_Management::check_in();
+        $this->assertSame(array('', ''), array(Sitepulse_Remote_Management::state()['last_error'], Sitepulse_Remote_Management::state()['last_refusal']));
+        $this->assertFalse(Sitepulse_Remote_Management::view_data()['connection']['license_open']);
+    }
+
+    public static function refusedCheckIns(): array {
+        $cases = array(
+            'a refusal that is not JSON' => array(
+                Sitepulse_Test_WP::response('Unauthorized', 401),
+                "SitePulse refused this site's request (HTTP 401). Check the server's date and time, and that Cloud Services are on; if the site's address or license changed, disconnect and connect again.",
+            ),
+        );
+        foreach (sitepulse_test_remote_refusals() as $code => $refusal) {
+            $cases["refused: $code"] = $refusal;
+        }
+        return $cases;
+    }
+
     public function test_events_are_recorded_only_while_managed_and_the_queue_is_bounded(): void {
         Sitepulse_Remote_Management::record_event('theme.switched', array('stylesheet' => 'astra'));
         Sitepulse_Remote_Management::inventory_changed();
@@ -694,7 +747,7 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
     public function test_settings_hide_the_activity_without_entries_and_from_users_who_cannot_manage_the_site(): void {
         foreach (array('advanced', 'easy') as $context) {
             ob_start(); Sitepulse_Remote_Management::render_settings($context); $html = ob_get_clean();
-            $this->assertStringNotContainsString('<details', $html);
+            $this->assertStringNotContainsString('>Activity</summary>', $html);
             $this->assertStringContainsString('Off', $html);
             $this->assertStringContainsString('Get connection key', $html);
             $this->assertDoesNotMatchRegularExpression('/name="sitepulse_remote_blocked"[^>]*checked/', $html);

@@ -47,7 +47,9 @@ class Sitepulse_Remote_Client {
 	 *
 	 * @param string $endpoint check-in, inventory, events or command-result.
 	 * @param array  $payload  Request body.
-	 * @return array|WP_Error The decoded response, or why there is no trustworthy one.
+	 * @return array|WP_Error The decoded response, or why there is no trustworthy one. An HTTP
+	 *                        error (http_<status>) carries the API's 'error' code and 'message'
+	 *                        (up to 200 characters) as its data, each null when the body has none.
 	 */
 	public function post( $endpoint, array $payload ) {
 		$path      = self::PATH_PREFIX . $endpoint;
@@ -79,7 +81,17 @@ class Sitepulse_Remote_Client {
 
 		$status = (int) wp_remote_retrieve_response_code( $response );
 		if ( $status < 200 || $status > 299 ) {
-			return new WP_Error( 'http_' . $status, sprintf( 'HTTP %d', $status ) );
+			// The API says why it refused a request: a code and a sentence, in an unsigned body.
+			$refusal = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+			$refusal = is_array( $refusal ) ? $refusal : array();
+			return new WP_Error(
+				'http_' . $status,
+				sprintf( 'HTTP %d', $status ),
+				array(
+					'error'   => is_string( $refusal['error'] ?? null ) && '' !== $refusal['error'] ? $refusal['error'] : null,
+					'message' => is_string( $refusal['message'] ?? null ) && '' !== $refusal['message'] ? mb_substr( $refusal['message'], 0, 200 ) : null,
+				)
+			);
 		}
 
 		$response_body      = (string) wp_remote_retrieve_body( $response );
