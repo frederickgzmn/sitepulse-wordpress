@@ -442,7 +442,7 @@ final class RemoteManagementTest extends Sitepulse_Test_Case {
         update_option(Sitepulse_Remote_Management::STATE_OPTION, array('check_in_seconds' => 300));
         $this->queue(sitepulse_test_remote_response(array('success' => false), 401), sitepulse_test_remote_response(array('success' => false), 401), sitepulse_test_remote_response(array('success' => false), 403), new WP_Error('http_request_failed', 'cURL error 6: could not resolve host'), $this->answer(self::IDLE));
 
-        $refused = "SitePulse refused this site's request (HTTP %d). Check the server's date and time, and that Cloud Services are on; if the site's license changed, disconnect and connect again.";
+        $refused = "SitePulse refused this site's request (HTTP %d). Check the server's date and time, and that Cloud Services are on; if the site's address or license changed, disconnect and connect again.";
         $unreachable = 'SitePulse could not be reached from this server (cURL error 6: could not resolve host). Check that the server can reach api.sitepulse.me, then try again.';
 
         Sitepulse_Remote_Management::check_in();
