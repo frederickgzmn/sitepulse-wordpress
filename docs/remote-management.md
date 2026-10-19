@@ -91,11 +91,12 @@ Called every `check_in_seconds` (5 minutes while active, hourly otherwise). The 
     { "id": "backwpup", "version": "5.7.8", "supported": true }
   ],
   "cron": { "url": "https://shop.example/wp-cron.php", "disabled": false, "late": 40 },
+  "wp_admin": { "reachable": true, "status": 302, "login_status": 200, "ms": 184, "error": null, "checked_at": "2026-10-18T22:10:00Z" },
   "features": ["safe_update"]
 }
 ```
 
-`features` lists what the plugin runs beyond the commands every version runs: `safe_update` means it runs safe updates (`backup_parts` and `safe_update` in update commands, the visual check before the update, `restore_backup` and `rollback_item`; see "Safe updates"). The API offers safe updates only to a site whose last check-in reported it, and the status (`POST /api/portal/remote-management`) repeats it in `site.features`; older plugins send no `features`. `cron` (plugin 1.5 and later; see "WP-Cron") is the site's `wp-cron.php`, whether `DISABLE_WP_CRON` is set, and `late`, the seconds the most overdue scheduled task had waited at the check-in. `backup_providers` lists every active backup plugin; `backup_provider` is the one SitePulse manages, or `null` when neither UpdraftPlus nor BackWPup is active. With both active, SitePulse manages the one picked in the dashboard (`remote_management.backup_provider` below) while it is active and supported; otherwise the supported one with the most recent successful backup, and UpdraftPlus when neither has one. Response:
+`features` lists what the plugin runs beyond the commands every version runs: `safe_update` means it runs safe updates (`backup_parts` and `safe_update` in update commands, the visual check before the update, `restore_backup` and `rollback_item`; see "Safe updates"). The API offers safe updates only to a site whose last check-in reported it, and the status (`POST /api/portal/remote-management`) repeats it in `site.features`; older plugins send no `features`. `cron` (plugin 1.5 and later; see "WP-Cron") is the site's `wp-cron.php`, whether `DISABLE_WP_CRON` is set, and `late`, the seconds the most overdue scheduled task had waited at the check-in. `wp_admin` (plugin 1.5 and later; see "wp-admin reachability") is the plugin's last check that the site's own server can reach its wp-admin. `backup_providers` lists every active backup plugin; `backup_provider` is the one SitePulse manages, or `null` when neither UpdraftPlus nor BackWPup is active. With both active, SitePulse manages the one picked in the dashboard (`remote_management.backup_provider` below) while it is active and supported; otherwise the supported one with the most recent successful backup, and UpdraftPlus when neither has one. Response:
 
 ```json
 {
@@ -380,7 +381,7 @@ The SitePulse dashboard calls these from trusted IPs with the existing portal au
 
 | Endpoint | Body | Purpose |
 |---|---|---|
-| `POST /api/portal/remote-management` | — | Status: switch, `active`, last check-in, what the site reported, backup warnings, `cron` (see "WP-Cron") |
+| `POST /api/portal/remote-management` | — | Status: switch, `active`, last check-in, what the site reported (`site`, with `wp_admin`, see "wp-admin reachability"), backup warnings, `cron` (see "WP-Cron") |
 | `POST /api/portal/remote-management/update` | `enabled`, `requested_by` | Turn remote management off; turning it on takes the site's connection key (see "Connecting a site to an account"), so `enabled: true` answers 422 while it is off |
 | `POST /api/portal/remote-management/inventory` | — | Latest software and backup inventory, backup warnings |
 | `POST /api/portal/remote-management/backup-provider` | `backup_provider` (`updraftplus`, `backwpup` or `null`), `requested_by` | Pick the backup plugin to manage when both are active |
@@ -495,13 +496,25 @@ The dashboard shows what all of a user's sites can update, and updates chosen it
 
 `updates/queue` queues, on each site, the chosen items it offers and can install, leaving out the ones already `pending` and the ones its update policy excludes, and answers `{ "sites": [ { "domain", "status", "reason", "commands", "items" } ], "unknown_sites": [...] }`. `status` is `queued` (with the new command ids and the number of items) or `skipped` with `reason`: `not_active`, `not_allowed` (the user's role on the site is below manager), `no_inventory`, `cannot_update` (`can_update` is `false`), `already_updating` (what it offers of the choice is already `pending`), `excluded` (its update policy excludes the rest) or `nothing_to_update`. A site gets one `update_plugins` command per 50 plugins, one `update_themes` command and one `update_core` command for the newest release, with the site's `backup_wait`; only its first command backs up first (when its policy says so and the site has a supported backup plugin), since the commands run one after the other (see "One update at a time"). At least one item or `core` must be chosen.
 
-`updates/overview` also gives each site's `cron` (see "WP-Cron").
+`updates/overview` also gives each site's `cron` (see "WP-Cron") and `wp_admin` (see "wp-admin reachability").
 
 A safe update answers `{ "id", "kind", "item", "name", "from", "to", "status", "error", "requested_by", "backup": { "provider", "job" } | null, "recovery": "restore_backup" | "rollback_item" | null, "threshold_percent": 20, "pages_changed", "max_diff_percent", "check": { "status", "pages_changed", "max_diff_percent" } | null, "decided_by", "decided_at", "changed_at", "hold_until", "created_at", "finished_at", "progress" }`. `changed_at` is when a big change was found and `hold_until` until when it holds the site's other updates (48 hours later); both `null` otherwise.
 
 `progress` says how far each step is, for progress bars: `before`, `after` and `check` are the scans (`{ "status", "done", "total", "percent" }`: pages scanned so far, as the visual worker reports them; `null` before the scan exists, except `before` while it waits for the site's earlier update: `{ "status": "pending", "done": 0, "total": 0, "percent": 0, "waiting_for": "update" }`); `backup` is `{ "status": "waiting" | "running" | "done" | "skipped" | "failed", "percent", "stage" }` from the update command's reports (`skipped` without a backup plugin); `update` and `undo` are the update and recovery commands (`{ "status": "waiting" | "running" | "done" | "failed", "phase", "percent", "item" }`; the update waits while its backup and the scan before it run; `null` without such a command).
 
 `activity` answers `{ "activity": [ { "domain", "time", "category", "type", "summary", "data" } ], "unknown_sites": [...] }`: the entries of each site's timeline (see "Timeline", same `limit`, `before` and `categories`) merged, newest first, each with its site's `domain`.
+
+### wp-admin reachability
+
+The plugin checks, from the site's own server, that wp-admin can be reached: it requests `/wp-admin/` and `wp-login.php` the way WordPress checks an edited plugin for fatal errors (a loopback request with WordPress's own fatal-error markers), every hour in WP-Cron, at a check-in when the last check is older than 15 minutes, and when an administrator asks for it (Check now) on the plugin's pages, which show the result; the admin bar shows it too. The result goes with the check-in as `wp_admin`:
+
+- `reachable`: `true` when `/wp-admin/` answered (a 2xx, or a redirect to the login page, as it does for a visitor) and `wp-login.php` answered 200, and neither reported a PHP fatal error;
+- `status` and `login_status`: the HTTP status of `/wp-admin/` and of `wp-login.php` (`0` when the request got no answer);
+- `ms`: how long both requests took, in milliseconds;
+- `error`: `null`, or why it is not reachable: `timeout`, `connection_failed` (the server could not connect to itself: DNS, a firewall, or loopback requests blocked), `http_<status>` (such as `http_503`), `fatal_error` (a PHP fatal error on the page), with `message` (up to 200 characters: the fatal error's first line, or the transport's own message) when there is one;
+- `checked_at`: when the check ran (UTC).
+
+The API keeps the last report per site (`site.wp_admin` in the status, `wp_admin` per site in `updates/overview`; `null` from a plugin that does not check), and while `reachable` is `false` the site's update warnings carry `wp_admin_unreachable`: the health checks around updates load wp-admin, so an update would stop with `health_check_unavailable`. The dashboard shows the result on the site's card and marks the site in its lists while wp-admin cannot be reached.
 
 ### WP-Cron
 

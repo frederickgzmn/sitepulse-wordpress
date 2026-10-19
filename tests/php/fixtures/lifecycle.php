@@ -30,7 +30,7 @@ if ($input['mode'] === 'uninstall') {
         'sitepulse_easy_mode' => '0', 'sitepulse_easy_mode_theme' => 'light', 'sitepulse_dashboard_view' => 'basic', 'sitepulse_getting_started_dismissed' => 1, 'sitepulse_getting_started_visited' => array('api-monitor')));
     set_transient('sitepulse_activation_redirect', true, 30);
     set_transient('sitepulse_load_single_page_list', array('legacy')); set_transient('sitepulse_single_page_list', array('legacy'));
-    set_transient('sitepulse_cron_healthy', 1); set_transient('sitepulse_cron_fallback_frontend_check', 1); set_transient('sitepulse_remote_update_lock', 1); set_transient('sitepulse_remote_recovery_lock', 1); set_transient('sitepulse_remote_late_check_in', 1);
+    set_transient('sitepulse_cron_healthy', 1); set_transient('sitepulse_cron_fallback_frontend_check', 1); set_transient('sitepulse_remote_update_lock', 1); set_transient('sitepulse_remote_recovery_lock', 1); set_transient('sitepulse_remote_late_check_in', 1); set_transient('sitepulse_admin_access_lock', 1);
     require $root . '/uninstall.php';
     echo json_encode(array('options' => Sitepulse_Test_WP::$options, 'user_meta' => Sitepulse_Test_WP::$user_meta, 'redirect' => get_transient('sitepulse_activation_redirect'), 'transients' => array_keys(Sitepulse_Test_WP::$transients)));
     exit;
@@ -83,6 +83,7 @@ if ($input['mode'] === 'order') {
     wp_schedule_single_event(time() + 300, 'sitepulse_remote_check_in');
     wp_schedule_single_event(time() + 60, 'sitepulse_remote_update_job');
     wp_schedule_single_event(time() + 60, 'sitepulse_remote_recovery_job');
+    wp_schedule_event(time(), 'hourly', 'sitepulse_admin_access_check');
     $sitepulse_loader->deactivate();
     echo json_encode(array('activated' => $activated, 'remaining' => array_column(Sitepulse_Test_WP::$scheduled, 'hook'), 'leftovers' => $leftovers));
 } elseif ($input['mode'] === 'notice') {
@@ -106,6 +107,8 @@ if ($input['mode'] === 'order') {
     remove_filter('pre_option_active_plugins', 'sitepulse_reorder_active_plugins_for_conflict');
     Sitepulse_Test_WP::$options['active_plugins'] = 'corrupt';
     echo json_encode(array('result' => sitepulse_reorder_active_plugins_for_conflict(false), 'stored' => Sitepulse_Test_WP::$options['active_plugins']));
+} elseif ($input['mode'] === 'admin_access') {
+    echo json_encode(array('option' => SITEPULSE_ADMIN_ACCESS_OPTION, 'cron' => has_action('sitepulse_admin_access_check', array('Sitepulse_Admin_Access', 'check')), 'schedule' => has_action('init', array('Sitepulse_Admin_Access', 'ensure_schedule')), 'button' => has_action('wp_ajax_sitepulse_admin_access_check', array('Sitepulse_Admin_Access', 'ajax_check'))));
 } elseif ($input['mode'] === 'translation') {
     $sitepulse_loader->load_plugin_textdomain();
     echo json_encode(array('domains' => Sitepulse_Test_WP::$textdomains, 'expected' => rtrim(SITEPULSE_TEXT_DOMAIN_PATH, '/') . '/sitepulse-en_US.mo'));

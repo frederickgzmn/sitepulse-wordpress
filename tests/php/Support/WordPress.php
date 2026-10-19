@@ -282,6 +282,7 @@ function get_bloginfo($show = '', $filter = 'raw') { return array('version' => '
 function home_url($path = '', $scheme = null) { return Sitepulse_Test_WP::$home_url . ($path === '' ? '' : '/' . ltrim($path, '/')); }
 function site_url($path = '', $scheme = null) { return home_url($path, $scheme); }
 function admin_url($path = '', $scheme = 'admin') { return home_url('/wp-admin/' . ltrim($path, '/')); }
+function wp_login_url($redirect = '', $force_reauth = false) { return apply_filters('login_url', site_url('wp-login.php', 'login'), $redirect, $force_reauth); }
 function rest_url($path = '', $scheme = 'rest') { return home_url('/wp-json/' . ltrim($path, '/')); }
 function wp_create_nonce($action = -1) { return 'nonce-' . $action; }
 function wp_verify_nonce($nonce, $action = -1) { return Sitepulse_Test_WP::$nonce_valid && $nonce === wp_create_nonce($action) ? 1 : false; }

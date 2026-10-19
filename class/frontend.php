@@ -5,6 +5,7 @@
  * - live load time and event counts
  * - "Analyze this page" for any front-end URL
  * - pause / resume monitoring
+ * - whether the site's own server can reach its wp-admin
  */
 if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 class Sitepulse_Frontend {
@@ -24,6 +25,7 @@ class Sitepulse_Frontend {
         $sitepulse_stats_count = count( $stats );
         $count = count( Sitepulse_CurLoader::get_events() );
         $paused = Sitepulse_Monitoring::is_paused();
+        $access = Sitepulse_Admin_Access::view();
 
         $left_icon = '<span class="wshp-left-icon" aria-hidden="true">'
             . '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="4" fill="transparent"/><path d="M4 12h4l2-5 3 10 2-6h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -59,6 +61,8 @@ class Sitepulse_Frontend {
         $badge .= $sitepulse_stats_count ? '<span class="wshp-count" aria-hidden="true">Load: ' . intval($sitepulse_stats_count) . '</span>' : '';
         $badge .= $time_load ? $time_load : '';
         $badge .= $paused ? '<span class="wshp-paused">' . esc_html__( 'Paused', 'sitepulse' ) . '</span>' : '';
+        // Only a problem shows in the toolbar itself; the menu always says.
+        $badge .= 'danger' === $access['tone'] ? '<span class="wshp-wp-admin-down">' . esc_html__( 'wp-admin unreachable', 'sitepulse' ) . '</span>' : '';
 
         $title_html = '<span class="wshp-pill">'
             . $left_icon
@@ -101,6 +105,18 @@ class Sitepulse_Frontend {
                 'title' => $paused
                     ? __( 'Start collecting performance data again', 'sitepulse' )
                     : __( 'Stop collecting performance data without deactivating SitePulse. Settings and history are kept.', 'sitepulse' ),
+            ],
+        ]);
+
+        $wp_admin_bar->add_node([
+            'id'     => SITEPULSE_PREFIX . '_wp_admin',
+            /* translators: %s: Reachable, Not reachable or Not checked yet */
+            'title'  => esc_html( sprintf( __( 'wp-admin: %s', 'sitepulse' ), $access['label'] ) ),
+            'parent' => SITEPULSE_PREFIX,
+            'href'   => Sitepulse_Admin_Access::page_url(),
+            'meta'   => [
+                'class' => 'wshp-wp-admin wshp-wp-admin-' . $access['tone'],
+                'title' => $access['detail'],
             ],
         ]);
     }

@@ -41,6 +41,7 @@ delete_option('sitepulse_remote_undone');
 delete_option('sitepulse_remote_activity');
 delete_option('sitepulse_remote_key');
 delete_option('sitepulse_remote_connection');
+delete_option('sitepulse_admin_access');
 
 // Remove all user meta
 delete_metadata( 'user', 0, 'sitepulse_trackers_disabled_notice_dismissed', '', true );
@@ -60,5 +61,6 @@ delete_transient('sitepulse_cron_fallback_frontend_check');
 delete_transient('sitepulse_remote_update_lock');
 delete_transient('sitepulse_remote_recovery_lock');
 delete_transient('sitepulse_remote_late_check_in');
+delete_transient('sitepulse_admin_access_lock');
 
 

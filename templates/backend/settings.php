@@ -310,6 +310,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                                     </div>
                                 </div>
                             </div>
+                            <?php Sitepulse_Admin_Access::render(); ?>
                             <div class="sp-detail-item">
                                 <div class="sp-detail-main">
                                     <div class="sp-detail-info">

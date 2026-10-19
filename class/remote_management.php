@@ -283,19 +283,22 @@ class Sitepulse_Remote_Management {
 		$client   = new Sitepulse_Remote_Client( self::signing_key() );
 		$blocked  = self::is_blocked();
 		$provider = Sitepulse_Remote_Backups::provider();
-		$response = $client->post(
-			'check-in',
-			array(
-				'schema'          => self::SCHEMA,
-				'plugin_version'  => SITEPULSE_VERSION,
-				'wp_version'      => (string) get_bloginfo( 'version' ),
-				'blocked'          => $blocked,
-				'backup_provider'  => $provider,
-				'backup_providers' => Sitepulse_Remote_Backups::providers(),
-				'cron'             => self::cron_health(),
-				'features'         => self::FEATURES,
-			)
+		$payload  = array(
+			'schema'           => self::SCHEMA,
+			'plugin_version'   => SITEPULSE_VERSION,
+			'wp_version'       => (string) get_bloginfo( 'version' ),
+			'blocked'          => $blocked,
+			'backup_provider'  => $provider,
+			'backup_providers' => Sitepulse_Remote_Backups::providers(),
+			'cron'             => self::cron_health(),
 		);
+		// Whether the site's own server can reach its wp-admin; nothing before the first check.
+		$wp_admin = Sitepulse_Admin_Access::report();
+		if ( null !== $wp_admin ) {
+			$payload['wp_admin'] = $wp_admin;
+		}
+		$payload['features'] = self::FEATURES;
+		$response            = $client->post( 'check-in', $payload );
 
 		if ( is_wp_error( $response ) ) {
 			// Log a problem once, not at every check-in.
