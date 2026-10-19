@@ -93,6 +93,7 @@ class Sitepulse_Remote_Management {
 		'last_check_in'      => 0,
 		'last_woken'         => 0,
 		'last_error'         => '',
+		'last_error_message' => '',
 		'inventory_sent_at'  => 0,
 		'inventory_due'      => false,
 		'provider'           => null,
@@ -301,11 +302,14 @@ class Sitepulse_Remote_Management {
 		$response            = $client->post( 'check-in', $payload );
 
 		if ( is_wp_error( $response ) ) {
+			$reason = self::connection_error_message( $response );
 			// Log a problem once, not at every check-in.
 			if ( $state['last_error'] !== $response->get_error_code() ) {
-				self::log( self::error_message( $response ) );
+				/* translators: %s: why the check-in failed */
+				self::log( sprintf( __( 'Check-in with SitePulse failed: %s', 'sitepulse' ), $reason ) );
 			}
-			$state['last_error'] = $response->get_error_code();
+			$state['last_error']         = $response->get_error_code();
+			$state['last_error_message'] = $reason;
 			self::save_state( $state );
 			self::schedule_next( (int) $state['check_in_seconds'] );
 			return;
@@ -320,6 +324,7 @@ class Sitepulse_Remote_Management {
 		$state['inventory_seconds'] = self::clamp( $remote['inventory_seconds'] ?? self::STATE_DEFAULTS['inventory_seconds'], HOUR_IN_SECONDS, WEEK_IN_SECONDS );
 		$state['last_check_in']     = time();
 		$state['last_error']        = '';
+		$state['last_error_message'] = '';
 
 		// The backup plugin picked in the dashboard applies from this check-in on.
 		$preferred                   = $remote['backup_provider'] ?? null;
@@ -476,7 +481,7 @@ class Sitepulse_Remote_Management {
 		);
 		$response  = ( new Sitepulse_Remote_Client( self::signing_key() ) )->post( $endpoints[ $operation ], array() );
 		if ( is_wp_error( $response ) ) {
-			$stored['error'] = __( 'SitePulse could not be reached. Please try again in a moment.', 'sitepulse' );
+			$stored['error'] = self::connection_error_message( $response );
 			return $stored;
 		}
 
@@ -725,7 +730,14 @@ class Sitepulse_Remote_Management {
 		// A site without a license has not connected yet, whatever it stored before.
 		$licensed = '' !== self::license();
 		if ( $licensed && '' !== $state['last_error'] ) {
-			return array( 'error', __( 'The last check-in with SitePulse failed. See the activity below.', 'sitepulse' ) );
+			return array(
+				'error',
+				'' !== $state['last_error_message']
+					/* translators: %s: why the check-in failed */
+					? sprintf( __( 'The last check-in with SitePulse failed: %s', 'sitepulse' ), $state['last_error_message'] )
+					// Stored by a version that kept only the error code; the activity has the reason.
+					: __( 'The last check-in with SitePulse failed. See the activity below.', 'sitepulse' ),
+			);
 		}
 		if ( $licensed && $state['active'] ) {
 			return array(
@@ -1080,17 +1092,45 @@ class Sitepulse_Remote_Management {
 	}
 
 	/**
-	 * @param WP_Error $error Why the check-in failed.
-	 * @return string Activity entry.
+	 * Why a request to SitePulse failed, in words that say where the problem is: this server
+	 * cannot reach SitePulse, SitePulse has trouble, or SitePulse refused the site. WordPress's
+	 * own reason for a request that could not be sent is kept to 160 characters; the settings
+	 * escape it when they show it.
+	 *
+	 * @param WP_Error $error Error of Sitepulse_Remote_Client::post().
+	 * @return string
 	 */
-	private static function error_message( WP_Error $error ) {
-		$hints = array(
-			'http_401' => __( 'SitePulse did not accept the signature of this site. Check that the server clock is correct and that the site address has not changed.', 'sitepulse' ),
-			'http_403' => __( 'The SitePulse license of this site is not active.', 'sitepulse' ),
-		);
+	private static function connection_error_message( WP_Error $error ) {
+		$code = (string) $error->get_error_code();
+		if ( 'unreachable' === $code ) {
+			/* translators: %s: why WordPress could not send the request, such as "cURL error 28: Operation timed out" */
+			return sprintf( __( 'SitePulse could not be reached from this server (%s). Check that the server can reach api.sitepulse.me, then try again.', 'sitepulse' ), mb_substr( $error->get_error_message(), 0, 160 ) );
+		}
+		if ( 'bad_signature' === $code ) {
+			return __( 'SitePulse answered, but the answer was not signed for this site. Check the server\'s date and time, then try again.', 'sitepulse' );
+		}
+		if ( 'bad_response' === $code ) {
+			return __( 'SitePulse\'s answer could not be understood. Please try again in a moment.', 'sitepulse' );
+		}
+		if ( 1 !== preg_match( '/^http_(\d+)$/', $code, $match ) ) {
+			return __( 'SitePulse could not be reached. Please try again in a moment.', 'sitepulse' );
+		}
 
-		/* translators: %s: reason */
-		return sprintf( __( 'Check-in with SitePulse failed: %s', 'sitepulse' ), $hints[ $error->get_error_code() ] ?? $error->get_error_message() );
+		$status = (int) $match[1];
+		if ( $status >= 500 ) {
+			/* translators: %d: HTTP status code, such as 503 */
+			return sprintf( __( 'SitePulse is having trouble right now (HTTP %d). Please try again in a few minutes.', 'sitepulse' ), $status );
+		}
+		if ( 401 === $status || 403 === $status ) {
+			/* translators: %d: HTTP status code, 401 or 403 */
+			return sprintf( __( 'SitePulse refused this site\'s request (HTTP %d). Check the server\'s date and time, and that Cloud Services are on; if the site\'s address or license changed, disconnect and connect again.', 'sitepulse' ), $status );
+		}
+		if ( 429 === $status ) {
+			/* translators: %d: HTTP status code, 429 */
+			return sprintf( __( 'SitePulse asked this site to slow down (HTTP %d). Please try again in a minute.', 'sitepulse' ), $status );
+		}
+		/* translators: %d: HTTP status code */
+		return sprintf( __( 'SitePulse answered HTTP %d. Please try again in a moment.', 'sitepulse' ), $status );
 	}
 
 	/**

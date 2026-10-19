@@ -173,15 +173,83 @@ final class RemoteConnectionTest extends Sitepulse_Test_Case {
         $this->assertStringNotContainsString('Disconnect from SitePulse accounts', $this->render());
     }
 
-    public function test_keeps_the_key_and_shows_an_error_when_sitepulse_cannot_be_reached(): void {
+    /**
+     * @dataProvider failures
+     * @param WP_Error|callable $response What the request to SitePulse got.
+     */
+    public function test_keeps_the_key_and_says_why_sitepulse_did_not_answer($response, string $error, string $shown): void {
         $this->connect();
         update_option(Sitepulse_Remote_Management::CONNECTION_OPTION, array('key' => 'spc_kept'));
-        Sitepulse_Test_WP::$http_queue[] = new WP_Error('http_request_failed', 'timeout');
+        Sitepulse_Test_WP::$http_queue[] = $response;
 
         $this->press('status');
 
+        $this->assertSame(array('connection'), $this->endpoints());
         $this->assertSame('spc_kept', $this->stored()['key']);
-        $this->assertStringContainsString('SitePulse could not be reached. Please try again in a moment.', $this->render('easy'));
+        $this->assertSame($error, $this->stored()['error']);
+        foreach (array('advanced', 'easy') as $context) {
+            $this->assertStringContainsString('<p style="color: #b32d2e; margin: 6px 0 0;">' . $shown . '</p>', $this->render($context));
+        }
+    }
+
+    public static function failures(): array {
+        // WordPress's reason is cut to 160 characters, here just after a two-byte character.
+        $kept = 'cURL error 28: <b>Operation</b> timed out & ' . str_repeat('x', 115) . 'é';
+        $refused = static function (int $status): array {
+            return array(
+                sitepulse_test_remote_response(array('success' => false), $status),
+                "SitePulse refused this site's request (HTTP $status). Check the server's date and time, and that Cloud Services are on; if the site's address or license changed, disconnect and connect again.",
+                "SitePulse refused this site&#039;s request (HTTP $status). Check the server&#039;s date and time, and that Cloud Services are on; if the site&#039;s address or license changed, disconnect and connect again.",
+            );
+        };
+
+        return array(
+            'this server cannot reach SitePulse' => array(
+                new WP_Error('http_request_failed', $kept . ' and the rest of a long reason'),
+                'SitePulse could not be reached from this server (' . $kept . '). Check that the server can reach api.sitepulse.me, then try again.',
+                'SitePulse could not be reached from this server (cURL error 28: &lt;b&gt;Operation&lt;/b&gt; timed out &amp; ' . str_repeat('x', 115) . 'é). Check that the server can reach api.sitepulse.me, then try again.',
+            ),
+            'SitePulse fails' => array(
+                sitepulse_test_remote_response(array('success' => false), 500),
+                'SitePulse is having trouble right now (HTTP 500). Please try again in a few minutes.',
+                'SitePulse is having trouble right now (HTTP 500). Please try again in a few minutes.',
+            ),
+            'SitePulse is unavailable' => array(
+                sitepulse_test_remote_response(array('success' => false), 503),
+                'SitePulse is having trouble right now (HTTP 503). Please try again in a few minutes.',
+                'SitePulse is having trouble right now (HTTP 503). Please try again in a few minutes.',
+            ),
+            'signature refused' => $refused(401),
+            'license refused' => $refused(403),
+            'too many requests' => array(
+                sitepulse_test_remote_response(array('success' => false), 429),
+                'SitePulse asked this site to slow down (HTTP 429). Please try again in a minute.',
+                'SitePulse asked this site to slow down (HTTP 429). Please try again in a minute.',
+            ),
+            'another status' => array(
+                sitepulse_test_remote_response(array('success' => false), 404),
+                'SitePulse answered HTTP 404. Please try again in a moment.',
+                'SitePulse answered HTTP 404. Please try again in a moment.',
+            ),
+            'an answer signed for another site' => array(
+                sitepulse_test_remote_response(array('success' => true), 200, array('license' => 'sk_other')),
+                "SitePulse answered, but the answer was not signed for this site. Check the server's date and time, then try again.",
+                'SitePulse answered, but the answer was not signed for this site. Check the server&#039;s date and time, then try again.',
+            ),
+            'an answer that is not understood' => array(
+                sitepulse_test_remote_response('not json'),
+                "SitePulse's answer could not be understood. Please try again in a moment.",
+                'SitePulse&#039;s answer could not be understood. Please try again in a moment.',
+            ),
+        );
+    }
+
+    public function test_a_failure_the_client_does_not_report_keeps_the_general_sentence(): void {
+        $message = new ReflectionMethod(Sitepulse_Remote_Management::class, 'connection_error_message');
+        if (PHP_VERSION_ID < 80100) { $message->setAccessible(true); }
+
+        $this->assertSame('SitePulse could not be reached. Please try again in a moment.', $message->invoke(null, new WP_Error('http_request_failed', 'timeout')));
+        $this->assertSame('SitePulse could not be reached. Please try again in a moment.', $message->invoke(null, new WP_Error('http_', 'HTTP')));
     }
 
     public function test_explains_a_pro_site_and_a_site_that_cannot_connect(): void {
