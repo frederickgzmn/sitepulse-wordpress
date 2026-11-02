@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/Support/RecentActivity.php';
 
 /** Additional real service behaviors, including failure and legacy-format boundaries. */
 final class ApiCoverageTest extends Sitepulse_Test_Case {
@@ -6,32 +7,27 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
         return json_decode(Sitepulse_Test_WP::$http_requests[$index]['args']['body'], true);
     }
 
-    public function test_oversized_site_report_keeps_the_fifty_most_recent_resource_entries(): void {
+    public function test_oversized_site_report_keeps_the_fifty_slowest_resource_entries(): void {
         $resources = array();
         for ($i = 0; $i < 60; $i++) {
-            $resources[] = array('ordinal' => $i, 'details' => str_repeat('x', 40000));
+            $resources['row-' . $i] = sitepulse_test_recent_stat(array('key' => 'row-' . $i, 'sig' => str_repeat('x', 40000)), 10.0 + $i);
         }
         update_option(SITEPULSE_PROFILER_KEY, $resources);
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array());
         $this->assertTrue(Sitepulse_Api_Service::send_website_data()['success']);
         $payload = $this->payload();
         $this->assertCount(50, $payload['resources']);
-        $this->assertSame(10, $payload['resources'][0]['ordinal']);
-        $this->assertSame(59, $payload['resources'][49]['ordinal']);
+        $this->assertSame('row-59', array_key_first($payload['resources']));
+        $this->assertSame('row-10', array_key_last($payload['resources']));
         $this->assertCount(0, $payload['api_requests']);
     }
 
     public function test_unencodable_resource_data_fails_without_outbound_request(): void {
-        $resource = fopen('php://memory', 'r+');
-        try {
-            update_option(SITEPULSE_PROFILER_KEY, array('invalid' => $resource));
-            $result = Sitepulse_Api_Service::send_website_data();
-            $this->assertFalse($result['success']);
-            $this->assertStringContainsString('encode', $result['message']);
-            $this->assertSame(array(), Sitepulse_Test_WP::$http_requests);
-        } finally {
-            fclose($resource);
-        }
+        update_option(SITEPULSE_PROFILER_KEY, array('invalid' => sitepulse_test_recent_stat(array('hook' => "\xB1\x31"))));
+        $result = Sitepulse_Api_Service::send_website_data();
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('encode', $result['message']);
+        $this->assertSame(array(), Sitepulse_Test_WP::$http_requests);
     }
 
     /** @dataProvider preparationFailures */
@@ -173,6 +169,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
     /** @dataProvider vulnerabilityFailures */
     public function test_failed_vulnerability_response_is_not_reported_as_clean_scan($response): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         Sitepulse_Test_WP::$http_queue[] = $response;
         $result = Sitepulse_Api_Service::check_vulnerabilities();
         $this->assertFalse($result['success']);
@@ -191,6 +188,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
     /** @dataProvider vulnerabilityLicenseFormats */
     public function test_vulnerability_scan_rotates_legacy_and_full_license_metadata($license, array $expected): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('new_license' => $license, 'vulnerabilities' => array()));
         $this->assertTrue(Sitepulse_Api_Service::check_vulnerabilities()['success']);
         foreach ($expected as $key => $value) {
@@ -200,6 +198,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
 
     public function test_queued_vulnerability_scan_without_message_returns_a_useful_wait_state(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('vuln_wait' => true));
         $result = Sitepulse_Api_Service::check_vulnerabilities();
         $this->assertTrue($result['success']);
@@ -236,6 +235,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
 
     public function test_ai_request_handles_corrupt_vulnerability_storage_as_empty_list(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         update_option('sitepulse_vulnerabilities_list', 'invalid');
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('status' => 'pending'));
         Sitepulse_Api_Service::request_ai_diagnostic();
@@ -243,6 +243,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
     }
 
     public function test_ai_poll_refreshes_queue_position_while_remaining_pending(): void {
+        update_option('sitepulse_license_key', 'existing-license');
         update_option('sitepulse_ai_diagnostic_status', 'pending');
         update_option('sitepulse_ai_diagnostic_report_id', 'report-42');
         set_transient('sitepulse_ai_diagnostic_queue_position', 8, 600);
@@ -254,6 +255,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
 
     public function test_failed_ai_response_preserves_error_details_and_retry_permission(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('success' => false, 'status' => 'failed', 'message' => 'Diagnostic failed', 'error_message' => 'No metrics supplied', 'can_retry' => true));
         $result = Sitepulse_Api_Service::request_ai_diagnostic();
         $this->assertFalse($result['success']);
@@ -265,6 +267,7 @@ final class ApiCoverageTest extends Sitepulse_Test_Case {
 
     public function test_ai_server_error_is_returned_without_replacing_stored_report(): void {
         update_option('sitepulse_last_api_request', 1700000000);
+        update_option('sitepulse_license_key', 'existing-license');
         update_option('sitepulse_ai_diagnostic_report', 'previous-report');
         Sitepulse_Test_WP::$http_queue[] = Sitepulse_Test_WP::response(array('message' => 'Unavailable'), 503);
         $result = Sitepulse_Api_Service::request_ai_diagnostic();

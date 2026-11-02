@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/Support/RecentActivity.php';
 
 /** Exercises the real API service; only WordPress HTTP and storage are doubled. */
 final class ApiServiceTest extends Sitepulse_Test_Case {
@@ -33,8 +34,10 @@ final class ApiServiceTest extends Sitepulse_Test_Case {
     }
 
     public function test_site_report_sends_identity_metrics_and_only_ten_recent_http_events(): void {
-        update_option(SITEPULSE_PROFILER_KEY, array('init' => array('elapsed' => 0.25)));
-        update_option(SITEPULSE_CURL_API_KEY, range(1, 14));
+        update_option(SITEPULSE_PROFILER_KEY, array('init' => sitepulse_test_recent_stat(array('key' => 'init'), 250.0), 'last-week' => sitepulse_test_recent_stat(array('key' => 'last-week'), 3000.0, 1, 7 * DAY_IN_SECONDS)));
+        $events = array(sitepulse_test_http_event(array('url' => 'https://old.test/'), 2 * DAY_IN_SECONDS));
+        foreach (range(1, 14) as $i) { $events[] = sitepulse_test_http_event(array('url' => 'https://api.test/' . $i)); }
+        update_option(SITEPULSE_CURL_API_KEY, $events);
         update_option('sitepulse_license_key', 'existing-license');
         $this->queue(array('license_key' => 'existing-license'));
 
@@ -47,8 +50,11 @@ final class ApiServiceTest extends Sitepulse_Test_Case {
         $this->assertTrue($request['args']['sslverify']);
         $this->assertSame(30, $request['args']['timeout']);
         $payload = $this->payload();
-        $this->assertSame(array('init' => array('elapsed' => 0.25)), $payload['resources']);
-        $this->assertSame(array(5, 6, 7, 8, 9, 10, 11, 12, 13, 14), $payload['api_requests']);
+        // Only activity of the last 24 hours is reported, with figures that cover that time.
+        $this->assertSame(array('init'), array_keys($payload['resources']));
+        $this->assertEquals(250.0, $payload['resources']['init']['load_ms']);
+        $this->assertArrayNotHasKey('window_ms', $payload['resources']['init']);
+        $this->assertSame(array_map(static function ($i) { return 'https://api.test/' . $i; }, range(5, 14)), array_column($payload['api_requests'], 'url'));
         $this->assertSame('existing-license', $payload['license_key']);
         $this->assertSame('192.0.2.25', $payload['ip_address']);
         $this->assertSame(home_url(), $payload['domain']);
@@ -139,7 +145,7 @@ final class ApiServiceTest extends Sitepulse_Test_Case {
 
     /** @dataProvider largePayloads */
     public function test_large_reports_receive_bounded_longer_timeouts(int $bytes, int $timeout): void {
-        update_option(SITEPULSE_PROFILER_KEY, array('init' => str_repeat('x', $bytes)));
+        update_option(SITEPULSE_PROFILER_KEY, array('init' => sitepulse_test_recent_stat(array('sig' => str_repeat('x', $bytes)))));
         $this->queue(array());
         Sitepulse_Api_Service::send_website_data();
         $this->assertSame($timeout, Sitepulse_Test_WP::$http_requests[0]['args']['timeout']);
@@ -198,8 +204,8 @@ final class ApiServiceTest extends Sitepulse_Test_Case {
     }
 
     public function test_ai_request_registers_first_and_persists_pending_state_and_queue_position(): void {
-        update_option(SITEPULSE_CURL_API_KEY, range(1, 25));
-        update_option(SITEPULSE_PROFILER_KEY, array('init' => array('elapsed' => 0.1)));
+        update_option(SITEPULSE_CURL_API_KEY, array_map(static function ($i) { return sitepulse_test_http_event(array('url' => 'https://api.test/' . $i)); }, range(1, 25)));
+        update_option(SITEPULSE_PROFILER_KEY, array('init' => sitepulse_test_recent_stat(array('key' => 'init')), 'retired' => sitepulse_test_recent_stat(array('key' => 'retired'), 100.0, 1, 3 * DAY_IN_SECONDS)));
         update_option('sitepulse_vulnerabilities_list', array(array('name' => 'XSS', 'version' => 'high')));
         $this->queue(array('license_key' => 'issued-license'));
         $this->queue(array('success' => true, 'status' => 'pending', 'ai_diagnostic_report_id' => 'report-42', 'queue_position' => 7));
@@ -209,8 +215,9 @@ final class ApiServiceTest extends Sitepulse_Test_Case {
         $this->assertSame('issued-license', $payload['license_key']);
         $this->assertTrue($payload['force_new']);
         $this->assertStringNotContainsString('://', $payload['domain']);
-        $this->assertSame(array(6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25), $payload['metrics']['api_requests']);
-        $this->assertSame(array('init' => array('elapsed' => 0.1)), $payload['metrics']['hooks']);
+        $this->assertSame(array_map(static function ($i) { return 'https://api.test/' . $i; }, range(6, 25)), array_column($payload['metrics']['api_requests'], 'url'));
+        // The diagnosis is about current behavior: code that stopped running is left out.
+        $this->assertSame(array('init'), array_keys($payload['metrics']['hooks']));
         $this->assertSame(array(array('name' => 'XSS', 'version' => 'high')), $payload['metrics']['vulnerabilities']);
         $this->assertSame('pending', get_option('sitepulse_ai_diagnostic_status'));
         $this->assertSame('report-42', get_option('sitepulse_ai_diagnostic_report_id'));
@@ -294,6 +301,198 @@ final class ApiServiceTest extends Sitepulse_Test_Case {
         $this->assertSame('processing', $result['status']);
         $this->assertSame('refreshed', $this->payload(2)['license_key']);
         $this->assertCount(3, Sitepulse_Test_WP::$http_requests);
+    }
+
+    public function test_ai_request_without_a_license_registers_first_even_after_earlier_requests(): void {
+        // The key was removed (or never issued) on a site that reached the API before.
+        update_option('sitepulse_last_api_request', 1700000000);
+        $this->queue(array('new_license' => array('license_key' => 'issued-license')));
+        $this->queue(array('success' => true, 'status' => 'pending', 'ai_diagnostic_report_id' => 'report-42'));
+        $this->assertTrue(Sitepulse_Api_Service::request_ai_diagnostic()['success']);
+        $this->assertSame('https://api.sitepulse.me/api/website/website-request', Sitepulse_Test_WP::$http_requests[0]['url']);
+        $this->assertArrayNotHasKey('license_key', $this->payload(0));
+        $this->assertSame('issued-license', $this->payload(1)['license_key']);
+    }
+
+    /** @dataProvider refusedRegistrations */
+    public function test_ai_request_explains_a_refused_registration_without_requesting_the_diagnosis(array $answer, int $status, string $reason): void {
+        update_option('sitepulse_last_api_request', 1700000000);
+        $this->queue($answer, $status);
+        $result = Sitepulse_Api_Service::request_ai_diagnostic();
+        $this->assertFalse($result['success']);
+        $this->assertSame('This site is not registered with SitePulse yet: ' . $reason, $result['message']);
+        $this->assertCount(1, Sitepulse_Test_WP::$http_requests);
+        $this->assertNull(get_option('sitepulse_ai_diagnostic_status', null));
+    }
+
+    public static function refusedRegistrations(): array {
+        return array(
+            'domain owned by another key' => array(array('success' => false, 'error' => 'website_ownership_required', 'message' => 'The existing license key is required to update this website.'), 403, 'The existing license key is required to update this website.'),
+            'refused without a reason' => array(array('success' => false), 403, 'SitePulse refused the request (HTTP 403).'),
+            'no key issued' => array(array('success' => true), 200, 'the API did not issue a license key.'),
+        );
+    }
+
+    public function test_ai_poll_without_a_license_registers_and_keeps_the_pending_state_when_refused(): void {
+        $this->pending();
+        delete_option('sitepulse_license_key');
+        $this->queue(array('message' => 'Too many requests'), 429);
+        $result = Sitepulse_Api_Service::check_ai_diagnostic_status();
+        $this->assertFalse($result['success']);
+        $this->assertSame('This site is not registered with SitePulse yet: Too many requests to SitePulse. Please wait a minute and try again.', $result['message']);
+        $this->assertSame('pending', $result['status']);
+        $this->assertSame('2026-10-01 10:15:00', $result['requested_at']);
+        $this->assertCount(1, Sitepulse_Test_WP::$http_requests);
+        $this->assertSame('pending', get_option('sitepulse_ai_diagnostic_status'));
+
+        $this->queue(array('license_key' => 'issued-license'));
+        $this->queue(array('status' => 'processing', 'success' => true));
+        $this->assertSame('processing', Sitepulse_Api_Service::check_ai_diagnostic_status()['status']);
+        $this->assertSame('issued-license', $this->payload(2)['license_key']);
+    }
+
+    /** @dataProvider refusedScans */
+    public function test_a_refused_vulnerability_scan_says_what_happened_and_what_to_do(array $answer, int $status, string $message): void {
+        $this->registered();
+        $this->queue($answer, $status);
+        $result = Sitepulse_Api_Service::check_vulnerabilities();
+        $this->assertFalse($result['success']);
+        $this->assertSame($message, $result['message']);
+        $this->assertCount(1, Sitepulse_Test_WP::$http_requests);
+    }
+
+    public static function refusedScans(): array {
+        return array(
+            'daily limit' => array(array('success' => false, 'message' => 'License limit reached try tomorrow'), 402, "This site has reached today's limit of free SitePulse requests. Please try again tomorrow."),
+            'Pro license' => array(array('success' => false, 'error' => 'pro_endpoint_required', 'message' => 'Pro licenses must use the Pro API endpoints for entitlement validation.'), 409, 'This site has a SitePulse Pro license. Activate the SitePulse Pro plugin to use it.'),
+            'invalid field' => array(array('message' => 'The given data was invalid.', 'errors' => array('website_info' => array('The website info field is required.'))), 422, 'The website info field is required.'),
+            'invalid field as text' => array(array('errors' => array('domain' => 'The domain is not valid.')), 422, 'The domain is not valid.'),
+            'rate limit' => array(array('message' => 'Too Many Attempts.'), 429, 'Too many requests to SitePulse. Please wait a minute and try again.'),
+            'server error' => array(array('message' => 'Server Error'), 503, 'SitePulse is temporarily unavailable (HTTP 503). Please try again in a few minutes.'),
+            'refusal with a reason' => array(array('message' => 'Website is <b>not active</b>'), 403, 'Website is not active'),
+            'refusal without a reason' => array(array(), 400, 'SitePulse refused the request (HTTP 400).'),
+        );
+    }
+
+    public function test_a_vulnerability_scan_without_a_license_registers_first(): void {
+        update_option('sitepulse_last_api_request', 1700000000);
+        $this->queue(array('new_license' => array('license_key' => 'issued-license')));
+        $this->queue(array('vuln_wait' => true));
+        $this->assertTrue(Sitepulse_Api_Service::check_vulnerabilities()['vuln_wait']);
+        $this->assertArrayNotHasKey('license_key', $this->payload(0));
+        $this->assertSame('issued-license', $this->payload(1)['license_key']);
+    }
+
+    public function test_a_vulnerability_scan_explains_a_refused_registration_without_scanning(): void {
+        update_option('sitepulse_last_api_request', 1700000000);
+        $this->queue(array('error' => 'website_ownership_required', 'message' => 'The existing license key is required to update this website.'), 403);
+        $result = Sitepulse_Api_Service::check_vulnerabilities();
+        $this->assertSame('This site is not registered with SitePulse yet: The existing license key is required to update this website.', $result['message']);
+        $this->assertCount(1, Sitepulse_Test_WP::$http_requests);
+    }
+
+    public function test_a_failed_diagnostic_is_stored_with_its_reason_until_a_new_request_is_taken(): void {
+        $this->pending();
+        set_transient('sitepulse_ai_diagnostic_queue_position', 4, 600);
+        // The API reports a failure with success false and instructions meant for its clients.
+        $this->queue(array('success' => false, 'status' => 'failed', 'message' => 'Previous AI diagnostic failed. Set force_new=true to retry.', 'ai_diagnostic_report_id' => 'report-43', 'error_message' => 'All free AI providers <b>failed</b>', 'can_retry' => true));
+        $result = Sitepulse_Api_Service::check_ai_diagnostic_status();
+        $this->assertFalse($result['success']);
+        $this->assertSame('failed', $result['status']);
+        $this->assertSame('The AI diagnosis failed: All free AI providers failed', $result['message']);
+        $this->assertTrue($result['can_retry']);
+        $this->assertSame('failed', get_option('sitepulse_ai_diagnostic_status'));
+        $this->assertSame('report-43', get_option('sitepulse_ai_diagnostic_report_id'));
+        $this->assertSame('All free AI providers failed', get_option('sitepulse_ai_diagnostic_error'));
+        $this->assertFalse(get_transient('sitepulse_ai_diagnostic_queue_position'));
+
+        $this->queue(array('success' => true, 'status' => 'pending', 'queue_position' => 2));
+        $this->assertTrue(Sitepulse_Api_Service::request_ai_diagnostic(true)['success']);
+        $this->assertSame('pending', get_option('sitepulse_ai_diagnostic_status'));
+        $this->assertFalse(get_option('sitepulse_ai_diagnostic_error'));
+        $this->assertSame(2, get_transient('sitepulse_ai_diagnostic_queue_position'));
+    }
+
+    public function test_a_failed_diagnostic_without_a_reason_still_says_it_failed_and_is_not_dated(): void {
+        $this->registered();
+        $this->queue(array('success' => false, 'status' => 'failed'));
+        $result = Sitepulse_Api_Service::request_ai_diagnostic();
+        $this->assertSame('The AI diagnosis could not be completed.', $result['message']);
+        $this->assertSame('', get_option('sitepulse_ai_diagnostic_error'));
+        $this->assertFalse(get_option('sitepulse_ai_diagnostic_requested_at'));
+    }
+
+    public function test_a_diagnostic_already_in_progress_is_shown_as_in_progress(): void {
+        $this->registered();
+        $this->queue(array('success' => false, 'message' => 'A diagnostic request is already queued or processing for this website.', 'status' => 'processing', 'ai_diagnostic_report_id' => 'report-9'));
+        $result = Sitepulse_Api_Service::request_ai_diagnostic();
+        $this->assertTrue($result['success']);
+        $this->assertSame('An AI diagnosis of this site is already in progress.', $result['message']);
+        $this->assertSame('processing', get_option('sitepulse_ai_diagnostic_status'));
+        $this->assertSame('report-9', get_option('sitepulse_ai_diagnostic_report_id'));
+        $this->assertSame(current_time('mysql'), get_option('sitepulse_ai_diagnostic_requested_at'));
+    }
+
+    public function test_a_diagnostic_the_api_could_not_queue_gives_its_reason_and_stores_nothing(): void {
+        $this->registered();
+        $this->queue(array('success' => false, 'status' => 'error', 'message' => 'The free AI <i>queue</i> is full.'));
+        $result = Sitepulse_Api_Service::request_ai_diagnostic();
+        $this->assertFalse($result['success']);
+        $this->assertSame('The free AI queue is full.', $result['message']);
+        $this->assertFalse(get_option('sitepulse_ai_diagnostic_status'));
+    }
+
+    /** @dataProvider temporaryDiagnosticFailures */
+    public function test_a_temporary_failure_while_waiting_keeps_the_diagnostic_pending($answer, string $message): void {
+        $this->pending();
+        Sitepulse_Test_WP::$http_queue[] = $answer;
+        $result = Sitepulse_Api_Service::check_ai_diagnostic_status();
+        $this->assertFalse($result['success']);
+        $this->assertSame('pending', $result['status']);
+        $this->assertSame($message, $result['message']);
+        $this->assertSame('pending', get_option('sitepulse_ai_diagnostic_status'));
+    }
+
+    public static function temporaryDiagnosticFailures(): array {
+        return array(
+            'server error' => array(Sitepulse_Test_WP::response(array('message' => 'Bad gateway'), 502), 'SitePulse is temporarily unavailable (HTTP 502). Please try again in a few minutes.'),
+            'unreadable answer' => array(Sitepulse_Test_WP::response('<html>Proxy page</html>'), 'SitePulse sent an answer that could not be read. Please try again in a few minutes.'),
+            'Pro license' => array(Sitepulse_Test_WP::response(array('message' => 'Pro licenses must use the Pro AI diagnostic endpoint.'), 409), 'This site has a SitePulse Pro license. Activate the SitePulse Pro plugin to use it.'),
+        );
+    }
+
+    public function test_a_server_error_on_a_new_request_keeps_the_previous_report(): void {
+        $this->registered();
+        update_option('sitepulse_ai_diagnostic_status', 'completed');
+        update_option('sitepulse_ai_diagnostic_report', '{"summary":"previous"}');
+        $this->queue(array('message' => 'AI diagnostic service is not available. Please try again later.'), 503);
+        $result = Sitepulse_Api_Service::request_ai_diagnostic(true);
+        $this->assertFalse($result['success']);
+        $this->assertSame('completed', $result['status']);
+        $this->assertSame('completed', get_option('sitepulse_ai_diagnostic_status'));
+        $this->assertSame(array('summary' => 'previous'), Sitepulse_Api_Service::get_ai_diagnostic_report());
+    }
+
+    public function test_a_first_request_that_is_refused_does_not_look_pending(): void {
+        $this->registered();
+        $this->queue(array('message' => 'Too Many Attempts.'), 429);
+        $result = Sitepulse_Api_Service::request_ai_diagnostic();
+        $this->assertNull($result['status']);
+        $this->assertFalse(get_option('sitepulse_ai_diagnostic_status'));
+    }
+
+    public function test_a_poll_that_finds_no_diagnostic_forgets_the_stale_request(): void {
+        $this->pending();
+        set_transient('sitepulse_ai_diagnostic_queue_position', 4, 600);
+        update_option('sitepulse_ai_diagnostic_error', 'old reason');
+        $this->queue(array('success' => true, 'status' => 'none', 'message' => 'No AI diagnostic is in progress for this website.'));
+        $result = Sitepulse_Api_Service::check_ai_diagnostic_status();
+        $this->assertTrue($result['success']);
+        $this->assertSame('none', $result['status']);
+        foreach (array('sitepulse_ai_diagnostic_status', 'sitepulse_ai_diagnostic_report_id', 'sitepulse_ai_diagnostic_requested_at', 'sitepulse_ai_diagnostic_error') as $option) {
+            $this->assertFalse(get_option($option), $option);
+        }
+        $this->assertFalse(get_transient('sitepulse_ai_diagnostic_queue_position'));
     }
 
     public function test_ai_invalid_json_fails_without_replacing_a_previous_report(): void {

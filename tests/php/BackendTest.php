@@ -18,18 +18,27 @@ final class BackendTest extends Sitepulse_Test_Case {
         $this->assertEquals($expected, $this->calculate('calculate_load_time_score', $milliseconds));
     }
 
-    public function test_slow_items_merge_deduplicate_case_insensitively_and_rank_by_time(): void {
-        $hooks = array(
-            array('source' => 'shop', 'total' => 0.8),
-            array('source' => 'slow-theme', 'total' => 1.5),
-            array('source' => 'boundary', 'total' => 0.5),
+    public function test_slow_items_list_each_source_once_with_its_slowest_own_time_per_page_load(): void {
+        $recent = array(
+            array('source' => 'shop', 'load_ms' => 800.0, 'date_time' => '2026-01-01 11:00:00'),
+            array('source' => 'slow-theme', 'load_ms' => 1500.0),
+            array('source' => 'SHOP', 'load_ms' => 1200.0, 'date_time' => '2026-01-01 11:30:00'),
+            array('source' => 'Shop', 'load_ms' => 600.0),
+            array('source' => 'boundary', 'load_ms' => 500.0),
+            array('source' => 'fast', 'load_ms' => 20.0),
         );
-        $plugins = array(array('plugin_name' => 'SHOP', 'load_time_ms' => 700), array('plugin_name' => 'Fast', 'load_time_ms' => 20));
         $this->assertSame(array(
             array('name' => 'Slow theme', 'time_ms' => 1500.0, 'date_time' => 0, 'severity' => 'critical'),
-            array('name' => 'SHOP', 'time_ms' => 700.0, 'date_time' => 0, 'severity' => 'warning'),
-        ), $this->calculate('calculate_slow_items', $hooks, $plugins));
-        $this->assertSame(array(), $this->calculate('calculate_slow_items', array(), array()));
+            array('name' => 'SHOP', 'time_ms' => 1200.0, 'date_time' => '2026-01-01 11:30:00', 'severity' => 'critical'),
+        ), $this->calculate('calculate_slow_items', $recent));
+        $this->assertSame(array(), $this->calculate('calculate_slow_items', array()));
+    }
+
+    public function test_frequent_fast_code_is_not_flagged_however_much_time_it_added_up_to(): void {
+        // Lifetime totals grow with traffic; only the time per page load decides.
+        $busy = array('source' => 'busy-plugin', 'calls' => 200000, 'total' => 400.0, 'total_ms' => 400000.0, 'load_ms' => 2.0);
+        $this->assertSame(array(), $this->calculate('calculate_slow_items', array($busy)));
+        $this->assertSame(2.0, $this->calculate('get_top_slow_item', array($busy + array('hook' => 'init', 'fileline' => 'busy.php:3')))['time_ms']);
     }
 
     public function test_slow_requests_apply_threshold_sort_and_tolerate_missing_metadata(): void {
@@ -45,11 +54,12 @@ final class BackendTest extends Sitepulse_Test_Case {
         ), $result);
     }
 
-    public function test_top_slow_item_ignores_missing_timings_and_formats_source(): void {
+    public function test_top_slow_item_is_the_most_own_time_per_page_load_and_formats_source(): void {
         $this->assertNull($this->calculate('get_top_slow_item', array()));
         $this->assertSame(array('name' => 'Slow plugin', 'time_ms' => 900.0, 'hook' => 'init', 'fileline' => 'plugin.php:9', 'type' => 'plugin_or_theme'), $this->calculate('get_top_slow_item', array(
-            array('source' => 'missing'), array('source' => 'fast', 'total' => 0.01),
-            array('source' => 'slow-plugin', 'total' => 0.9, 'hook' => 'init', 'fileline' => 'plugin.php:9'),
+            array('source' => 'fast', 'load_ms' => 10.0, 'hook' => 'wp', 'fileline' => 'fast.php:1'),
+            array('source' => 'slow-plugin', 'load_ms' => 900.0, 'hook' => 'init', 'fileline' => 'plugin.php:9'),
+            array('source' => 'medium', 'load_ms' => 300.0, 'hook' => 'wp_head', 'fileline' => 'medium.php:4'),
         )));
     }
 

@@ -20,7 +20,7 @@
   /* ======================================================
    * Init
    * ====================================================== */
-  $(document).ready(function () {
+  $(function () {
     initTheme();
     initScoreRings();
     initSidebar();
@@ -100,8 +100,8 @@
       var circumference = 2 * Math.PI * 42; // radius = 42
 
       $fill.css({
-        'stroke-dasharray': circumference,
-        'stroke-dashoffset': circumference
+        'stroke-dasharray': String(circumference),
+        'stroke-dashoffset': String(circumference)
       });
 
       // Choose color based on score
@@ -114,7 +114,7 @@
       // Animate after short delay
       setTimeout(function () {
         var offset = circumference - (score / 100) * circumference;
-        $fill.css('stroke-dashoffset', offset);
+        $fill.css('stroke-dashoffset', String(offset));
       }, 200);
     });
   }

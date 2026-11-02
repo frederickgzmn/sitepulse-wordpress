@@ -66,7 +66,7 @@ class Sitepulse_Backend {
 				true
 			);
 			wp_localize_script( 'sitepulse-deactivation-modal', 'SitePulseDeactivationData', [
-				'api_endpoint'      => 'https://api.sitepulse.me/api/feedback/deactivation',
+				'api_endpoint'      => Sitepulse_Api_Service::api_url( Sitepulse_Api_Service::API_ENDPOINT_DEACTIVATION_FEEDBACK ),
 				'domain'            => esc_url_raw( home_url() ),
 				'plugin_version'    => defined( 'SITEPULSE_VERSION' ) ? SITEPULSE_VERSION : '',
 				'wp_version'        => get_bloginfo( 'version' ),
@@ -459,95 +459,50 @@ class Sitepulse_Backend {
 	}
 
 	/**
-	 * Calculate slow plugins and themes from performance data
-	 * 
-	 * @param array $stats Hook performance stats
-	 * @param array $plugin_profiler_stats Plugin profiler stats
-	 * @return array Slow items array
+	 * Plugins and themes whose code took over half a second of its own time per page load.
+	 *
+	 * Each plugin or theme is listed once, with its slowest code. Lifetime totals are not
+	 * used: they grow with traffic and keep blaming code that has since been fixed.
+	 *
+	 * @param array $stats Activity of the last 24 hours from Sitepulse_Profiler::get_recent_stats()
+	 * @return array Slow items array, slowest first
 	 */
-	private function calculate_slow_items( $stats, $plugin_profiler_stats ) {
-		$slow_plugins_themes = array();
-		if ( ! empty( $stats ) && is_array( $stats ) ) {
-			foreach ( $stats as $stat ) {
-				if ( ! empty( $stat ) && isset( $stat['total'] ) ) {
-					$time_ms = $stat['total'] * 1000;
-					if ( $time_ms > 500 ) {
-						$plugin_or_theme = str_replace( '-', ' ', $stat['source'] );
-						$slow_plugins_themes[] = array(
-							'name' => ucfirst( $plugin_or_theme ),
-							'time_ms' => $time_ms,
-							'date_time' => isset( $stat['date_time'] ) ? $stat['date_time'] : 0,
-							'severity' => $time_ms > 1000 ? 'critical' : 'warning'
-						);
-					}
-				}
+	private function calculate_slow_items( $stats ) {
+		$slow_items = array();
+		foreach ( $stats as $stat ) {
+			$time_ms = (float) $stat['load_ms'];
+			$name    = ucfirst( str_replace( '-', ' ', $stat['source'] ) );
+			$key     = strtolower( $name );
+			if ( $time_ms <= 500 || ( isset( $slow_items[ $key ] ) && $slow_items[ $key ]['time_ms'] >= $time_ms ) ) {
+				continue;
 			}
+
+			$slow_items[ $key ] = array(
+				'name' => $name,
+				'time_ms' => $time_ms,
+				'date_time' => isset( $stat['date_time'] ) ? $stat['date_time'] : 0,
+				'severity' => $time_ms > 1000 ? 'critical' : 'warning'
+			);
 		}
 
-		$slow_plugins_profiler = array();
-		if ( ! empty( $plugin_profiler_stats ) && is_array( $plugin_profiler_stats ) ) {
-			foreach ( $plugin_profiler_stats as $plugin_stat ) {
-				if ( isset( $plugin_stat['load_time_ms'] ) ) {
-					$time_ms = floatval( $plugin_stat['load_time_ms'] );
-					if ( $time_ms > 500 ) {
-						$slow_plugins_profiler[] = array(
-							'name' => isset( $plugin_stat['plugin_name'] ) ? $plugin_stat['plugin_name'] : 'Unknown Plugin',
-							'time_ms' => $time_ms,
-							'date_time' => isset( $plugin_stat['date_time'] ) ? $plugin_stat['date_time'] : 0,
-							'severity' => $time_ms > 1000 ? 'critical' : 'warning'
-						);
-					}
-				}
-			}
-		}
-
-		// Merge and deduplicate
-		$all_slow_items = array();
-		$seen_names = array();
-
-		foreach ( $slow_plugins_profiler as $item ) {
-			$key = strtolower( $item['name'] );
-			if ( ! isset( $seen_names[ $key ] ) ) {
-				$all_slow_items[] = $item;
-				$seen_names[ $key ] = true;
-			}
-		}
-
-		foreach ( $slow_plugins_themes as $item ) {
-			$key = strtolower( $item['name'] );
-			if ( ! isset( $seen_names[ $key ] ) ) {
-				$all_slow_items[] = $item;
-				$seen_names[ $key ] = true;
-			}
-		}
-
-		usort( $all_slow_items, function ( $a, $b ) {
+		usort( $slow_items, function ( $a, $b ) {
 			return $b['time_ms'] <=> $a['time_ms'];
 		} );
 
-		return $all_slow_items;
+		return $slow_items;
 	}
 
 	/**
-	 * Find top slowest item from stats
-	 * 
-	 * @param array $stats Hook performance stats
+	 * Find the code with the most own time per page load
+	 *
+	 * @param array $stats Activity of the last 24 hours from Sitepulse_Profiler::get_recent_stats()
 	 * @return array|null Top slow item or null
 	 */
 	private function get_top_slow_item( $stats ) {
-		if ( empty( $stats ) || ! is_array( $stats ) ) {
-			return null;
-		}
-
 		$top_slow = null;
-		$top_slow_time = 0;
 		foreach ( $stats as $stat ) {
-			if ( ! empty( $stat ) && isset( $stat['total'] ) ) {
-				$time_ms = $stat['total'] * 1000;
-				if ( $time_ms > $top_slow_time ) {
-					$top_slow_time = $time_ms;
-					$top_slow = $stat;
-				}
+			if ( $stat['load_ms'] > ( $top_slow ? $top_slow['load_ms'] : 0 ) ) {
+				$top_slow = $stat;
 			}
 		}
 
@@ -555,9 +510,9 @@ class Sitepulse_Backend {
 			$plugin_or_theme = str_replace( '-', ' ', $top_slow['source'] );
 			return array(
 				'name' => ucfirst( $plugin_or_theme ),
-				'time_ms' => $top_slow_time,
-				'hook' => isset( $top_slow['hook'] ) ? $top_slow['hook'] : '',
-				'fileline' => isset( $top_slow['fileline'] ) ? $top_slow['fileline'] : '',
+				'time_ms' => (float) $top_slow['load_ms'],
+				'hook' => $top_slow['hook'],
+				'fileline' => $top_slow['fileline'],
 				'type' => 'plugin_or_theme'
 			);
 		}
@@ -618,11 +573,8 @@ class Sitepulse_Backend {
 		}
 
 		if ( $total_load_time == 0 && ! empty( $stats ) ) {
-			foreach ( $stats as $stat ) {
-				if ( ! empty( $stat ) && isset( $stat['total'] ) ) {
-					$total_load_time += (float) $stat['total'] * 1000;
-				}
-			}
+			// Own time per page load of everything that ran in the last 24 hours.
+			$total_load_time = (float) array_sum( array_column( $stats, 'load_ms' ) );
 		}
 
 		return $total_load_time;
@@ -768,7 +720,8 @@ class Sitepulse_Backend {
 	 * Display sections
 	 */
 	public function render_dashboard_section() {
-		$stats = Sitepulse_Profiler::get_stored_stats();
+		// Scores, rankings and warnings describe the last 24 hours, not code that has since changed.
+		$stats = Sitepulse_Profiler::get_recent_stats();
 		$snapshot_time = get_option( SITEPULSE_PROFILER_CURRENT_TIME, null );
 
 		// List of activated plugins - use cached utility method
@@ -784,7 +737,8 @@ class Sitepulse_Backend {
 		$slow_queries = [];
 		$slow_queries = $this->plugin->sp_get_slow_queries( 100.0, 50 );
 		$curLoader = new Sitepulse_CurLoader();
-		$curl_events = array_reverse( $curLoader::get_events() );
+		// The External Requests screen keeps the full log; the dashboard covers the same 24 hours as everything else.
+		$curl_events = array_reverse( $curLoader::get_recent_events() );
 
 		// Get plugin profiler stats
 		$plugin_profiler_stats = [];
@@ -809,7 +763,7 @@ class Sitepulse_Backend {
 
 		// Calculate all performance metrics
 		$scores = $this->calculate_performance_scores( $stats, $curl_events, $mem, $active_plugins_count, $error_log_stats );
-		$all_slow_items = $this->calculate_slow_items( $stats, $plugin_profiler_stats );
+		$all_slow_items = $this->calculate_slow_items( $stats );
 		$top_slow_item = $this->get_top_slow_item( $stats );
 		$slow_api_requests = $this->calculate_slow_api_requests( $curl_events );
 		$total_load_time = $this->calculate_total_load_time( $stats );
@@ -860,6 +814,8 @@ class Sitepulse_Backend {
 			return array_merge( [ 'name' => '' ], $vulnerability );
 		}, array_filter( (array) get_option( 'sitepulse_vulnerabilities_list', [] ), 'is_array' ) );
 		$last_vulnerability_check = get_option( 'sitepulse_last_vulnerability_check', '' );
+		// A scan the API queued and has not finished yet.
+		$vulnerability_scan_queued_at = get_option( 'sitepulse_vulnerability_scan_queued_at', '' );
 
 		if ( ! empty( $pagespeed_report ) && is_array( $pagespeed_report ) && ! empty( $pagespeed_report['has_data'] ) ) {
 			// Check for desktop data first, then mobile
@@ -895,11 +851,14 @@ class Sitepulse_Backend {
 		$ai_diagnostic_requested_at = null;
 		$ai_diagnostic_queue_position = null;
 		$ai_diagnostic_report = null;
+		$ai_diagnostic_error = '';
 
 		if ( $sp_ai_external_api_enabled ) {
 			$ai_diagnostic_status = get_option( 'sitepulse_ai_diagnostic_status', null );
 			$ai_diagnostic_requested_at = get_option( 'sitepulse_ai_diagnostic_requested_at', null );
 			$ai_diagnostic_queue_position = get_transient( 'sitepulse_ai_diagnostic_queue_position' );
+			// Why the last diagnostic failed, as the API reported it.
+			$ai_diagnostic_error = (string) get_option( 'sitepulse_ai_diagnostic_error', '' );
 			
 			// Get report if completed or no status yet
 			if ( $ai_diagnostic_status === 'completed' || empty( $ai_diagnostic_status ) ) {
@@ -1012,7 +971,7 @@ class Sitepulse_Backend {
 			return;
 
 		Sitepulse_Getting_Started::mark_visited( 'resource-load' );
-		$stats = Sitepulse_Profiler::get_stored_stats();
+		$stats = Sitepulse_Profiler::get_recent_stats();
 
 		$snapshot_time = get_option( SITEPULSE_PROFILER_CURRENT_TIME, null );
 

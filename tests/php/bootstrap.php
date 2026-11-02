@@ -7,7 +7,7 @@ foreach (array('/wp-admin/includes', '/wp-content/plugins', '/wp-content/themes'
         mkdir(SITEPULSE_TEST_WP_ROOT . $directory, 0777, true);
     }
 }
-foreach (array('file', 'plugin', 'update') as $fixture) {
+foreach (array('file', 'plugin', 'update', 'misc', 'class-wp-upgrader') as $fixture) {
     file_put_contents(SITEPULSE_TEST_WP_ROOT . '/wp-admin/includes/' . $fixture . '.php', "<?php // Intentionally empty WordPress boundary fixture.\n");
 }
 $constants = array(
@@ -24,6 +24,7 @@ $constants = array(
     'SITEPULSE_PROFILER_CURRENT_TIME' => 'sitepulse_profiler_current_time', 'SITEPULSE_PROFILER_SLUG' => 'resource_load',
     'SITEPULSE_CURL_API_KEY' => 'sitepulse_curl_api_events', 'SITEPULSE_CURL_API_ENABLED' => 'sitepulse_curl_api_enabled',
     'SITEPULSE_CURL_API_SLUG' => 'curl_api', 'SITEPULSE_CURL_API_DEFAULT_THRESHOLD' => 1,
+    'SITEPULSE_ADMIN_ACCESS_OPTION' => 'sitepulse_admin_access',
     'SITEPULSE_SETTINGS_PROFILER_INACTIVE_AFTER_SECONDS' => 60, 'SITEPULSE_REALTIME_TRACKING_TIME' => 30,
     'SECOND_IN_SECONDS' => 1, 'MINUTE_IN_SECONDS' => 60, 'HOUR_IN_SECONDS' => 3600, 'DAY_IN_SECONDS' => 86400,
     'WEEK_IN_SECONDS' => 604800, 'MONTH_IN_SECONDS' => 2592000, 'YEAR_IN_SECONDS' => 31536000,

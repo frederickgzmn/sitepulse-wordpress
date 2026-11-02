@@ -158,6 +158,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 									<p class="text-muted mb-3">
 										<?php echo esc_html__( 'The AI diagnostic could not be completed. Please try again.', 'sitepulse' ); ?>
 									</p>
+									<?php if ( ! empty( $ai_diagnostic_error ) ) : ?>
+										<p class="small mb-3">
+											<strong><?php echo esc_html__( 'Reason:', 'sitepulse' ); ?></strong>
+											<?php echo esc_html( $ai_diagnostic_error ); ?>
+										</p>
+									<?php endif; ?>
 									<button type="button" class="btn btn-primary sp-request-ai-diagnostic-btn" data-force="true">
 										<span class="dashicons dashicons-update-alt me-1"></span>
 										<?php echo esc_html__( 'Retry Diagnostic', 'sitepulse' ); ?>
@@ -755,7 +761,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 									<?php if ( ! empty( $last_vulnerability_check ) ) : ?>
 										<?php echo esc_html__( 'Last checked:', 'sitepulse' ); ?>
 										<span
-											class="fw-bold"><?php echo esc_html( date( 'g:i A', strtotime( $last_vulnerability_check ) ) ); ?></span>
+											class="fw-bold"><?php echo esc_html( date_i18n( 'M j, g:i A', strtotime( $last_vulnerability_check ) ) ); ?></span>
 									<?php else : ?>
 										<?php echo esc_html__( 'Not checked yet', 'sitepulse' ); ?>
 									<?php endif; ?>
@@ -763,6 +769,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 							</div>
 
 							<div class="sp-vulnerabilities-results">
+								<?php if ( ! empty( $vulnerability_scan_queued_at ) ) : ?>
+									<div class="alert alert-warning mb-2">
+										<span class="dashicons dashicons-hourglass me-1"></span>
+										<?php echo esc_html( sprintf(
+											/* translators: %s: when the scan was queued */
+											__( 'Your site has been in the queue for a vulnerability scan since %s. Results are usually ready within 30 minutes: click "Check Vulnerabilities" to see them.', 'sitepulse' ),
+											date_i18n( 'M j, g:i A', strtotime( $vulnerability_scan_queued_at ) )
+										) ); ?>
+									</div>
+								<?php endif; ?>
 								<?php if ( ! empty( $vulnerabilities ) ) : ?>
 									<div class="alert alert-danger mb-0">
 										<h6 class="alert-heading">
@@ -785,7 +801,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 										<span class="dashicons dashicons-yes-alt me-1"></span>
 										<?php echo esc_html__( 'No vulnerabilities found.', 'sitepulse' ); ?>
 									</div>
-								<?php else : ?>
+								<?php elseif ( empty( $vulnerability_scan_queued_at ) ) : ?>
 									<div class="alert alert-info mb-0">
 										<span class="dashicons dashicons-info me-1"></span>
 										<?php echo esc_html__( 'Run a scan to check for vulnerabilities.', 'sitepulse' ); ?>
@@ -929,7 +945,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 										<div>
 											<strong><?php echo esc_html__( 'Performance Warnings', 'sitepulse' ); ?></strong>
 											<div class="sp-widget-subtitle">
-												<?php echo esc_html__( 'Plugins, themes, or processes that are slowing down your site', 'sitepulse' ); ?>
+												<?php echo esc_html__( 'Plugins, themes and external requests that slowed down your site in the last 24 hours', 'sitepulse' ); ?>
 											</div>
 										</div>
 									</div>
@@ -989,6 +1005,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 												}
 												?>
 											</span>
+											<span class="small ms-2"><?php echo esc_html__( 'own time per page load, last 24 hours', 'sitepulse' ); ?></span>
 										</p>
 										<?php if ( ! empty( $top_slow_item['hook'] ) || ! empty( $top_slow_item['fileline'] ) ) : ?>
 											<p class="mb-0 small text-muted">
@@ -1060,7 +1077,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 										</p>
 
 										<div class="mt-3">
-											<strong><?php echo esc_html__( 'Slow Items Detected:', 'sitepulse' ); ?></strong>
+											<strong><?php echo esc_html__( 'Slow items in the last 24 hours:', 'sitepulse' ); ?></strong>
 											<ul class="mb-0 mt-2">
 												<?php
 												$display_count = 0;
@@ -1149,7 +1166,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 											<?php echo esc_html__( 'Your site is making requests to external services (like payment processors, analytics, or social media) that are responding slowly. This can delay page loading.', 'sitepulse' ); ?>
 										</p>
 										<div class="mt-3">
-											<strong><?php echo esc_html__( 'Slow API Requests:', 'sitepulse' ); ?></strong>
+											<strong><?php echo esc_html__( 'Slow API requests in the last 24 hours:', 'sitepulse' ); ?></strong>
 											<ul class="mb-0 mt-2">
 												<?php
 												$api_display_count = 0;
@@ -2011,6 +2028,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 									<p class="text-muted mb-3">
 										<?php echo esc_html__( 'The AI diagnostic could not be completed. Please try again.', 'sitepulse' ); ?>
 									</p>
+									<?php if ( ! empty( $ai_diagnostic_error ) ) : ?>
+										<p class="small mb-3">
+											<strong><?php echo esc_html__( 'Reason:', 'sitepulse' ); ?></strong>
+											<?php echo esc_html( $ai_diagnostic_error ); ?>
+										</p>
+									<?php endif; ?>
 									<button type="button" class="btn btn-primary sp-request-ai-diagnostic-btn" data-force="true">
 										<span class="dashicons dashicons-update-alt me-1"></span>
 										<?php echo esc_html__( 'Retry Diagnostic', 'sitepulse' ); ?>
@@ -2193,7 +2216,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 									<div>
 										<strong><?php echo esc_html__( 'Plugins/Themes Hooks', 'sitepulse' ); ?></strong>
 										<div class="sp-widget-subtitle">
-											<?php echo esc_html__( 'Performance impact from plugins and themes', 'sitepulse' ); ?>
+											<?php echo esc_html__( 'Time each plugin and theme adds to a page load, over the last 24 hours', 'sitepulse' ); ?>
 										</div>
 									</div>
 								</div>
@@ -2216,11 +2239,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<div class="sp-widget-content">
 								<div class="sp-details-list">
 									<?php
-									// Sort by total time desc by default
+									// Slowest first: own time per page load over the last 24 hours
 									$stats = array_values( $stats );
 
 									usort( $stats, function ( $a, $b ) {
-										return $b['total'] <=> $a['total'];
+										return $b['load_ms'] <=> $a['load_ms'];
 									} );
 
 									if ( empty( $stat ) && round( count( $stats ) ) == 0 ) {
@@ -2228,7 +2251,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 										<div class="sp-detail-item sp-empty-state">
 											<div class="sp-detail-content">
 												<span class="dashicons dashicons-info"></span>
-												<span><?php echo esc_html__( 'No plugin or theme activity detected. Please enable the monitor tracker to start collecting data.', 'sitepulse' ); ?></span>
+												<span><?php echo esc_html__( 'No plugin or theme activity in the last 24 hours. Make sure the Performance Monitor is on, then visit a few pages of your site.', 'sitepulse' ); ?></span>
 											</div>
 										</div>
 										<?php
@@ -2242,8 +2265,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 										}
 
 										if ( ! empty( $stat ) ) {
-											$avg = $stat['calls'] ? ( $stat['total'] / $stat['calls'] ) : 0;
-											$time_ms = $stat['total'] * 1000;
+											$avg = $stat['avg_ms'];
+											$time_ms = $stat['load_ms'];
 
 											// Determine performance level
 											if ( $time_ms > 1000 ) {
@@ -2270,7 +2293,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 														</div>
 													</div>
 													<div class="sp-detail-metrics">
-														<div class="sp-metric-badge" style="--metric-color: <?php echo esc_attr( $perf_color ); ?>">
+														<div class="sp-metric-badge" style="--metric-color: <?php echo esc_attr( $perf_color ); ?>" title="<?php echo esc_attr__( 'Own time per page load', 'sitepulse' ); ?>">
 															<span class="sp-metric-value"><?php echo esc_html( number_format( $time_ms, 0 ) ); ?></span>
 															<span class="sp-metric-unit">ms</span>
 														</div>
@@ -2279,8 +2302,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 												<div class="sp-detail-secondary">
 													<div class="sp-detail-stats">
 														<span class="sp-stat">
-															<span class="sp-stat-label"><?php echo esc_html__( 'Avg', 'sitepulse' ); ?>:</span>
-															<span class="sp-stat-value"><?php echo esc_html( number_format( $avg * 1000, 2 ) ); ?>
+															<span class="sp-stat-label"><?php echo esc_html__( 'Avg per call', 'sitepulse' ); ?>:</span>
+															<span class="sp-stat-value"><?php echo esc_html( number_format( $avg, 2 ) ); ?>
 																ms</span>
 														</span>
 														<span class="sp-stat">
@@ -2346,7 +2369,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 										<div class="sp-detail-item sp-empty-state">
 											<div class="sp-detail-content">
 												<span class="dashicons dashicons-info"></span>
-												<span><?php echo esc_html__( 'No API requests detected. Please enable the monitor tracker to start collecting data.', 'sitepulse' ); ?></span>
+												<span><?php echo esc_html__( 'No slow external requests in the last 24 hours.', 'sitepulse' ); ?></span>
 											</div>
 										</div>
 										<?php
@@ -2433,7 +2456,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 									<?php if ( ! empty( $last_vulnerability_check ) ) : ?>
 										<?php echo esc_html__( 'Last checked:', 'sitepulse' ); ?>
 										<span
-											class="fw-bold"><?php echo esc_html( date( 'g:i A', strtotime( $last_vulnerability_check ) ) ); ?></span>
+											class="fw-bold"><?php echo esc_html( date_i18n( 'M j, g:i A', strtotime( $last_vulnerability_check ) ) ); ?></span>
 									<?php else : ?>
 										<?php echo esc_html__( 'Not checked yet', 'sitepulse' ); ?>
 									<?php endif; ?>
@@ -2441,6 +2464,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 							</div>
 
 							<div class="sp-vulnerabilities-results">
+								<?php if ( ! empty( $vulnerability_scan_queued_at ) ) : ?>
+									<div class="alert alert-warning mb-2">
+										<span class="dashicons dashicons-hourglass me-1"></span>
+										<?php echo esc_html( sprintf(
+											/* translators: %s: when the scan was queued */
+											__( 'Your site has been in the queue for a vulnerability scan since %s. Results are usually ready within 30 minutes: click "Check Vulnerabilities" to see them.', 'sitepulse' ),
+											date_i18n( 'M j, g:i A', strtotime( $vulnerability_scan_queued_at ) )
+										) ); ?>
+									</div>
+								<?php endif; ?>
 								<?php if ( ! empty( $vulnerabilities ) ) : ?>
 									<div class="alert alert-danger mb-0">
 										<h6 class="alert-heading">
@@ -2463,7 +2496,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 										<span class="dashicons dashicons-yes-alt me-1"></span>
 										<?php echo esc_html__( 'No vulnerabilities found.', 'sitepulse' ); ?>
 									</div>
-								<?php else : ?>
+								<?php elseif ( empty( $vulnerability_scan_queued_at ) ) : ?>
 									<div class="alert alert-info mb-0">
 										<span class="dashicons dashicons-info me-1"></span>
 										<?php echo esc_html__( 'Run a scan to check for vulnerabilities.', 'sitepulse' ); ?>
