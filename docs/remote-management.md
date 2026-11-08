@@ -60,7 +60,17 @@ A rejected request is answered `{ "success": false, "error": "<code>", "message"
 
 The API also writes each rejection to its log (`Remote management: request rejected`, a warning with the domain, the path, the code, the client address and whether the domain is a known site), at most once per domain and code every 10 minutes, so a misconfigured site that checks in every 5 minutes does not flood the log.
 
-The plugin shows the reason in its connection box and check-in status: for `invalid_signature` it tells the administrator to set the site's SitePulse license to the one the dashboard shows for the site (its settings page lists it) and press Check connection, since with a non-matching key the site cannot disconnect or re-register by itself (`website-request` refuses a known domain without its license).
+The plugin shows the reason in its connection box and check-in status: for `invalid_signature` it tells the administrator to set the site's SitePulse license to the one the dashboard shows for the site (its settings page lists it) and press Check connection, since with a non-matching key the site cannot disconnect by itself. A site that has no license at all registers again on its own by proving it runs on the domain (see [Registering again without the license](#registering-again-without-the-license)).
+
+### Registering again without the license
+
+`POST /api/website/website-request` refuses to re-key a domain that is already registered unless the request carries the domain's current license (`website_ownership_required`, 403): otherwise anyone naming a domain could take over its record. A site that lost its license (a reinstalled plugin, a restored database, a cloned site carrying another domain's key) proves instead that the request comes from the domain itself:
+
+1. The plugin generates a one-time token (32 to 128 characters of `A-Z a-z 0-9 _ -`), keeps it for 15 minutes and sends it as `registration_proof` with the request.
+2. While it keeps the token, the plugin answers `GET https://<site>/?sitepulse_registration_proof=1` with the token's lower-case hexadecimal SHA-256 digest alone as `text/plain`; without a token it answers as for any other page.
+3. The API resolves the host the site sent (and the same host without `www.`), refuses private or unresolved addresses, fetches that URL over HTTPS pinned to the resolved address without following redirects, and compares the body with the digest of the token it received. On a match the request is treated as the site's own: the domain is re-keyed and `new_license` is returned as for any registration; the abuse-prevention schedule of a known domain still applies. Otherwise the 403 above is returned and nothing changes.
+
+The response of `/?sitepulse_registration_proof=1` is public but useless to anyone else: it is a digest, so a bystander who reads it while a registration is in flight cannot send the token it was made from, and only the request that carries that token re-keys the domain. A development API with `REMOTE_MANAGEMENT_WAKE_PRIVATE_HOSTS=true` also checks private hosts, over HTTPS without certificate verification and then plain HTTP.
 
 ### API → site
 
@@ -179,14 +189,14 @@ Sent when remote management becomes active, every `inventory_seconds`, after any
 | Field | Meaning |
 |---|---|
 | `schedules` | UpdraftPlus has one schedule for files and one for the database; BackWPup has one per job ("Backup now" jobs are left out). |
-| `schedules[].contents`, `recent[].contents` | `database`, `files`; BackWPup jobs can also have `content_export`, `plugin_list` and `database_check`. |
+| `schedules[].contents`, `recent[].contents` | `database`, `files`; BackWPup jobs can also have `content_export`, `plugin_list` (a job that saves only the list of installed plugins; the list a files job saves goes with its `files`) and `database_check`. A BackWPup archive holds what its name says (BackWPup names an archive after the job types it saved), or what its job saves now when the name does not say. |
 | `schedules[].frequency` | The plugin's own value (UpdraftPlus: `every4hours`, `every8hours`, `twicedaily`, `daily`, `weekly`, `fortnightly`, `monthly`; BackWPup: `hourly`, `daily`, `weekly`, `monthly`, or `custom`), or `manual` when the backup is not scheduled. |
 | `schedules[].keep` | Backups the plugin keeps; for BackWPup the folder destination's limit, `null` when unknown. |
 | `schedules[].destinations`, `recent[].destinations` | Storage methods, lowercase (`googledrive`, `s3`, `dropbox`, ...). UpdraftPlus lists only remote storage, so an empty list means the backups stay on this server; BackWPup lists `folder` for this server. |
 | `running` | `null` when no backup is running. `progress` (percent) is `null` for UpdraftPlus; `stage` is the plugin's own step name. |
-| `last` | The newest finished backup, or `null`. For BackWPup, `ok`, `errors` and `warnings` are `null` when its log cannot be read. |
+| `last` | The newest finished backup, or `null`; a running backup is not finished. For BackWPup, `ok`, `errors` and `warnings` are `null` when its log cannot be read, and a job that ended without the archive it was to make (one that was aborted: BackWPup logs that as a warning, not an error) is not `ok`. |
 | `next` | The next scheduled backup of any schedule, or `null`. |
-| `recent` | The 10 newest backups. |
+| `recent` | The 10 newest backups. A BackWPup storage lists every archive it holds, whichever job made it: each archive is listed once, under the job that made it (BackWPup names archives after their job), or under the first job that lists it when no job can claim it. |
 
 ### `POST /api/website/remote/events`
 
@@ -206,7 +216,7 @@ Up to 50 events per request, oldest first. Event `id`s are UUIDs; the API ignore
 | `update.completed` | `kind` (`plugin`, `theme`, `core`, `translation`), `initiator` (`user`, `auto`, `sitepulse`), `items` with `id`, `from`, `to`, `ok` |
 | `plugin.activated`, `plugin.deactivated` | `file`, `name`, `version` |
 | `theme.switched` | `stylesheet`, `name`, `version`, `previous` |
-| `backup.completed` | `provider`, `ok`, `errors`, `warnings`, `size`, `time` |
+| `backup.completed` | `provider`, `ok` (for BackWPup, also `false` when the job ended without the archive it was to make), `errors`, `warnings`, `size`, `time` |
 | `backup_provider.changed` | `provider` (object or `null`) |
 | `update.impact` | `kind`, `id`, `name`, `from`, `to`, `updated_at`, `before` and `after` (`{ "day", "ms", "loads" }`, `after` `null` when `reason` is `missed`), `measured`, `reason` |
 | `performance.daily` | `day`, `ms`, `loads`, `top` (up to 5 `{ "kind", "id", "ms" }`) |
@@ -290,12 +300,12 @@ All three answer `no_backup_plugin` when no supported backup plugin is active (t
 
 | Command | Result when `done` | Errors |
 |---|---|---|
-| `backup_now` | `what`, `job`: UpdraftPlus's backup nonce, or the BackWPup job id | `backup_running` (a backup is running or already queued), `invalid_arguments`, `start_failed` (BackWPup did not start its job) |
+| `backup_now` | `what`, `job`: UpdraftPlus's backup nonce, or the BackWPup job id | `backup_running` (a backup is running or already queued), `invalid_arguments`, `start_failed` (BackWPup did not start its job within 10 seconds) |
 | `cancel_backup` | `cancelled`: how many running or queued backups were stopped (0 when none) | |
 | `apply_backup_preset` | `preset`: its name, `schedules`: the backup schedules afterwards (as in the inventory), `created`: BackWPup jobs created | `invalid_preset` |
 
 - **UpdraftPlus** `backup_now` queues UpdraftPlus's own "Backup Now" (labelled "SitePulse") as a one-off WordPress cron event, so it starts at the next cron run and uses the storage set up in UpdraftPlus. `plugins` and `themes` back up the database and only that folder. `cancel_backup` stops running jobs the way UpdraftPlus's "Delete" link does and removes backups SitePulse queued that have not started.
-- **BackWPup** `backup_now` runs BackWPup's own "Backup Now" job, which, like its button, keeps the archive on this server; for `plugins` and `themes` the job saves the database and only that folder. `cancel_backup` aborts the running job.
+- **BackWPup** `backup_now` runs BackWPup's own "Backup Now" job, which, like its button, keeps the archive on this server; for `plugins` and `themes` the job saves the database and only that folder. `cancel_backup` aborts the running job, which BackWPup ends with a warning and without its archive: it is reported as a backup that is not `ok`.
 
 ### Backup preset format
 
@@ -355,7 +365,7 @@ A safe update updates one plugin or theme between two visual scans of the site, 
    - **Keep the update** (`safe-updates/keep`);
    - **Restore** (`safe-updates/recover`): with a backup UpdraftPlus made, the API queues `restore_backup`, which restores the item's folder and the database from the backup taken before the update. Without one (no backup plugin, or BackWPup), when UpdraftPlus no longer has the backup or cannot restore it (`backup_not_found`, `restore_unsupported`), or when another update or recovery was delivered to the site since the safe update started (restoring the database would undo that too), it queues `rollback_item`, which reinstalls the version that was installed; `recovery` tells the dashboard which one it would be. Afterwards the API scans the pages once more and records how far they still are from the captures before the update (`check`). Undoing is refused (409) while another safe update of the site runs or waits for a choice, and when the update was never made.
 
-   A page the worker could not compare for a reason of the service's own (`error_code` `vrt_failed` or `artifact_failed`: the comparison service or the image storage failed) is left out of the verdict; a page that did not load (`navigation_timeout`, `capture_failed`) counts as a big change. When no page could be compared, the safe update fails with `after_check_failed`.
+   A page the worker could not compare for a reason of the service's own (`error_code` `vrt_failed` or `artifact_failed`: the comparison service or the image storage failed; `capture_abandoned`: the worker kept claiming the scan without finishing it) is left out of the verdict; a page that did not load (`navigation_timeout`, `capture_failed`) counts as a big change. When no page could be compared, the safe update fails with `after_check_failed`.
 
 **Statuses:** `preparing` (the scan before and the backup run, or the scan waits for the site's earlier update) → `updating` → `checking` → `passed` or `changed` → `kept`, or `restoring` → `restored` or `restore_failed` (which may be retried); or `failed`, with `error`. Every step changes a safe update only from the status the step expects, so the site, the visual worker, the dashboard and the 15-minute check never undo each other's change; the 15-minute check also moves a safe update on when the request that brought its result or scan failed after storing it.
 

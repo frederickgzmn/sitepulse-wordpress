@@ -92,6 +92,12 @@ class Sitepulse_Remote_Backups {
 		'files,database' => 'Files and database (SitePulse)',
 	);
 
+	/** BackWPup job types that put something in the job's archive; a job of other types (a database check) makes none. */
+	const BACKWPUP_ARCHIVE_TYPES = array( 'FILE', 'DBDUMP', 'WPEXP', 'WPPLUGIN' );
+
+	/** Seconds to wait for BackWPup to start its job, as long as BackWPup's own "Run now" waits. */
+	const BACKWPUP_START_SECONDS = 10;
+
 	/**
 	 * Report finished backups.
 	 */
@@ -253,17 +259,33 @@ class Sitepulse_Remote_Backups {
 	 * @param object $job_object  The finished BackWPup_Job.
 	 */
 	public static function backwpup_finished( $job, $backup_file, $job_object ) {
+		$size = (int) $job_object->backup_filesize;
 		Sitepulse_Remote_Management::record_event(
 			'backup.completed',
 			array(
 				'provider' => 'backwpup',
-				'ok'       => 0 === (int) $job_object->errors,
+				'ok'       => 0 === (int) $job_object->errors && self::backwpup_archived( (array) $job, $size ),
 				'errors'   => (int) $job_object->errors,
 				'warnings' => (int) $job_object->warnings,
-				'size'     => (int) $job_object->backup_filesize,
+				'size'     => $size,
 				'time'     => self::time( time() ),
 			)
 		);
+	}
+
+	/**
+	 * Whether a job that ended saved its archive. An aborted job ends without one and without
+	 * an error (BackWPup logs the abort as a warning); a job that makes no archive (a database
+	 * check, a sync to its storage) has none to save.
+	 *
+	 * @param array $job  Job settings.
+	 * @param int   $size Size of the archive the job saved, 0 for none.
+	 * @return bool
+	 */
+	private static function backwpup_archived( array $job, $size ) {
+		$makes_archive = 'sync' !== ( $job['backuptype'] ?? 'archive' ) && array_intersect( (array) ( $job['type'] ?? array() ), self::BACKWPUP_ARCHIVE_TYPES );
+
+		return ! $makes_archive || $size > 0;
 	}
 
 	/**
@@ -676,6 +698,7 @@ class Sitepulse_Remote_Backups {
 	 */
 	private static function backwpup_status() {
 		$jobs      = self::backwpup_jobs();
+		$working   = BackWPup_Job::get_working_data();
 		$schedules = array();
 		$recent    = array();
 		$next      = array();
@@ -705,8 +728,16 @@ class Sitepulse_Remote_Backups {
 			}
 		}
 
-		// Jobs that share a folder list the same archives.
-		$recent = array_values( array_column( $recent, null, 'key' ) );
+		// A storage lists an archive for every job that uses it: the archive is the job's that
+		// made it, or the first job's when none can claim it (BackWPup did not always name
+		// archives after their job).
+		$listed = array();
+		foreach ( $recent as $backup ) {
+			if ( ! isset( $listed[ $backup['key'] ] ) || ( $backup['owned'] && ! $listed[ $backup['key'] ]['owned'] ) ) {
+				$listed[ $backup['key'] ] = $backup;
+			}
+		}
+		$recent = array_values( $listed );
 		usort(
 			$recent,
 			static function ( $a, $b ) {
@@ -716,12 +747,12 @@ class Sitepulse_Remote_Backups {
 
 		return array(
 			'schedules' => $schedules,
-			'running'   => self::backwpup_running(),
-			'last'      => self::backwpup_last( self::backwpup_last_run( $jobs ) ),
+			'running'   => self::backwpup_running( $working ),
+			'last'      => self::backwpup_last_finished( $jobs, $working ),
 			'next'      => $next ? self::time( min( $next ) ) : null,
 			'recent'    => array_map(
 				static function ( $backup ) {
-					unset( $backup['key'] );
+					unset( $backup['key'], $backup['owned'] );
 					$backup['time'] = self::time( $backup['time'] );
 					return $backup;
 				},
@@ -748,10 +779,13 @@ class Sitepulse_Remote_Backups {
 			if ( ! is_array( $item ) ) {
 				continue;
 			}
+			$file      = (string) ( $item['file'] ?? '' );
 			$backups[] = array(
-				'key'          => $destination . '|' . ( $item['file'] ?? '' ),
+				'key'          => $destination . '|' . $file,
+				// BackWPup names each archive after its job; a storage lists every archive it holds, whichever job made it.
+				'owned'        => method_exists( $handler, 'is_backup_owned_by_job' ) && $handler->is_backup_owned_by_job( $file, (int) $job_id ),
 				'time'         => (int) ( $item['time'] ?? 0 ),
-				'contents'     => $contents,
+				'contents'     => self::backwpup_archive_contents( $file, $contents ),
 				'size'         => (int) ( $item['filesize'] ?? 0 ),
 				'destinations' => array( strtolower( $destination ) ),
 				'label'        => (string) ( $job['name'] ?? '' ),
@@ -762,23 +796,54 @@ class Sitepulse_Remote_Backups {
 	}
 
 	/**
+	 * @param string $file     Archive name.
+	 * @param array  $contents What the job saves now.
+	 * @return array What the archive holds: BackWPup ends an archive's name with the job types it
+	 *               saved (2025-10-14_20-00-00_BEX374AG01_FILE-DBDUMP.tar); an archive named
+	 *               otherwise holds what its job saves now.
+	 */
+	private static function backwpup_archive_contents( $file, array $contents ) {
+		if ( preg_match( '/_([A-Z]+(?:-[A-Z]+)*)\./', basename( $file ), $found ) ) {
+			$types = explode( '-', $found[1] );
+			if ( ! array_diff( $types, array_keys( self::BACKWPUP_CONTENTS ) ) ) {
+				return self::backwpup_contents( $types );
+			}
+		}
+
+		return $contents;
+	}
+
+	/**
+	 * @param object|bool $working BackWPup's working data: the running job, or false.
 	 * @return array|null The job BackWPup is running.
 	 */
-	private static function backwpup_running() {
-		$job = BackWPup_Job::get_working_data();
-		if ( ! is_object( $job ) ) {
+	private static function backwpup_running( $working ) {
+		if ( ! is_object( $working ) ) {
 			return null;
 		}
 
 		return array(
-			'name'     => (string) ( $job->job['name'] ?? '' ),
-			'progress' => (int) $job->step_percent,
-			'stage'    => (string) $job->step_working,
+			'name'     => (string) ( $working->job['name'] ?? '' ),
+			'progress' => (int) $working->step_percent,
+			'stage'    => (string) $working->step_working,
 		);
 	}
 
 	/**
-	 * @param array|null $last Time and log file of the job that ran last.
+	 * @param array       $jobs    BackWPup jobs by id.
+	 * @param object|bool $working BackWPup's working data: the running job, or false.
+	 * @return array|null The newest finished run; the running job's log is not finished.
+	 */
+	private static function backwpup_last_finished( array $jobs, $working ) {
+		if ( is_object( $working ) ) {
+			unset( $jobs[ (int) ( $working->job['jobid'] ?? 0 ) ] );
+		}
+
+		return self::backwpup_last( self::backwpup_last_run( $jobs ) );
+	}
+
+	/**
+	 * @param array|null $last Time, log file and settings of the job that ran last.
 	 * @return array|null
 	 */
 	private static function backwpup_last( $last ) {
@@ -791,7 +856,7 @@ class Sitepulse_Remote_Backups {
 		$known  = is_numeric( $header['errors'] ?? null );
 		return array(
 			'time'     => self::time( $last['ran'] ),
-			'ok'       => $known ? 0 === (int) $header['errors'] : null,
+			'ok'       => $known ? 0 === (int) $header['errors'] && self::backwpup_archived( $last['job'], (int) ( $header['backupfilesize'] ?? 0 ) ) : null,
 			'errors'   => $known ? (int) $header['errors'] : null,
 			'warnings' => $known ? (int) ( $header['warnings'] ?? 0 ) : null,
 		);
@@ -822,7 +887,7 @@ class Sitepulse_Remote_Backups {
 
 	/**
 	 * @param array $jobs BackWPup jobs by id.
-	 * @return array|null Time (UTC) and log file of the job that ran last.
+	 * @return array|null Time (UTC), log file and settings of the job that ran last.
 	 */
 	private static function backwpup_last_run( array $jobs ) {
 		// BackWPup stores job run times in the site's local time.
@@ -834,6 +899,7 @@ class Sitepulse_Remote_Backups {
 				$last = array(
 					'ran'     => $ran,
 					'logfile' => (string) ( $job['logfile'] ?? '' ),
+					'job'     => $job,
 				);
 			}
 		}
@@ -860,18 +926,30 @@ class Sitepulse_Remote_Backups {
 
 		$job_id = self::backwpup_backup_now_job( $what );
 		BackWPup_Job::get_jobrun_url( 'runnow', $job_id );
-		for ( $wait = 0; $wait < 10 && ! file_exists( $started ); $wait++ ) {
+		// The job starts in a request BackWPup sends to the site itself, which takes as long as
+		// a page of the site: wait for it as BackWPup's own "Run now" does.
+		for ( $wait = 0; $wait < self::BACKWPUP_START_SECONDS * 10 && ! self::backwpup_started( $started ); $wait++ ) {
 			usleep( 100000 );
 		}
-		if ( ! file_exists( $started ) ) {
+		if ( ! self::backwpup_started( $started ) ) {
 			return 'start_failed';
 		}
-		wp_delete_file( $started );
+		if ( file_exists( $started ) ) {
+			wp_delete_file( $started );
+		}
 
 		return array(
 			'what' => $what,
 			'job'  => $job_id,
 		);
+	}
+
+	/**
+	 * @param string $started The file BackWPup's job writes as it starts.
+	 * @return bool Whether the job has started: it writes that file first, then its running file.
+	 */
+	private static function backwpup_started( $started ) {
+		return file_exists( $started ) || is_object( BackWPup_Job::get_working_data() );
 	}
 
 	/**
@@ -1064,7 +1142,7 @@ class Sitepulse_Remote_Backups {
 		try {
 			$last = 'updraftplus' === $id
 				? self::updraftplus_last( UpdraftPlus_Options::get_updraft_option( 'updraft_last_backup', array() ) )
-				: self::backwpup_last( self::backwpup_last_run( self::backwpup_jobs() ) );
+				: self::backwpup_last_finished( self::backwpup_jobs(), BackWPup_Job::get_working_data() );
 		} catch ( Throwable $e ) {
 			return 0;
 		}
@@ -1115,7 +1193,7 @@ class Sitepulse_Remote_Backups {
 	 * @return array What the job saves.
 	 */
 	private static function backwpup_contents( $types ) {
-		return array_values(
+		$contents = array_values(
 			array_map(
 				static function ( $type ) {
 					return self::BACKWPUP_CONTENTS[ (string) $type ] ?? strtolower( (string) $type );
@@ -1123,6 +1201,9 @@ class Sitepulse_Remote_Backups {
 				(array) $types
 			)
 		);
+
+		// BackWPup's files jobs also save the list of installed plugins: that goes with the files.
+		return in_array( 'files', $contents, true ) ? array_values( array_diff( $contents, array( 'plugin_list' ) ) ) : $contents;
 	}
 
 	/**

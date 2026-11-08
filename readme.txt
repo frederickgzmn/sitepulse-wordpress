@@ -4,7 +4,7 @@ Tags: performance, speed, optimization, monitoring, profiler
 Requires at least: 5.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,10 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 ---
 
 == Changelog ==
+= 1.5.1 =
+* Fixed: with the hook profiler on and BackWPup active, every wp-admin page died with Class "WP_List_Table" not found.
+* Additional fixes to the remote management.
+
 = 1.5.0 =
 * New: Remote management (optional). Your SitePulse dashboard can show this site's plugins, themes and available updates, plus a history of updates, plugin changes and backups, and update plugins, themes and WordPress, on request (on one site, or on all your sites at once) or under an update policy (by default security and minor updates, after three days, at night): a backup first when UpdraftPlus 1.26+ or BackWPup 5 is active, then one update at a time through WordPress's own updater, each checked on the home page, wp-admin and WooCommerce's cart and checkout, and rolled back when it breaks them. With UpdraftPlus 1.26+ or BackWPup 5 active, the dashboard also shows this site's backup schedules and recent backups, can start or cancel a backup and apply saved backup settings (schedules, how many backups to keep, what to include), and warns about backups kept only on the server, missing or overdue backups and unusually small ones. The dashboard also shows how each update changed page speed (the full day before against the full day after), daily page speed and PHP fatal errors in one timeline of everything that changed on the site, builds monthly client reports, and can alert you by email, Slack or webhook when an update or backup fails, check-ins stop or the site slows down. It is off until you set the site up in your dashboard with its connection key, and you can block it at any time under SitePulse Settings. An update cut short by a PHP time limit or crash takes the site out of maintenance mode and puts the previous version back, and the dashboard can rotate the key remote management signs with.
 * New: safe update of one plugin or theme from your dashboard: the plugins (or themes) folder and the database are backed up first, screenshots of the site's monitored pages taken just before and after the update are compared, and when a page changed a lot or stopped loading you can keep the update or undo it. Undoing restores the folder and the whole database from the UpdraftPlus backup (anything saved since is lost), or without one reinstalls the previous version from WordPress.org.
