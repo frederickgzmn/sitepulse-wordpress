@@ -60,7 +60,7 @@ final class RemoteBackupCommandsTest extends Sitepulse_Test_Case {
         $this->updraftplus();
         $this->backwpup(array(1 => $this->job($backwpup)));
         update_option('updraft_last_backup', $updraftplus);
-        Sitepulse_Test_Backups::$log_headers = array('/logs/ok.html' => array('errors' => '0'), '/logs/failed.html' => array('errors' => '2'));
+        Sitepulse_Test_Backups::$log_headers = array('/logs/ok.html' => array('errors' => '0', 'backupfilesize' => '100'), '/logs/failed.html' => array('errors' => '2'));
 
         $this->assertSame($expected, Sitepulse_Remote_Backups::provider()['id']);
     }
@@ -77,9 +77,20 @@ final class RemoteBackupCommandsTest extends Sitepulse_Test_Case {
     public function test_a_failing_plugin_counts_as_never_backed_up(): void {
         $this->updraftplus();
         $this->backwpup(array(1 => $this->job(array('lastrun' => 1760500000, 'logfile' => '/logs/ok.html'))));
-        Sitepulse_Test_Backups::$log_headers = array('/logs/ok.html' => array('errors' => '0'));
+        Sitepulse_Test_Backups::$log_headers = array('/logs/ok.html' => array('errors' => '0', 'backupfilesize' => '100'));
         Sitepulse_Test_Backups::$throw = true;
         $this->assertSame('updraftplus', Sitepulse_Remote_Backups::provider()['id']);
+    }
+
+    public function test_a_running_backwpup_job_is_not_its_latest_backup(): void {
+        $this->updraftplus();
+        $this->backwpup(array(1 => $this->job(array('lastrun' => 1760500000, 'logfile' => '/logs/ok.html'))));
+        update_option('updraft_last_backup', array('backup_time' => 1760400000, 'success' => 1));
+        Sitepulse_Test_Backups::$log_headers = array('/logs/ok.html' => array('errors' => '0', 'backupfilesize' => '100'));
+        $working = new BackWPup_Job(); $working->job = array('jobid' => 1);
+        Sitepulse_Test_Backups::$working = $working;
+
+        $this->assertSame('updraftplus', Sitepulse_Remote_Backups::provider()['id'], 'BackWPup\'s newest run has not finished.');
     }
 
     /** @dataProvider withoutBackupPlugin */
@@ -258,8 +269,16 @@ final class RemoteBackupCommandsTest extends Sitepulse_Test_Case {
     public function test_backwpup_backup_now_reports_a_job_that_did_not_start(): void {
         $this->backwpup();
         Sitepulse_Test_Backups::$job_starts = false;
+        $started = microtime(true);
         $this->assertSame('start_failed', $this->run_command('backup_now', array('what' => 'files'))['error']);
+        $this->assertGreaterThanOrEqual(Sitepulse_Remote_Backups::BACKWPUP_START_SECONDS, round(microtime(true) - $started), 'The job gets as long to start as BackWPup\'s own "Run now" gives it.');
         $this->assertSame(array('FILE', 'WPPLUGIN'), Sitepulse_Test_Backups::$jobs[1]['type']);
+    }
+
+    public function test_backwpup_backup_now_sees_a_job_that_started_without_its_start_file(): void {
+        $this->backwpup();
+        Sitepulse_Test_Backups::$job_starts = 'running';
+        $this->assertSame(array('provider' => 'backwpup', 'what' => 'database', 'job' => 1), $this->run_command('backup_now', array('what' => 'database'))['result']);
     }
 
     public function test_backwpup_runs_one_backup_at_a_time_and_cancels_the_running_one(): void {

@@ -547,7 +547,7 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         $job = static function (array $changes) { update_option(Sitepulse_Remote_Updates::JOB_OPTION, array_replace(get_option(Sitepulse_Remote_Updates::JOB_OPTION), $changes)); };
         return array(
             'the backup plugin was deactivated since' => array(static function () { unset($GLOBALS['updraftplus']); }, 'no_backup_plugin'),
-            'BackWPup did not start' => array(static function () { unset($GLOBALS['updraftplus']); Sitepulse_Test_Backups::$backwpup_version = '5.7.8'; Sitepulse_Test_Backups::$destinations = array('FOLDER' => array()); Sitepulse_Test_Backups::$job_starts = false; }, 'backup_failed'),
+            'BackWPup failed as it prepared its job' => array(static function () { unset($GLOBALS['updraftplus']); Sitepulse_Test_Backups::$backwpup_version = '5.7.8'; Sitepulse_Test_Backups::$destinations = array('FOLDER' => array()); Sitepulse_Test_Backups::$throw = true; }, 'backup_failed'),
             'the backup failed' => array(static function () use ($job) {
                 Sitepulse_Test_Backups::updraftplus();
                 $job(array('backup' => array('provider' => 'updraftplus', 'job' => 'x', 'requested_at' => time() - 120)));
@@ -1013,12 +1013,33 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         Sitepulse_Test_Backups::$working = false;
         Sitepulse_Test_Backups::$jobs[$backup['job']]['lastrun'] = time() + 1;
         Sitepulse_Test_Backups::$jobs[$backup['job']]['logfile'] = 'backwpup_log_1.html';
-        Sitepulse_Test_Backups::$log_headers['backwpup_log_1.html'] = array('errors' => 0, 'warnings' => 1);
+        Sitepulse_Test_Backups::$log_headers['backwpup_log_1.html'] = array('errors' => 0, 'warnings' => 1, 'backupfilesize' => 4096);
         $this->api();
         Sitepulse_Remote_Updates::run_job();
 
         $result = $this->results();
         $this->assertSame(array('done', array('provider' => 'backwpup', 'job' => $backup['job'])), array($result['status'], $result['result']['backup']));
+    }
+
+    public function test_an_update_does_not_run_after_backwpup_aborted_its_backup(): void {
+        Sitepulse_Test_Backups::$backwpup_version = '5.7.8';
+        Sitepulse_Test_Backups::$destinations = array('FOLDER' => array());
+        $this->plugin('seo/seo.php', '1.0');
+        $this->offer('plugin', 'seo/seo.php', '1.1');
+        $this->start('update_plugins', array('plugins' => array('seo/seo.php')));
+        Sitepulse_Remote_Updates::run_job();
+        $backup = $this->job()['backup'];
+
+        // The job ended without its archive: BackWPup logs an abort (from its own screen, or the dashboard's cancel) as a warning only.
+        Sitepulse_Test_Backups::$jobs[$backup['job']]['lastrun'] = time() + 1;
+        Sitepulse_Test_Backups::$jobs[$backup['job']]['logfile'] = 'backwpup_log_2.html';
+        Sitepulse_Test_Backups::$log_headers['backwpup_log_2.html'] = array('errors' => 0, 'warnings' => 2, 'backupfilesize' => 0);
+        $this->api();
+        Sitepulse_Remote_Updates::run_job();
+
+        $result = $this->results();
+        $this->assertSame(array('backup_failed', 'skipped'), array($result['error'], $result['result']['items'][0]['error']));
+        $this->assertSame(array(), $this->upgrades());
     }
 
     public function test_a_request_that_ends_while_it_reports_progress_keeps_the_step_it_made(): void {

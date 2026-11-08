@@ -127,22 +127,28 @@ final class RemoteBackupsTest extends Sitepulse_Test_Case {
             3 => $job(array('name' => 'Backup now', 'tempjob' => true, 'lastrun' => 1760500000)),
             4 => 'corrupt',
             5 => $job(array('name' => 'Sharing the folder', 'activetype' => 'easycron', 'maxbackups' => null, 'destinations' => array('FOLDER'))),
+            6 => $job(array('name' => 'Files', 'type' => array('FILE', 'WPPLUGIN'), 'activetype' => '', 'destinations' => array())),
         );
         unset(Sitepulse_Test_Backups::$jobs[5]['frequency'], Sitepulse_Test_Backups::$jobs[5]['maxbackups']);
+        // BackWPup names an archive after its job (the two digits after the hash) and what it saved. Jobs 1 and 5
+        // share the folder, which also holds an archive named by hand, from before BackWPup named them so.
+        $folder = array(
+            array('file' => '/backups/2025-10-14_20-01-40_BEX374AG01_FILE-DBDUMP.tar', 'filesize' => 100, 'time' => 1760472100),
+            array('file' => '/backups/2025-10-13_21-13-20_CEX374AG05_DBDUMP.tar', 'time' => 1760390000),
+            array('file' => '/backups/site_MANUAL.tar', 'filesize' => 50, 'time' => 1760300000),
+            'not an item',
+        );
         Sitepulse_Test_Backups::$destinations = array(
-            'FOLDER' => array(
-                '1_FOLDER' => array(array('file' => '/backups/a.tar', 'filesize' => 100, 'time' => 1760472100), 'not an item'),
-                '5_FOLDER' => array(array('file' => '/backups/a.tar', 'filesize' => 100, 'time' => 1760472100), array('file' => '/backups/b.tar', 'time' => 1760390000)),
-            ),
+            'FOLDER' => array('1_FOLDER' => $folder, '5_FOLDER' => $folder),
             'S3' => array('1_S3' => array(array('file' => 'a.tar', 'filesize' => 100, 'time' => 1760472200))),
         );
         Sitepulse_Test_WP::$scheduled = array(
             (object) array('timestamp' => 1760558400, 'hook' => 'backwpup_cron', 'args' => array('arg' => 1)),
             (object) array('timestamp' => 1760600000, 'hook' => 'backwpup_cron', 'args' => array('arg' => 5)),
         );
-        $working = new BackWPup_Job(); $working->job = array('name' => 'Daily'); $working->step_percent = 40; $working->step_working = 'DEST_S3';
+        $working = new BackWPup_Job(); $working->job = array('jobid' => 1, 'name' => 'Daily'); $working->step_percent = 40; $working->step_working = 'DEST_S3';
         Sitepulse_Test_Backups::$working = $working;
-        Sitepulse_Test_Backups::$log_headers = array('/logs/1.html' => array('errors' => '0', 'warnings' => '2'));
+        Sitepulse_Test_Backups::$log_headers = array('/logs/1.html' => array('errors' => '0', 'warnings' => '0', 'backupfilesize' => '100'), '/logs/2.html' => array('errors' => '0', 'warnings' => '2', 'backupfilesize' => '512'));
 
         $status = Sitepulse_Remote_Backups::status();
 
@@ -150,15 +156,17 @@ final class RemoteBackupsTest extends Sitepulse_Test_Case {
             array('name' => 'Daily', 'contents' => array('database', 'files'), 'frequency' => 'daily', 'next' => '2025-10-15T20:00:00Z', 'keep' => 15, 'destinations' => array('folder', 's3', 'gone')),
             array('name' => 'Weekly export', 'contents' => array('content_export', 'plugin_list', 'database_check', 'custom'), 'frequency' => 'manual', 'next' => null, 'keep' => 15, 'destinations' => array('folder')),
             array('name' => 'Sharing the folder', 'contents' => array('database', 'files'), 'frequency' => 'custom', 'next' => '2025-10-16T07:33:20Z', 'keep' => null, 'destinations' => array('folder')),
-        ), $status['schedules']);
+            array('name' => 'Files', 'contents' => array('files'), 'frequency' => 'manual', 'next' => null, 'keep' => 15, 'destinations' => array()),
+        ), $status['schedules'], 'The list of installed plugins a files job saves goes with its files.');
         $this->assertSame(array('name' => 'Daily', 'progress' => 40, 'stage' => 'DEST_S3'), $status['running']);
-        $this->assertSame(array('time' => '2025-10-15T01:00:00Z', 'ok' => true, 'errors' => 0, 'warnings' => 2), $status['last'], 'BackWPup stores local time; the site is five hours behind UTC.');
+        $this->assertSame(array('time' => '2025-10-13T01:13:20Z', 'ok' => true, 'errors' => 0, 'warnings' => 2), $status['last'], 'The running job has not finished: the last backup is the run before it. BackWPup stores local time; the site is five hours behind UTC.');
         $this->assertSame('2025-10-15T20:00:00Z', $status['next']);
         $this->assertSame(array(
             array('time' => '2025-10-14T20:03:20Z', 'contents' => array('database', 'files'), 'size' => 100, 'destinations' => array('s3'), 'label' => 'Daily'),
-            array('time' => '2025-10-14T20:01:40Z', 'contents' => array('database', 'files'), 'size' => 100, 'destinations' => array('folder'), 'label' => 'Sharing the folder'),
-            array('time' => '2025-10-13T21:13:20Z', 'contents' => array('database', 'files'), 'size' => 0, 'destinations' => array('folder'), 'label' => 'Sharing the folder'),
-        ), $status['recent'], 'An archive two jobs share is listed once.');
+            array('time' => '2025-10-14T20:01:40Z', 'contents' => array('files', 'database'), 'size' => 100, 'destinations' => array('folder'), 'label' => 'Daily'),
+            array('time' => '2025-10-13T21:13:20Z', 'contents' => array('database'), 'size' => 0, 'destinations' => array('folder'), 'label' => 'Sharing the folder'),
+            array('time' => '2025-10-12T20:13:20Z', 'contents' => array('database', 'files'), 'size' => 50, 'destinations' => array('folder'), 'label' => 'Daily'),
+        ), $status['recent'], 'An archive is listed once, under the job that made it (its name says which job and what it holds), or under the first job when none did.');
     }
 
     public function test_backwpup_without_runs_or_readable_logs(): void {
@@ -236,6 +244,31 @@ final class RemoteBackupsTest extends Sitepulse_Test_Case {
         $this->assertSame(array('provider' => 'backwpup', 'ok' => true, 'errors' => 0, 'warnings' => 1, 'size' => 2048), array_diff_key($events[2]['data'], array('time' => 1)));
         $this->assertEqualsWithDelta(time(), strtotime($events[2]['data']['time']), 2);
         $this->assertTrue(Sitepulse_Remote_Management::state()['inventory_due'], 'A new backup refreshes the inventory.');
+    }
+
+    public function test_a_backwpup_job_that_saved_no_archive_is_not_a_finished_backup(): void {
+        Sitepulse_Remote_Backups::init();
+        $this->activateRemoteManagement();
+        $ended = static function (array $job, int $size): ?bool {
+            $run = new BackWPup_Job(); $run->errors = 0; $run->warnings = 2; $run->backup_filesize = $size;
+            do_action('backwpup_end_job', $job, '', $run);
+            $events = get_option(Sitepulse_Remote_Management::EVENTS_OPTION, array());
+            return end($events)['data']['ok'];
+        };
+
+        // BackWPup logs an abort as a warning, so only the missing archive tells.
+        $this->assertFalse($ended(array('type' => array('FILE', 'DBDUMP')), 0), 'An aborted job saved no archive.');
+        $this->assertTrue($ended(array('type' => array('FILE', 'DBDUMP')), 4096));
+        $this->assertTrue($ended(array('type' => array('DBCHECK')), 0), 'A database check makes no archive.');
+        $this->assertTrue($ended(array('type' => array('FILE'), 'backuptype' => 'sync'), 0), 'A sync to the storage makes no archive.');
+
+        // The same from the log of the last run.
+        Sitepulse_Test_Backups::$backwpup_version = '5.7.8';
+        Sitepulse_Test_Backups::$jobs = array(1 => array('type' => array('DBDUMP'), 'lastrun' => 1760472000, 'logfile' => '/logs/1.html'));
+        Sitepulse_Test_Backups::$log_headers = array('/logs/1.html' => array('errors' => '0', 'warnings' => '2', 'backupfilesize' => '0'));
+        $this->assertSame(array('time' => '2025-10-14T20:00:00Z', 'ok' => false, 'errors' => 0, 'warnings' => 2), Sitepulse_Remote_Backups::status()['last']);
+        Sitepulse_Test_Backups::$jobs[1]['backuptype'] = 'sync';
+        $this->assertTrue(Sitepulse_Remote_Backups::status()['last']['ok']);
     }
 
     public function test_an_updraftplus_run_that_will_resume_is_not_reported_as_a_failed_backup(): void {

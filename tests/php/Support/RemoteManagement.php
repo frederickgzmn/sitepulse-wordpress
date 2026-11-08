@@ -23,7 +23,7 @@ final class Sitepulse_Test_Backups {
     public static $nonce = 'abc123def456';
     /** What UpdraftPlus's "Delete" answers per job nonce; other jobs are not found. */
     public static $deletable = array();
-    /** Whether a BackWPup job launched with get_jobrun_url() starts. */
+    /** Whether a BackWPup job launched with get_jobrun_url() starts: true writes its start file, 'running' only its running file, false nothing. */
     public static $job_starts = true;
     /** Default settings of BackWPup storages: KEY => settings. */
     public static $destination_defaults = array('FOLDER' => array('maxbackups' => 15, 'backupdir' => 'uploads/backwpup'), 'S3' => array('s3maxbackups' => 15, 's3region' => 'us-east-1'));
@@ -128,6 +128,8 @@ final class Sitepulse_Test_Backwpup_Destination {
     public function __construct($key) { $this->key = $key; }
     public function file_get_list($jobdest) { return Sitepulse_Test_Backups::$destinations[$this->key][$jobdest] ?? array(); }
     public function option_defaults() { return Sitepulse_Test_Backups::$destination_defaults[$this->key] ?? array(); }
+    /** BackWPup names an archive after its job: eight characters of hash, then the job id on two digits. */
+    public function is_backup_owned_by_job(string $file, int $jobid): bool { return (bool) preg_match('/_[A-Z0-9]{8}(\d{2})(?:_|\.)/', basename($file), $found) && (int) $found[1] === $jobid; }
 }
 final class BackWPup_Option {
     public static function get_job_ids($key = null, $value = false) {
@@ -135,7 +137,7 @@ final class BackWPup_Option {
         return array_keys(Sitepulse_Test_Backups::$jobs);
     }
     public static function get_job($id, $use_cache = true) { return Sitepulse_Test_Backups::$jobs[$id] ?? false; }
-    public static function next_job_id() { return Sitepulse_Test_Backups::$jobs ? max(array_keys(Sitepulse_Test_Backups::$jobs)) + 1 : 1; }
+    public static function next_job_id() { return max(array_merge(array(0), self::get_job_ids())) + 1; }
     public static function defaults_job() { return array('type' => BackWPup_JobTypes::$type_job_both, 'destinations' => array('FOLDER'), 'name' => 'New Job', 'activetype' => 'wpcron', 'cronselect' => 'basic', 'cron' => '0 0 1 * *', 'frequency' => 'monthly', 'tempjob' => false, 'backup_now' => false); }
     public static function update($id, $key, $value) { Sitepulse_Test_Backups::$jobs[$id][$key] = $value; return true; }
     public static function create_default_jobs($job_name, array $job_type) {
@@ -164,7 +166,8 @@ class BackWPup_Job {
     /** Launching a job: its request writes the start file once it runs. */
     public static function get_jobrun_url($starttype, $jobid = 0) {
         Sitepulse_Test_Backups::$calls[] = array('get_jobrun_url', $starttype, $jobid);
-        if (Sitepulse_Test_Backups::$job_starts) { touch(Sitepulse_Test_Backups::backwpup_started()); }
+        if (true === Sitepulse_Test_Backups::$job_starts) { touch(Sitepulse_Test_Backups::backwpup_started()); }
+        elseif ('running' === Sitepulse_Test_Backups::$job_starts) { Sitepulse_Test_Backups::$working = new BackWPup_Job(); }
         return array();
     }
     public static function user_abort() { Sitepulse_Test_Backups::$calls[] = array('user_abort'); }

@@ -210,7 +210,7 @@ if (!class_exists('Sitepulse_Profiler')) {
                         $key = self::key($hook_name, $priority, $id);
                         if (isset(self::$wrapped[$key])) continue;
 
-                        if (!isset($cb['function']) || !is_callable($cb['function'])) continue;
+                        if (!isset($cb['function']) || !self::wrappable($cb['function'])) continue;
                         if (is_array($cb['function']) && is_string($cb['function'][0]) && in_array($cb['function'][0], self::UNWRAPPED_CLASSES, true)) continue;
 
                         // Replace the callable with a timing wrapper
@@ -242,6 +242,23 @@ if (!class_exists('Sitepulse_Profiler')) {
                     }
                 }
             }
+        }
+
+        /**
+         * Whether a hook callback can be wrapped, decided without loading any class.
+         * Asking is_callable() about a static method autoloads its class at once, and a class written for later in
+         * the request then fails to load (BackWPup's admin pages extend WP_List_Table, which WordPress loads only on
+         * admin screens). WordPress loads the class when the hook fires, and so does the wrapper.
+         */
+        private static function wrappable($callback): bool {
+            if (is_string($callback) && strpos($callback, '::') !== false) {
+                $callback = explode('::', $callback, 2);
+            }
+            if (is_array($callback)) {
+                if (count($callback) !== 2 || !isset($callback[0], $callback[1])) return false;
+                if (is_string($callback[0]) && !class_exists($callback[0], false)) return true;
+            }
+            return is_callable($callback);
         }
 
         /** Record the plugin main-file interval when plugin_loaded begins. */

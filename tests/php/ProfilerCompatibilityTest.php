@@ -30,12 +30,32 @@ final class ProfilerCompatibilityTest extends Sitepulse_Test_Case {
     }
     public function test_hooks_with_incomplete_callback_entries_are_ignored(): void {
         $GLOBALS['wp_filter']['corrupt'] = 'not-a-hook';
-        $GLOBALS['wp_filter']['partial'] = (object) array('callbacks' => array(10 => array('missing' => array(), 'invalid' => array('function' => 'undefined_callback'))));
+        $GLOBALS['wp_filter']['partial'] = (object) array('callbacks' => array(10 => array('missing' => array(), 'invalid' => array('function' => 'undefined_callback'), 'lopsided' => array('function' => array('Sitepulse_Test_Admin_Only_Callback')), 'unknown_static' => array('function' => 'Sitepulse_Test_Profiler_Callback::missing_static'))));
         Sitepulse_Profiler::wrap_all_hooks();
         $this->assertSame(array(), Sitepulse_Profiler::get_formatted_stats());
         $GLOBALS['wp_filter'] = null;
         Sitepulse_Profiler::wrap_all_hooks();
         $this->assertSame(array(), Sitepulse_Profiler::get_formatted_stats());
+    }
+    public function test_wrapping_hooks_does_not_load_the_class_of_a_static_callback_before_its_hook_runs(): void {
+        $requested = array();
+        $autoloader = static function ($class) use (&$requested) {
+            if ('Sitepulse_Test_Admin_Only_Callback' === $class) { $requested[] = $class; require __DIR__ . '/fixtures/admin-only-callback.php'; }
+        };
+        spl_autoload_register($autoloader);
+        try {
+            add_filter('admin_enqueue_scripts', array('Sitepulse_Test_Admin_Only_Callback', 'print_scripts'));
+            add_filter('admin_enqueue_scripts', 'Sitepulse_Test_Admin_Only_Callback::print_scripts', 11);
+            Sitepulse_Profiler::wrap_all_hooks();
+            $this->assertSame(array(), $requested, 'Wrapping must not load the class: its parent is not loaded yet.');
+            foreach (array(10, 11) as $priority) { $this->assertInstanceOf(Closure::class, $GLOBALS['wp_filter']['admin_enqueue_scripts']->callbacks[$priority]['Sitepulse_Test_Admin_Only_Callback::print_scripts']['function']); }
+            require __DIR__ . '/fixtures/admin-screen.php';
+            $this->assertSame('ok!!', apply_filters('admin_enqueue_scripts', 'ok'));
+            $this->assertSame(array('Sitepulse_Test_Admin_Only_Callback'), $requested);
+            $this->assertCount(2, Sitepulse_Profiler::get_stats_by_hook('admin_enqueue_scripts'));
+        } finally {
+            spl_autoload_unregister($autoloader);
+        }
     }
     public function test_empty_plugin_identifier_does_not_create_an_activity_row(): void {
         Sitepulse_Profiler::mark_plugin_load_complete(); Sitepulse_Profiler::capture_plugin_load_time('');
