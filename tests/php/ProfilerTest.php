@@ -71,6 +71,15 @@ final class ProfilerTest extends Sitepulse_Test_Case {
             foreach ($GLOBALS['wp_filter'][$hook]->callbacks[$priority] as $callback) { $this->assertIsArray($callback['function']); }
         }
     }
+    public function test_a_failure_while_recording_never_changes_what_the_measured_callback_returns(): void {
+        add_filter('measured_filter', static function ($value) { usleep(2000); return $value . ' filtered'; });
+        add_action('sitepulse_profiler_record', static function () { throw new RuntimeException('Extension failed'); });
+        Sitepulse_Profiler::wrap_all_hooks();
+        $this->assertSame('value filtered', apply_filters('measured_filter', 'value'));
+        $this->assertSame('value filtered', apply_filters('measured_filter', 'value'), 'Each run, with what recording learned about the callback on its first.');
+        $row = array_values(Sitepulse_Profiler::get_stats_by_hook('measured_filter'))[0];
+        $this->assertSame(2, $row['calls']); $this->assertSame('Closure', $row['sig']); $this->assertStringContainsString('ProfilerTest.php:', $row['fileline']);
+    }
     public function test_exception_in_wrapped_callback_propagates_and_later_timings_stay_exclusive(): void {
         add_filter('failing_filter', static function () { throw new RuntimeException('callback failed'); });
         add_filter('after_failure', static function ($value) { usleep(2000); return $value; });

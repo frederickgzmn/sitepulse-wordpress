@@ -232,6 +232,11 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 ---
 
 == Changelog ==
+= 1.5.2 =
+* Fixed: a PHP fatal error on a page (for example, a plugin calling a function that no longer exists) showed a blank page instead of WordPress's "critical error" page, and WordPress did not offer recovery mode. SitePulse still logs and reports each one.
+* Fixed: SitePulse no longer turns a warning into a fatal error when it cannot save the error log, and no longer interferes with WordPress's own fatal error protection or its recovery mode email.
+* Improved: SitePulse adds less to every page load. Warnings are saved once per request (a warning repeated in a loop is stored once), measurements are saved after the page is sent on PHP-FPM and LiteSpeed servers, and SitePulse no longer writes a test file to wp-content on every request.
+
 = 1.5.1 =
 * Fixed: with the hook profiler on and BackWPup active, every wp-admin page died with Class "WP_List_Table" not found.
 * Additional fixes to the remote management.

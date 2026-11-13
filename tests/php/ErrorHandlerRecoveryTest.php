@@ -16,7 +16,7 @@ final class ErrorHandlerRecoveryTest extends Sitepulse_Test_Case {
     public function test_exception_logs_fatal_trace_and_sends_exception_notification(): void {
         Sitepulse_Error_Handler::set_recovery_email('recovery@example.test');
         $exception = $this->buildException();
-        Sitepulse_Error_Handler::handle_exception($exception);
+        try { Sitepulse_Error_Handler::handle_exception($exception); $this->fail('The exception must go back to PHP, which reports it as a fatal error.'); } catch (RuntimeException $rethrown) { $this->assertSame($exception, $rethrown); }
         $error = Sitepulse_Error_Handler::get_error_log()['errors'][0];
         $this->assertTrue($error['is_fatal']); $this->assertSame('Uncaught Exception', $error['type']); $this->assertSame('Checkout failed', $error['message']);
         $this->assertNotEmpty($error['call_stack']); $this->assertSame('buildException', $error['call_stack'][0]['function']);

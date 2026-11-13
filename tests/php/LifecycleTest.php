@@ -56,7 +56,7 @@ final class LifecycleTest extends Sitepulse_Test_Case {
 
     public function test_page_analysis_request_is_detected_before_the_profilers_start(): void {
         $result = $this->runLifecycle(array('mode' => 'analysis_bootstrap'));
-        $this->assertSame(array('analysis' => true, 'profiler' => true, 'sample_hook' => PHP_INT_MAX, 'persist_hook' => 10, 'toggle' => true), $result);
+        $this->assertSame(array('analysis' => true, 'profiler' => true, 'sample_hook' => PHP_INT_MAX, 'persist_hook' => PHP_INT_MAX, 'toggle' => true), $result);
     }
 
     public function test_the_loader_starts_the_wp_admin_check(): void {

@@ -77,6 +77,7 @@ final class CoreAdditionalBehaviorTest extends Sitepulse_Test_Case {
         update_option('sitepulse_plugin_profiler_stats', array('old' => array('avg_time' => 2000)));
         $GLOBALS['wp_filesystem'] = null;
         Sitepulse_Plugin_Profiler::init();
+        $this->assertNull($GLOBALS['wp_filesystem'], 'Every request runs this: it must not set up the filesystem, which tests it by writing a file.');
         Sitepulse_Plugin_Profiler::capture_baseline();
         Sitepulse_Plugin_Profiler::setup_plugin_tracking();
         $this->assertFalse(has_action('plugins_loaded', array('Sitepulse_Plugin_Profiler', 'track_plugins')));

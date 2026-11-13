@@ -10,7 +10,7 @@ final class ProfilerCompatibilityTest extends Sitepulse_Test_Case {
         Sitepulse_Profiler::init();
         $this->assertTrue(Sitepulse_Profiler::$enabled);
         $this->assertNotFalse(has_action('plugin_loaded', array('Sitepulse_Profiler', 'capture_plugin_load_time')));
-        $this->assertNotFalse(has_action('shutdown', array('Sitepulse_Profiler', 'persist')));
+        $this->assertSame(PHP_INT_MAX, has_action('shutdown', array('Sitepulse_Profiler', 'persist_after_response')), 'Saved after every other shutdown callback, once the page is sent.');
         do_action('setup_theme'); do_action('after_setup_theme');
         $this->assertCount(1, Sitepulse_Profiler::get_stats_by_hook('theme_bootstrap'));
     }

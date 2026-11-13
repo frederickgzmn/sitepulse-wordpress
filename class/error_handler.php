@@ -46,6 +46,13 @@ class Sitepulse_Error_Handler {
 	private const MAX_ERROR_LOG_ENTRIES = 100;
 
 	/**
+	 * Different errors a request remembers to store each one once
+	 *
+	 * @var int
+	 */
+	private const MAX_NOTED_ERRORS = 1000;
+
+	/**
 	 * Every field a stored error entry may be read for.
 	 */
 	private const ERROR_DEFAULTS = array(
@@ -82,6 +89,42 @@ class Sitepulse_Error_Handler {
 	private static $previous_exception_handler = null;
 
 	/**
+	 * Errors this request noted and has not saved yet. They are saved together when the
+	 * request ends, so a page that raises many warnings writes the log once, not once each.
+	 *
+	 * @var array
+	 */
+	private static $pending_errors = array();
+
+	/**
+	 * Errors this request noted and has not added to the lifetime count yet, repeats included.
+	 *
+	 * @var int
+	 */
+	private static $pending_count = 0;
+
+	/**
+	 * Errors this request already noted (type, file, line and message): one repeated in a loop is stored once.
+	 *
+	 * @var array<string,bool>
+	 */
+	private static $noted_errors = array();
+
+	/**
+	 * Whether the request has ended (handle_shutdown() ran): an error raised after that is saved at once.
+	 *
+	 * @var bool
+	 */
+	private static $request_ended = false;
+
+	/**
+	 * Whether handle_exception() logged the uncaught exception PHP reports again, as a fatal error, at shutdown.
+	 *
+	 * @var bool
+	 */
+	private static $exception_logged = false;
+
+	/**
 	 * Initialize the error handler
 	 */
 	public static function init() {
@@ -98,7 +141,7 @@ class Sitepulse_Error_Handler {
 		// Register error handler for warnings and notices
 		// Use a high priority to ensure our handler runs
 		$previous_handler = set_error_handler( array( __CLASS__, 'handle_error' ), E_ALL );
-		
+
 		// Store previous handler to chain if needed
 		if ( $previous_handler !== null ) {
 			self::$previous_error_handler = $previous_handler;
@@ -106,29 +149,15 @@ class Sitepulse_Error_Handler {
 
 		// Register exception handler
 		$previous_exception_handler = set_exception_handler( array( __CLASS__, 'handle_exception' ) );
-		
+
 		// Store previous exception handler
 		if ( $previous_exception_handler !== null ) {
 			self::$previous_exception_handler = $previous_exception_handler;
 		}
 
-		// Prevent WordPress from sending its own fatal error emails
-		// WordPress 5.2+ has a built-in fatal error handler that sends emails to admin_email
-		// We disable it so only our custom handler sends emails to the recovery email
-		
-		// Method 1: Disable WordPress's fatal error handler completely
-		add_filter( 'wp_fatal_error_handler_enabled', '__return_false', 999 );
-		
-		// Method 2: Filter the email address to empty string (backup method)
-		add_filter( 'wp_fatal_error_handler_email', array( __CLASS__, 'prevent_wordpress_fatal_error_email' ), 999 );
-		
-		// Method 3: Intercept wp_mail calls to block WordPress's fatal error emails
-		// This catches any fatal error emails WordPress might still try to send
-		add_filter( 'wp_mail', array( __CLASS__, 'prevent_wordpress_fatal_error_wp_mail' ), 999, 1 );
-		
-		// Method 4: Set constant to disable fatal error handler (if not already set)
-		// This is done via filter since we can't set constants after PHP has started
-		// Note: User can also add define('WP_DISABLE_FATAL_ERROR_HANDLER', true); to wp-config.php
+		// WordPress's own fatal error protection stays on: on a fatal error it shows its "critical error"
+		// page instead of a blank one, and emails the recovery mode link that gets an administrator back
+		// into a site a plugin broke. SitePulse only logs and reports errors; it never replaces that.
 
 		// Clean up old errors on initialization (runs once per page load)
 		add_action( 'init', array( __CLASS__, 'cleanup_old_errors_on_init' ), 999 );
@@ -172,32 +201,75 @@ class Sitepulse_Error_Handler {
 	/**
 	 * Handle PHP errors (warnings, notices, etc.)
 	 *
+	 * SitePulse only observes: whatever happens while it logs the error, the error then goes on exactly as
+	 * it would without SitePulse (to the previous handler, if any, and then to PHP), so a warning never
+	 * becomes a fatal error because of SitePulse.
+	 *
 	 * @param int    $errno   Error number
 	 * @param string $errstr  Error message
 	 * @param string $errfile File where error occurred
 	 * @param int    $errline Line number where error occurred
-	 * @return bool True if error was handled, false to use default handler
+	 * @return bool What the previous handler returned, or false so PHP handles the error as usual
 	 */
-	public static function handle_error( $errno, $errstr, $errfile, $errline ) {
+	public static function handle_error( $errno, $errstr, $errfile = '', $errline = 0 ) {
 		// Handle warnings, notices, and fatal errors
 		// But only log warnings/notices temporarily (removed after 1 hour)
 		// Fatal errors are kept for 2 days
-		if ( ! ( $errno & ( E_WARNING | E_USER_WARNING | E_ERROR | E_USER_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_RECOVERABLE_ERROR ) ) ) {
-			return false; // Let WordPress handle notices and strict warnings
+		if ( ( $errno & ( E_WARNING | E_USER_WARNING | E_ERROR | E_USER_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_RECOVERABLE_ERROR ) )
+			&& self::is_reported( $errno ) ) {
+			try {
+				self::note_error( $errno, $errstr, $errfile, $errline );
+			} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Logging must never break the page that raised the error.
+			}
 		}
 
-		// Check if error reporting is disabled for this specific error type
+		// Call previous error handler if it exists (chain handlers), and keep its answer.
+		if ( self::$previous_error_handler !== null && is_callable( self::$previous_error_handler ) ) {
+			return call_user_func( self::$previous_error_handler, $errno, $errstr, $errfile, $errline );
+		}
+
+		// Return false to allow WordPress to also handle the error
+		return false;
+	}
+
+	/**
+	 * Whether the error reporting level includes this error (a level of 0 still logs everything).
+	 *
+	 * @param int $errno Error number.
+	 * @return bool
+	 */
+	private static function is_reported( $errno ) {
 		$error_reporting = error_reporting();
-		if ( $error_reporting !== 0 && ! ( $error_reporting & $errno ) ) {
-			return false;
+		return 0 === $error_reporting || (bool) ( $error_reporting & $errno );
+	}
+
+	/**
+	 * Log an error once per request; a fatal one is saved and notified at once.
+	 *
+	 * @param int    $errno   Error number.
+	 * @param string $errstr  Error message.
+	 * @param string $errfile File where the error occurred.
+	 * @param int    $errline Line where the error occurred.
+	 */
+	private static function note_error( $errno, $errstr, $errfile, $errline ) {
+		// Every occurrence counts towards the lifetime total, but a warning raised in a loop is stored
+		// (and its call stack captured) only the first time, so it costs nothing after that.
+		$fingerprint = $errno . '|' . $errfile . '|' . $errline . '|' . $errstr;
+		if ( isset( self::$noted_errors[ $fingerprint ] ) ) {
+			self::$pending_count++;
+			if ( self::$request_ended ) {
+				self::save_pending_errors();
+			}
+			return;
+		}
+		// Remembering stops at a bound, so a request raising endless different warnings keeps its memory.
+		if ( count( self::$noted_errors ) < self::MAX_NOTED_ERRORS ) {
+			self::$noted_errors[ $fingerprint ] = true;
 		}
 
 		// Determine if this is a fatal error
 		$is_fatal = (bool)( $errno & ( E_ERROR | E_USER_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_RECOVERABLE_ERROR ) );
 
-		$call_stack = self::get_call_stack();
-
-		// Log the error
 		$error_data = array(
 			'type'    => self::get_error_type_name( $errno ),
 			'message' => $errstr,
@@ -205,7 +277,7 @@ class Sitepulse_Error_Handler {
 			'line'    => $errline,
 			'timestamp' => current_time( 'mysql' ),
 			'is_fatal' => $is_fatal, // Mark if this is a fatal error
-			'call_stack' => $call_stack, // Store call stack
+			'call_stack' => self::get_call_stack( 4 ), // The frames it always left out, and note_error
 		);
 
 		// Store error in log (warnings/notices removed after 1 hour, fatal errors kept for 2 days)
@@ -215,80 +287,98 @@ class Sitepulse_Error_Handler {
 		if ( $is_fatal ) {
 			self::send_error_notification( $error_data, 'PHP Error' );
 		}
-
-		// Call previous error handler if it exists (chain handlers)
-		if ( self::$previous_error_handler !== null && is_callable( self::$previous_error_handler ) ) {
-			call_user_func( self::$previous_error_handler, $errno, $errstr, $errfile, $errline );
-		}
-
-		// Return false to allow WordPress to also handle the error
-		return false;
 	}
 
 	/**
 	 * Handle uncaught exceptions
 	 *
+	 * Since PHP 7 most fatal errors are thrown (a call to an undefined function, a TypeError, a missing
+	 * class), so they all arrive here. Once logged, the exception goes on to the previous handler or, when
+	 * there is none, back to PHP, which reports it as the fatal error it is: WordPress then shows its
+	 * "critical error" page and offers recovery mode instead of a blank page.
+	 *
 	 * @param Throwable $exception The exception object
-	 * @throws Throwable The same exception while WordPress checks the page for fatal errors.
+	 * @throws Throwable The same exception, so PHP reports it as a fatal error.
 	 */
 	public static function handle_exception( $exception ) {
-		// WordPress checks a page for fatal errors (in its plugin and theme editors, and SitePulse
-		// after an update) with the error PHP reports at shutdown. A handled exception leaves none:
-		// let PHP report it, and handle_shutdown() logs it.
-		if ( defined( 'WP_SANDBOX_SCRAPING' ) && WP_SANDBOX_SCRAPING ) {
-			throw $exception;
+		try {
+			// Capture call stack from exception trace
+			$call_stack = self::format_exception_trace( $exception->getTrace() );
+
+			$error_data = array(
+				'type'      => 'Uncaught Exception',
+				'message'   => $exception->getMessage(),
+				'file'      => $exception->getFile(),
+				'line'      => $exception->getLine(),
+				'trace'     => $exception->getTraceAsString(),
+				'timestamp' => current_time( 'mysql' ),
+				'is_fatal'  => true, // Exceptions are treated as fatal errors
+				'call_stack' => $call_stack, // Store formatted call stack
+			);
+
+			// Store error in log (exceptions are kept for 2 days like fatal errors)
+			self::log_error( $error_data );
+			self::$exception_logged = true;
+
+			self::send_error_notification( $error_data, 'PHP Exception' );
+		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Logging must never hide the exception.
 		}
 
-		// Capture call stack from exception trace
-		$call_stack = self::format_exception_trace( $exception->getTrace() );
-		
-		$error_data = array(
-			'type'      => 'Uncaught Exception',
-			'message'   => $exception->getMessage(),
-			'file'      => $exception->getFile(),
-			'line'      => $exception->getLine(),
-			'trace'     => $exception->getTraceAsString(),
-			'timestamp' => current_time( 'mysql' ),
-			'is_fatal'  => true, // Exceptions are treated as fatal errors
-			'call_stack' => $call_stack, // Store formatted call stack
-		);
+		// WordPress checks a page for fatal errors (in its plugin and theme editors, and SitePulse after an
+		// update) with the error PHP reports at shutdown, whatever other handler there is.
+		$scraping = defined( 'WP_SANDBOX_SCRAPING' ) && WP_SANDBOX_SCRAPING;
 
-		// Store error in log (exceptions are kept for 2 days like fatal errors)
-		self::log_error( $error_data );
-
-		self::send_error_notification( $error_data, 'PHP Exception' );
-
-		// Call previous exception handler if it exists (chain handlers)
-		if ( self::$previous_exception_handler !== null && is_callable( self::$previous_exception_handler ) ) {
+		// Call previous exception handler if it exists (chain handlers): it decides what the visitor sees.
+		if ( ! $scraping && self::$previous_exception_handler !== null && is_callable( self::$previous_exception_handler ) ) {
 			call_user_func( self::$previous_exception_handler, $exception );
+			return;
+		}
+
+		throw $exception;
+	}
+
+	/**
+	 * Handle fatal errors on shutdown, and save the errors this request noted
+	 */
+	public static function handle_shutdown() {
+		try {
+			$error = error_get_last();
+
+			if ( $error !== null && in_array( $error['type'], array( E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_RECOVERABLE_ERROR ), true )
+				&& ! self::is_logged_exception( $error ) ) {
+				// Capture call stack for fatal errors
+				$call_stack = self::get_call_stack();
+
+				$error_data = array(
+					'type'      => self::get_error_type_name( $error['type'] ),
+					'message'   => $error['message'],
+					'file'      => $error['file'],
+					'line'      => $error['line'],
+					'timestamp' => current_time( 'mysql' ),
+					'is_fatal'  => true, // Shutdown errors are always fatal
+					'call_stack' => $call_stack, // Store call stack
+				);
+
+				// Store error in log (fatal errors kept for 2 days)
+				self::log_error( $error_data );
+
+				self::send_error_notification( $error_data, 'Fatal Error' );
+			}
+
+			self::$request_ended = true;
+			self::save_pending_errors();
+		} catch ( Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- The page is already sent; logging must not add an error to it.
 		}
 	}
 
 	/**
-	 * Handle fatal errors on shutdown
+	 * Whether the fatal error PHP reports at shutdown is the uncaught exception handle_exception() logged.
+	 *
+	 * @param array $error Error from error_get_last().
+	 * @return bool
 	 */
-	public static function handle_shutdown() {
-		$error = error_get_last();
-
-		if ( $error !== null && in_array( $error['type'], array( E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_RECOVERABLE_ERROR ), true ) ) {
-			// Capture call stack for fatal errors
-			$call_stack = self::get_call_stack();
-			
-			$error_data = array(
-				'type'      => self::get_error_type_name( $error['type'] ),
-				'message'   => $error['message'],
-				'file'      => $error['file'],
-				'line'      => $error['line'],
-				'timestamp' => current_time( 'mysql' ),
-				'is_fatal'  => true, // Shutdown errors are always fatal
-				'call_stack' => $call_stack, // Store call stack
-			);
-
-			// Store error in log (fatal errors kept for 2 days)
-			self::log_error( $error_data );
-
-			self::send_error_notification( $error_data, 'Fatal Error' );
-		}
+	private static function is_logged_exception( $error ) {
+		return self::$exception_logged && E_ERROR === $error['type'] && 0 === strpos( (string) $error['message'], 'Uncaught ' );
 	}
 
 	/**
@@ -458,9 +548,47 @@ class Sitepulse_Error_Handler {
 	 * Stores error details, count, and date in a structured format
 	 * Warnings/notices are removed after 1 hour, fatal errors kept for 2 days
 	 *
+	 * Warnings wait in memory and are saved together when the request ends, so the page that raised
+	 * them does not write to the database once per warning. A fatal error ends the request: it is saved
+	 * at once, with the warnings before it.
+	 *
 	 * @param array $error_data Error information
 	 */
 	private static function log_error( $error_data ) {
+		// Determine if this is a fatal error
+		$is_fatal = isset( $error_data['is_fatal'] ) ? (bool) $error_data['is_fatal'] : false;
+
+		// Create error entry
+		self::$pending_errors[] = array(
+			'type'      => isset( $error_data['type'] ) ? $error_data['type'] : 'Unknown',
+			'message'   => isset( $error_data['message'] ) ? $error_data['message'] : '',
+			'file'      => isset( $error_data['file'] ) ? $error_data['file'] : '',
+			'line'      => isset( $error_data['line'] ) ? $error_data['line'] : 0,
+			'date'      => isset( $error_data['timestamp'] ) ? $error_data['timestamp'] : current_time( 'mysql' ),
+			'timestamp' => current_time( 'timestamp' ),
+			'is_fatal'  => $is_fatal, // Mark if this is a fatal error
+			'call_stack' => isset( $error_data['call_stack'] ) ? $error_data['call_stack'] : array(), // Store call stack
+		);
+		self::$pending_count++;
+
+		// The log keeps the most recent entries only; older ones waiting here would be dropped anyway.
+		if ( count( self::$pending_errors ) > self::MAX_ERROR_LOG_ENTRIES ) {
+			array_shift( self::$pending_errors );
+		}
+
+		if ( $is_fatal || self::$request_ended ) {
+			self::save_pending_errors();
+		}
+	}
+
+	/**
+	 * Save the errors this request noted, in one write.
+	 */
+	private static function save_pending_errors() {
+		if ( 0 === self::$pending_count ) {
+			return;
+		}
+
 		// Get existing error log
 		$error_log = get_option( self::ERROR_LOG_OPTION_KEY, array(
 			'errors' => array(),
@@ -486,43 +614,18 @@ class Sitepulse_Error_Handler {
 		// Warnings/notices removed after 1 hour, fatal errors after 2 days
 		$error_log = self::cleanup_old_errors( $error_log );
 
-		// Determine if this is a fatal error
-		$is_fatal = isset( $error_data['is_fatal'] ) ? (bool) $error_data['is_fatal'] : false;
-
-		// Create error entry
-		$error_entry = array(
-			'type'      => isset( $error_data['type'] ) ? $error_data['type'] : 'Unknown',
-			'message'   => isset( $error_data['message'] ) ? $error_data['message'] : '',
-			'file'      => isset( $error_data['file'] ) ? $error_data['file'] : '',
-			'line'      => isset( $error_data['line'] ) ? $error_data['line'] : 0,
-			'date'      => isset( $error_data['timestamp'] ) ? $error_data['timestamp'] : current_time( 'mysql' ),
-			'timestamp' => current_time( 'timestamp' ),
-			'is_fatal'  => $is_fatal, // Mark if this is a fatal error
-			'call_stack' => isset( $error_data['call_stack'] ) ? $error_data['call_stack'] : array(), // Store call stack
-		);
-
-		// Check retention period based on error type
-		$one_hour_ago = current_time( 'timestamp' ) - HOUR_IN_SECONDS;
-		$two_days_ago = current_time( 'timestamp' ) - ( 2 * DAY_IN_SECONDS );
-		
-		// For fatal errors: keep if within 2 days
-		// For warnings/notices: keep if within 1 hour
-		$retention_threshold = $is_fatal ? $two_days_ago : $one_hour_ago;
-		
-		if ( $error_entry['timestamp'] >= $retention_threshold ) {
-			// Add to errors array
-			$error_log['errors'][] = $error_entry;
-
-			// Limit the number of stored errors to prevent option from growing too large
-			if ( count( $error_log['errors'] ) > self::MAX_ERROR_LOG_ENTRIES ) {
-				// Remove oldest errors, keeping only the most recent
-				$error_log['errors'] = array_slice( $error_log['errors'], -self::MAX_ERROR_LOG_ENTRIES );
-			}
-
-			// Update count and last error date
-			$error_log['total_count'] = isset( $error_log['total_count'] ) ? (int) $error_log['total_count'] + 1 : 1;
-			$error_log['last_error_date'] = $error_entry['date'];
+		if ( self::$pending_errors ) {
+			// Limit the number of stored errors to prevent option from growing too large, keeping only the most recent
+			$error_log['errors']          = array_slice( array_merge( $error_log['errors'], self::$pending_errors ), -self::MAX_ERROR_LOG_ENTRIES );
+			$last_error                   = end( self::$pending_errors );
+			$error_log['last_error_date'] = $last_error['date'];
 		}
+
+		// Update count: every occurrence, a repeated warning included
+		$error_log['total_count'] = ( isset( $error_log['total_count'] ) ? (int) $error_log['total_count'] : 0 ) + self::$pending_count;
+
+		self::$pending_errors = array();
+		self::$pending_count  = 0;
 
 		// Save to option
 		update_option( self::ERROR_LOG_OPTION_KEY, $error_log, false );
@@ -585,6 +688,9 @@ class Sitepulse_Error_Handler {
 	 * @return array Error log with errors list, count, and last error date
 	 */
 	public static function get_error_log() {
+		// Include the errors this request noted.
+		self::save_pending_errors();
+
 		$error_log = get_option( self::ERROR_LOG_OPTION_KEY, array(
 			'errors' => array(),
 			'total_count' => 0,
@@ -655,20 +761,24 @@ class Sitepulse_Error_Handler {
 	 * @return bool True on success
 	 */
 	public static function clear_error_log() {
+		// Errors this request noted before the log was cleared are cleared too.
+		self::$pending_errors = array();
+		self::$pending_count  = 0;
+
 		return delete_option( self::ERROR_LOG_OPTION_KEY );
 	}
 
 	/**
 	 * Get call stack formatted
 	 *
+	 * @param int $skip Frames to leave out, starting with this function's own.
 	 * @return array Formatted call stack
 	 */
-	private static function get_call_stack() {
+	private static function get_call_stack( $skip = 3 ) {
 		$trace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
 		$stack = array();
 
 		// Skip the first few entries (error handler itself)
-		$skip = 3; // Skip: get_call_stack, handle_error/handle_shutdown, log_error
 		$trace = array_slice( $trace, $skip );
 
 		foreach ( $trace as $index => $frame ) {
@@ -848,6 +958,9 @@ class Sitepulse_Error_Handler {
 	 * Prevent WordPress from sending fatal error emails to admin email
 	 * Returns empty string to disable WordPress's default email sending
 	 *
+	 * Not hooked: no WordPress filter of that name exists, and WordPress's recovery mode email is how an
+	 * administrator gets back into a site a fatal error broke.
+	 *
 	 * @param string $email The email address WordPress would use
 	 * @return string Empty string to prevent WordPress from sending emails
 	 */
@@ -860,6 +973,10 @@ class Sitepulse_Error_Handler {
 	/**
 	 * Prevent WordPress from sending fatal error emails via wp_mail
 	 * Intercepts wp_mail calls that are for fatal error notifications
+	 *
+	 * Not hooked: wp_mail() ignores a false from its 'wp_mail' filter and sends the email anyway, but every
+	 * later 'wp_mail' and 'pre_wp_mail' callback receives that false, and one that requires an array stops
+	 * the request with a fatal error. The emails it matches include WordPress's recovery mode link.
 	 *
 	 * @param array $mail_data Mail data array
 	 * @return array|false Modified mail data or false to prevent sending

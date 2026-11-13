@@ -60,7 +60,7 @@ if ($input['mode'] === 'order') {
     sitepulse_move_to_first_position();
     echo json_encode(array('conflict' => $conflict, 'reordered' => $reordered, 'before' => $before, 'after' => get_option('active_plugins'), 'is_first' => sitepulse_is_first_plugin()));
 } elseif ($input['mode'] === 'analysis_bootstrap') {
-    echo json_encode(array('analysis' => Sitepulse_Page_Tracker::is_analysis_request(), 'profiler' => Sitepulse_Profiler::$enabled, 'sample_hook' => has_action('shutdown', array('Sitepulse_Page_Tracker', 'store_sample')), 'persist_hook' => has_action('shutdown', array('Sitepulse_Profiler', 'persist')), 'toggle' => has_action('admin_post_sitepulse_toggle_monitoring')));
+    echo json_encode(array('analysis' => Sitepulse_Page_Tracker::is_analysis_request(), 'profiler' => Sitepulse_Profiler::$enabled, 'sample_hook' => has_action('shutdown', array('Sitepulse_Page_Tracker', 'store_sample')), 'persist_hook' => has_action('shutdown', array('Sitepulse_Profiler', 'persist_after_response')), 'toggle' => has_action('admin_post_sitepulse_toggle_monitoring')));
 } elseif ($input['mode'] === 'upgrade') {
     update_option('sitepulse_current_tracked_pageid', 42); set_transient('sitepulse_single_page_list', array('x'));
     update_option(SITEPULSE_CURL_API_ENABLED, $input['curl'] ?? 'disabled');

@@ -97,4 +97,56 @@ final class ErrorHandlerTest extends Sitepulse_Test_Case {
         update_option('admin_email', 'admin@example.test');
         $this->assertFalse(Sitepulse_Error_Handler::prevent_wordpress_fatal_error_wp_mail(array('to' => array('admin@example.test'), 'message' => 'fatal exception occurred')));
     }
+
+    private function errorLogWrites(): array {
+        return array_values(array_filter(Sitepulse_Test_WP::$option_writes, static function ($write) { return 'sitepulse_error_log' === $write['key']; }));
+    }
+
+    public function test_a_failure_while_logging_never_changes_the_error_the_page_raised(): void {
+        add_filter('pre_option_sitepulse_error_log', static function () { throw new RuntimeException('Database unavailable'); });
+        $this->assertFalse(Sitepulse_Error_Handler::handle_error(E_USER_WARNING, 'Still a warning', __FILE__, 1), 'A warning stays a warning: PHP handles it as usual.');
+        $this->assertFalse(Sitepulse_Error_Handler::handle_error(E_USER_ERROR, 'Worker failed', __FILE__, 2));
+        $exception = new LogicException('Checkout failed');
+        try { Sitepulse_Error_Handler::handle_exception($exception); $this->fail('The exception must reach PHP.'); } catch (LogicException $rethrown) { $this->assertSame($exception, $rethrown, 'The page\'s own exception, not the logging failure.'); }
+        error_clear_last(); Sitepulse_Error_Handler::handle_shutdown();
+        $this->assertSame(array(), $this->errorLogWrites());
+        $this->assertSame(array(), Sitepulse_Test_WP::$mail);
+    }
+
+    public function test_a_page_raising_many_warnings_saves_the_log_once_and_stores_a_repeated_warning_once(): void {
+        for ($i = 0; $i < 500; $i++) { Sitepulse_Error_Handler::handle_error(E_WARNING, 'Undefined array key "title"', ABSPATH . 'wp-content/themes/example/loop.php', 12); }
+        Sitepulse_Error_Handler::handle_error(E_USER_WARNING, 'Deprecated setting', ABSPATH . 'wp-content/plugins/example/example.php', 3);
+        $this->assertSame(array(), $this->errorLogWrites(), 'Nothing is written while the page is generated.');
+        error_clear_last(); Sitepulse_Error_Handler::handle_shutdown();
+        $this->assertCount(1, $this->errorLogWrites());
+        $log = get_option('sitepulse_error_log');
+        $this->assertSame(array('Undefined array key "title"', 'Deprecated setting'), array_column($log['errors'], 'message'));
+        $this->assertSame(501, $log['total_count'], 'Every occurrence still counts.');
+        $this->assertSame('Warning', $log['errors'][0]['type']); $this->assertSame(12, $log['errors'][0]['line']);
+    }
+
+    public function test_errors_raised_after_the_request_ended_are_saved_at_once(): void {
+        error_clear_last(); Sitepulse_Error_Handler::handle_shutdown();
+        $this->assertSame(array(), $this->errorLogWrites(), 'A request without errors writes nothing.');
+        Sitepulse_Error_Handler::handle_error(E_WARNING, 'Raised by a later shutdown function', __FILE__, 7);
+        $this->assertSame(1, get_option('sitepulse_error_log')['total_count']);
+        Sitepulse_Error_Handler::handle_error(E_WARNING, 'Raised by a later shutdown function', __FILE__, 7);
+        $log = get_option('sitepulse_error_log');
+        $this->assertSame(2, $log['total_count']); $this->assertCount(1, $log['errors']);
+    }
+
+    public function test_a_request_remembers_a_bounded_number_of_different_errors(): void {
+        for ($i = 0; $i <= 1000; $i++) { Sitepulse_Error_Handler::handle_error(E_WARNING, 'warning-' . $i, __FILE__, 1); }
+        Sitepulse_Error_Handler::handle_error(E_WARNING, 'warning-1000', __FILE__, 1);
+        Sitepulse_Error_Handler::handle_error(E_WARNING, 'warning-999', __FILE__, 1);
+        $log = Sitepulse_Error_Handler::get_error_log();
+        $this->assertSame(1003, $log['total_count']); $this->assertCount(100, $log['errors']);
+        $this->assertSame(array('warning-999', 'warning-1000', 'warning-1000'), array_slice(array_column($log['errors'], 'message'), -3), 'Past the bound an error is stored again; before it, only counted.');
+    }
+
+    public function test_clearing_the_log_also_clears_errors_waiting_to_be_saved(): void {
+        Sitepulse_Error_Handler::handle_error(E_WARNING, 'Before clearing', __FILE__, 1);
+        Sitepulse_Error_Handler::clear_error_log();
+        $this->assertSame(array('errors' => array(), 'total_count' => 0, 'last_error_date' => null), Sitepulse_Error_Handler::get_error_log());
+    }
 }

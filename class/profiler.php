@@ -74,9 +74,23 @@ if (!class_exists('Sitepulse_Profiler')) {
                 // Themes often add callbacks during plugins_loaded; wrap them before they run.
                 add_action('after_setup_theme', [__CLASS__, 'wrap_all_hooks'], PHP_INT_MIN);
 
-                // Persist stats at end of request
-                add_action('shutdown', [__CLASS__, 'persist']);
+                // Persist stats at end of request, after every other shutdown callback, once the page is sent
+                add_action('shutdown', [__CLASS__, 'persist_after_response'], PHP_INT_MAX);
             }
+        }
+
+        /**
+         * Save the stats once the visitor has the page. The stats are rewritten on every request; on PHP-FPM
+         * and LiteSpeed that write no longer delays the page (elsewhere it runs before the response ends, as before).
+         */
+        public static function persist_after_response() {
+            // A page analysis response must reach the page tracker whole; its samples are not saved here.
+            if ( self::$analysis ) {
+                return;
+            }
+
+            Sitepulse_Utils::finish_response();
+            self::persist();
         }
 
         /** Persist stats */
@@ -214,34 +228,45 @@ if (!class_exists('Sitepulse_Profiler')) {
                         if (is_array($cb['function']) && is_string($cb['function'][0]) && in_array($cb['function'][0], self::UNWRAPPED_CLASSES, true)) continue;
 
                         // Replace the callable with a timing wrapper
-                        $orig = $cb['function'];
-
-                        $hook_obj->callbacks[$priority][$id]['function'] = function(...$args) use ($hook_name, $priority, $id, $orig, $key) {
-                            // Track nested callbacks so each callback's own (exclusive) time can be separated.
-                            $parent_child_time = self::$child_time;
-                            self::$child_time  = 0.0;
-                            $start = microtime(true);
-                            try {
-                                return $orig(...$args);
-                            } finally {
-                                $elapsed      = microtime(true) - $start;
-                                $self_elapsed = max(0.0, $elapsed - self::$child_time);
-                                self::$child_time = $parent_child_time + $elapsed;
-
-                                // Only record if execution time is measurable (> 0.0001 seconds = 0.1ms)
-                                if ($elapsed > 0.0001) {
-                                    Sitepulse_Profiler::record($hook_name, (int)$priority, (string)$id, $orig, $elapsed, $self_elapsed);
-                                    // Allow pro version to record additional metrics
-                                    do_action( 'sitepulse_profiler_record', $hook_name, $priority, $id, $orig, $elapsed );
-                                }
-                            }
-                        };
+                        $hook_obj->callbacks[$priority][$id]['function'] = self::timing_wrapper($hook_name, $priority, $id, $cb['function']);
 
                         // Mark wrapped
                         self::$wrapped[$key] = true;
                     }
                 }
             }
+        }
+
+        /** A callable that runs $orig as WordPress would and records how long it took. */
+        private static function timing_wrapper($hook_name, $priority, $id, $orig): Closure {
+            // What recording needs to know about $orig (it uses reflection), found on its first measurable run only.
+            $described = null;
+
+            return function(...$args) use ($hook_name, $priority, $id, $orig, &$described) {
+                // Track nested callbacks so each callback's own (exclusive) time can be separated.
+                $parent_child_time = self::$child_time;
+                self::$child_time  = 0.0;
+                $start = microtime(true);
+                try {
+                    return $orig(...$args);
+                } finally {
+                    $elapsed      = microtime(true) - $start;
+                    $self_elapsed = max(0.0, $elapsed - self::$child_time);
+                    self::$child_time = $parent_child_time + $elapsed;
+
+                    // Only record if execution time is measurable (> 0.0001 seconds = 0.1ms)
+                    if ($elapsed > 0.0001) {
+                        try {
+                            $described = $described ?? self::describe($orig);
+                            self::record_sample($hook_name, (int) $priority, $described[0], $described[1], $described[2], $elapsed, $self_elapsed);
+                            // Allow pro version to record additional metrics
+                            do_action( 'sitepulse_profiler_record', $hook_name, $priority, $id, $orig, $elapsed );
+                        } catch (Throwable $e) {
+                            // Measuring must never break the callback it measures: its result or exception goes on unchanged.
+                        }
+                    }
+                }
+            };
         }
 
         /**
@@ -423,6 +448,17 @@ if (!class_exists('Sitepulse_Profiler')) {
 
         /** Record one timing sample */
         public static function record(string $hook, int $priority, string $id, $callable, float $elapsed, ?float $self_elapsed = null): void {
+            [$sig, $fileline, $plugin_or_theme] = self::describe($callable);
+
+            self::record_sample($hook, $priority, $sig, $fileline, $plugin_or_theme, $elapsed, $self_elapsed);
+        }
+
+        /**
+         * A callable's signature, file:line and the plugin or theme it belongs to.
+         *
+         * @return array{0:string,1:string,2:string}
+         */
+        private static function describe($callable): array {
             $sig      = self::signature($callable);
             $fileline = self::fileline($callable);
 
@@ -439,7 +475,7 @@ if (!class_exists('Sitepulse_Profiler')) {
                 $plugin_or_theme = isset($parts[2]) ? $parts[2] : '(unknown)';
             }
 
-            self::record_sample($hook, $priority, $sig, $fileline, $plugin_or_theme, $elapsed, $self_elapsed);
+            return [$sig, $fileline, $plugin_or_theme];
         }
 
         /**

@@ -17,6 +17,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Sitepulse_Utils {
 
 	/**
+	 * Send the visitor the response now, so saving what SitePulse measured does not delay the page.
+	 *
+	 * Call it at the very end of the request (the last 'shutdown' callbacks): output after it is lost.
+	 * PHP-FPM and LiteSpeed can end the response early; elsewhere (Apache's mod_php, the CLI) it does
+	 * nothing, and the work that follows runs before the response ends, as it always did.
+	 */
+	public static function finish_response() {
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			// The visitor may leave once the page is sent; the work that follows must still finish.
+			ignore_user_abort( true );
+			fastcgi_finish_request();
+		} elseif ( function_exists( 'litespeed_finish_request' ) ) {
+			ignore_user_abort( true );
+			litespeed_finish_request();
+		}
+	}
+
+	/**
 	 * Format time with appropriate units (ms for < 1s, s for >= 1s)
 	 * Handles both seconds and milliseconds input
 	 *

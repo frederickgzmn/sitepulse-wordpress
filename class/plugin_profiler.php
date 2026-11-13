@@ -141,13 +141,9 @@ if ( ! class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
 	 * Initialize the plugin profiler
 	 */
 	public static function init() {
-		// Initialize WP_Filesystem for file operations
-		global $wp_filesystem;
-		if ( ! $wp_filesystem ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-			WP_Filesystem();
-		}
-		
+		// No WP_Filesystem() here: it runs on every request, and without FS_METHOD WordPress tests the
+		// filesystem by creating and deleting a file in wp-content. Code that writes files sets it up first.
+
 		// Load persisted stats and enabled flag
 		self::$stats = array_filter( (array) get_option( self::OPTION_KEY, [] ), 'is_array' );
 		self::$measured_total_time = (float) get_option( self::OPTION_TOTAL_TIME, 0.0 );			// Validate and clean loaded stats - remove entries with invalid values
@@ -208,8 +204,8 @@ if ( ! class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
 			// Track after plugins are loaded - use high priority to run after all plugins initialize
 			add_action( 'plugins_loaded', [ __CLASS__, 'track_plugins' ], PHP_INT_MAX );
 			
-			// Persist stats at end of request
-			add_action( 'shutdown', [ __CLASS__, 'persist' ] );
+			// Persist stats at end of request, after every other shutdown callback, once the page is sent
+			add_action( 'shutdown', [ __CLASS__, 'persist_after_response' ], PHP_INT_MAX );
 			
 			// Hook into plugin activation to trigger immediate data collection
 			add_action( 'activated_plugin', [ __CLASS__, 'on_plugin_activated' ], 10, 2 );
@@ -420,6 +416,14 @@ if ( ! class_exists( 'Sitepulse_Plugin_Profiler' ) ) {
 		self::$measured_total_time = $measured_total_time;
 	}
 		
+	/**
+	 * Save the stats once the visitor has the page: on PHP-FPM and LiteSpeed the write no longer delays it.
+	 */
+	public static function persist_after_response() {
+		Sitepulse_Utils::finish_response();
+		self::persist();
+	}
+
 	/**
 	 * Persist stats to database
 	 */
