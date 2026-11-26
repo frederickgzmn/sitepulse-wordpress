@@ -4,7 +4,7 @@ Tags: performance, speed, optimization, monitoring, profiler
 Requires at least: 5.5
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.1
+Stable tag: 1.5.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -72,28 +72,18 @@ Activate it, and within seconds you will see which plugins are heavy, which exte
 ### 💎 Core Features are Free Forever
 We believe every site owner deserves a fast website. The **Performance Monitoring**, **Plugin Profiler**, **Error Tracking** and all the current features included in this version are **Free Forever**. We will never paywall these essential tools.
 
-### 🚀 Coming Soon: SitePulse Pro
-We are developing a Pro version for agencies and power users who need historical data and automation.
-* **Ai-Powered Auto-Fixing** (Coming Soon)
-* **Access to our portal** (Coming Soon)
-* **📤 **CSV & PDF Exports** – Download performance logs and data for deeper analysis and reporting
-* **Historical Performance Timelines** (Coming Soon)
-* **Advanced SQL Query Monitor** (Coming Soon)
-* **Multi-Site Dashboard** – Manage and monitor all websites from a single admin dashboard.(Coming Soon)
-* **Performance Alerts & Notifications** – Get notified of performance regressions with detailed change analysis(Coming Soon)
-* **PageSpeed Deep Dive** – Full PageSpeed Insights reports with opportunities, diagnostics, and lab data(Coming Soon)
-* **Historical Performance Charts** – Track performance metrics over weeks and months with trend analysis(Coming Soon)
-* **Opportunities & Recommendations** – Actionable optimization suggestions from PageSpeed with implementation guides(Coming Soon)
-* **Custom Reports & Exports** – Generate and download detailed performance reports in multiple formats(Coming Soon)
-* **Multi-Page PageSpeed Tracking** – Monitor PageSpeed Insights performance across multiple pages and URLs with individual reports and comparisons(Coming Soon)
-* **URL Performance Dashboard** – Track performance metrics for specific URLs, homepage, key landing pages, and custom URLs you select(Coming Soon)
-* **Scheduled PageSpeed Audits** – Automatically run PageSpeed Insights on multiple URLs on a schedule to track performance trends(Coming Soon)
-* **Comparative Analysis** – Compare PageSpeed scores and metrics across different pages to identify which content needs optimization(Coming Soon)
-* **Vulnerability Scanner automatic & Alerts** – Scan your site for known vulnerabilities and get recommendations for fixing them
-* **Unlimited and fast and precise AI Diagnostic** – Get instant insights into what's slowing down your site with AI-powered diagnostics
-* **And more.
+### 🚀 SitePulse Pro: every site in one dashboard
+SitePulse Pro is the paid dashboard at sitepulse.me. It works with this free plugin, so there's nothing extra to install: get a connection key under SitePulse Settings → Remote Management, then add the site to your dashboard.
 
-👉 **[Join the Pro Waitlist](https://sitepulse.me/)** – Get early access, exclusive launch pricing, and be among the first to unlock advanced features.
+* **All your sites on one screen:** plugins, themes, available updates and health for every connected site.
+* **Safe updates:** a backup first, then one update at a time, each checked on key pages and rolled back when it breaks them.
+* **Backups:** schedules and recent backups from UpdraftPlus or BackWPup, with warnings for missing or overdue ones.
+* **One timeline per site:** updates, page speed and PHP fatal errors in one history.
+* **Client reports and alerts:** monthly reports, and alerts by email, Slack or webhook when an update or backup fails or a site slows down.
+
+Start a 14-day trial. The Founders plan needs no card.
+
+👉 **[Start a SitePulse Pro trial](https://sitepulse.me/pricing/?utm_source=wordpress.org&utm_medium=readme&utm_campaign=pro-trial)**
 
 ---
 
@@ -210,10 +200,10 @@ The check after each update loads wp-admin from the site's own server, so SitePu
 Yes. Page Analysis works on any front-end address, including WooCommerce product, shop, cart and category pages, and SitePulse runs on multisite environments.
 
 = Is this a "Lite" version with limited features? =
-No. This is the Core version of SitePulse. It is a fully functional, unlimited performance monitor. We are building a separate Pro version for advanced historical data and AI features, but the features you see here today will remain free forever.
+No. This is the Core version of SitePulse, a fully functional, unlimited performance monitor, and the features you see here will stay free forever. SitePulse Pro is the paid dashboard for managing many sites from one place.
 
-= How do I join the Pro waitlist? =
-You can sign up to be notified when Pro launches at [sitepulse.me](https://sitepulse.me/).
+= How do I start a SitePulse Pro trial? =
+Start a 14-day trial at [sitepulse.me](https://sitepulse.me/pricing/?utm_source=wordpress.org&utm_medium=readme&utm_campaign=pro-trial), then choose Get connection key under SitePulse Settings → Remote Management and add the site to your dashboard. The Founders plan needs no card.
 
 ---
 
@@ -232,6 +222,9 @@ You can sign up to be notified when Pro launches at [sitepulse.me](https://sitep
 ---
 
 == Changelog ==
+= 1.5.2 =
+* Changed: the dashboard banner and the readme now point to SitePulse Pro, the paid dashboard, and its 14-day trial instead of an early-access waitlist.
+
 = 1.5.1 =
 * Fixed: with the hook profiler on and BackWPup active, every wp-admin page died with Class "WP_List_Table" not found.
 * Additional fixes to the remote management.

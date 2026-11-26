@@ -205,7 +205,7 @@ final class DiagnosticTemplateCoverageTest extends Sitepulse_Test_Case {
         $this->assertSame(1, substr_count($html, 'sp-getting-started-step is-done')); $this->assertStringContainsString('Find your &lt;heaviest&gt; plugins', $html);
         $this->assertStringContainsString('href="https://example.test/plugins">Open Plugin Activity</a>', $html); $this->assertStringNotContainsString('>Analyze homepage<', $html);
         $this->assertStringContainsString('<input type="hidden" name="page" value="wpsp_sitepulse_page_analysis">', $html); $this->assertStringContainsString('id="sp-ai-card"', $html);
-        $this->assertGreaterThan(strpos($html, 'Key Numbers'), strpos($html, 'Claim Your Early Access'));
+        $this->assertGreaterThan(strpos($html, 'Key Numbers'), strpos($html, 'Manage every site from one dashboard'));
         $this->assertStringContainsString('Performance Monitor', $html); $this->assertStringNotContainsString('Activity Monitor', $html);
         $this->assertStringNotContainsString('Get started with SitePulse', $this->render('easy/views/home.php'));
     }
@@ -216,7 +216,7 @@ final class DiagnosticTemplateCoverageTest extends Sitepulse_Test_Case {
         $this->assertStringContainsString('<div id="sp-basic-view" class="sp-view-mode"' . $basic_style . '>', $html);
         $this->assertStringContainsString('<div id="sp-developer-view" class="sp-view-mode"' . $developer_style . '>', $html);
         $this->assertStringContainsString('data-view="' . $offer . '"', $html); $this->assertStringContainsString('class="sp-analyze-card"', $html);
-        $this->assertGreaterThan(strpos($html, 'Your Site Health Overview'), strpos($html, 'Claim Your Early Access'));
+        $this->assertGreaterThan(strpos($html, 'Your Site Health Overview'), strpos($html, 'Manage every site from one dashboard'));
         $this->assertStringContainsString('External Requests', $html); $this->assertStringNotContainsString('LoadSentinel', $html);
     }
     public static function classicViews(): array {
