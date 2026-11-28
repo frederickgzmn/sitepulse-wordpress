@@ -89,12 +89,4 @@ final class ErrorHandlerTest extends Sitepulse_Test_Case {
         $this->assertSame('', Sitepulse_Error_Handler::format_call_stack_for_display(array()));
         $this->assertSame('', Sitepulse_Error_Handler::format_call_stack_for_display('invalid'));
     }
-
-    public function test_fatal_notification_is_blocked_but_ordinary_mail_is_preserved(): void {
-        $this->assertFalse(Sitepulse_Error_Handler::prevent_wordpress_fatal_error_wp_mail(array('subject' => 'Your site has a CRITICAL ERROR')));
-        $ordinary = array('to' => 'customer@example.test', 'subject' => 'Your receipt', 'message' => 'Thank you.');
-        $this->assertSame($ordinary, Sitepulse_Error_Handler::prevent_wordpress_fatal_error_wp_mail($ordinary));
-        update_option('admin_email', 'admin@example.test');
-        $this->assertFalse(Sitepulse_Error_Handler::prevent_wordpress_fatal_error_wp_mail(array('to' => array('admin@example.test'), 'message' => 'fatal exception occurred')));
-    }
 }

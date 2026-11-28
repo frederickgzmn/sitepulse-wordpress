@@ -119,24 +119,6 @@ class Sitepulse_Error_Handler {
 			self::$previous_exception_handler = $previous_exception_handler;
 		}
 
-		// Prevent WordPress from sending its own fatal error emails
-		// WordPress 5.2+ has a built-in fatal error handler that sends emails to admin_email
-		// We disable it so only our custom handler sends emails to the recovery email
-		
-		// Method 1: Disable WordPress's fatal error handler completely
-		add_filter( 'wp_fatal_error_handler_enabled', '__return_false', 999 );
-		
-		// Method 2: Filter the email address to empty string (backup method)
-		add_filter( 'wp_fatal_error_handler_email', array( __CLASS__, 'prevent_wordpress_fatal_error_email' ), 999 );
-		
-		// Method 3: Intercept wp_mail calls to block WordPress's fatal error emails
-		// This catches any fatal error emails WordPress might still try to send
-		add_filter( 'wp_mail', array( __CLASS__, 'prevent_wordpress_fatal_error_wp_mail' ), 999, 1 );
-		
-		// Method 4: Set constant to disable fatal error handler (if not already set)
-		// This is done via filter since we can't set constants after PHP has started
-		// Note: User can also add define('WP_DISABLE_FATAL_ERROR_HANDLER', true); to wp-config.php
-
 		// Clean up old errors on initialization (runs once per page load)
 		add_action( 'init', array( __CLASS__, 'cleanup_old_errors_on_init' ), 999 );
 	}
@@ -243,7 +225,7 @@ class Sitepulse_Error_Handler {
 		// after an update) with the error PHP reports at shutdown. A handled exception leaves none:
 		// let PHP report it, and handle_shutdown() logs it.
 		if ( defined( 'WP_SANDBOX_SCRAPING' ) && WP_SANDBOX_SCRAPING ) {
-			throw $exception;
+			throw self::reportable( $exception );
 		}
 
 		// Capture call stack from exception trace
@@ -265,6 +247,10 @@ class Sitepulse_Error_Handler {
 
 		self::send_error_notification( $error_data, 'PHP Exception' );
 
+		// From here the exception is in the log: handle_shutdown() must not log the fatal error
+		// PHP makes of it, whether this handler or an earlier one gives it back.
+		self::$exception_logged = true;
+
 		// Call previous exception handler if it exists (chain handlers)
 		if ( self::$previous_exception_handler !== null && is_callable( self::$previous_exception_handler ) ) {
 			call_user_func( self::$previous_exception_handler, $exception );
@@ -273,18 +259,27 @@ class Sitepulse_Error_Handler {
 
 		// An exception a handler returns from counts as handled: PHP records no fatal error, so
 		// WordPress never shows its "critical error" page or starts recovery mode, and the visitor
-		// gets a blank page. Give it back to PHP; handle_shutdown() knows it is logged already.
-		self::$exception_logged = true;
+		// gets a blank page. Give it back to PHP.
+		throw self::reportable( $exception );
+	}
 
-		// PHP 7 cannot rethrow a syntax or compile error from an exception handler: it stops with
-		// "Exception thrown without a stack frame" and the page is empty. The same error goes back
-		// as an exception PHP can report, at the file and line of the original, which is how
-		// WordPress finds the plugin or theme to pause in recovery mode.
+	/**
+	 * The exception to give back to PHP for the one this handler received.
+	 *
+	 * PHP 7 cannot rethrow a syntax or compile error from an exception handler: it stops with
+	 * "Exception thrown without a stack frame", with no file and no message. Such an error goes
+	 * back as an exception PHP can report, at the file and line of the original, which is how
+	 * WordPress finds the plugin or theme to pause in recovery mode.
+	 *
+	 * @param Throwable $exception The uncaught exception.
+	 * @return Throwable
+	 */
+	private static function reportable( $exception ) {
 		if ( $exception instanceof CompileError ) {
-			throw new ErrorException( $exception->getMessage(), 0, E_PARSE, $exception->getFile(), $exception->getLine(), $exception );
+			return new ErrorException( $exception->getMessage(), 0, E_PARSE, $exception->getFile(), $exception->getLine(), $exception );
 		}
 
-		throw $exception;
+		return $exception;
 	}
 
 	/**
@@ -357,8 +352,10 @@ class Sitepulse_Error_Handler {
 		// Get recovery email address
 		$recovery_email = self::get_recovery_email();
 
-		// Skip if no email is configured
-		if ( empty( $recovery_email ) || ! is_email( $recovery_email ) ) {
+		// Skip if no email is configured, or if WordPress has not loaded wp_mail() yet: it comes
+		// after the plugins, so an error while a plugin loads cannot be mailed from here. Calling
+		// it anyway would replace the error being reported with one in this file.
+		if ( empty( $recovery_email ) || ! is_email( $recovery_email ) || ! function_exists( 'wp_mail' ) ) {
 			return;
 		}
 
@@ -870,89 +867,5 @@ class Sitepulse_Error_Handler {
 		$output .= '</div>';
 
 		return $output;
-	}
-
-	/**
-	 * Prevent WordPress from sending fatal error emails to admin email
-	 * Returns empty string to disable WordPress's default email sending
-	 *
-	 * @param string $email The email address WordPress would use
-	 * @return string Empty string to prevent WordPress from sending emails
-	 */
-	public static function prevent_wordpress_fatal_error_email( $email ) {
-		// Return empty string to prevent WordPress from sending its own fatal error emails
-		// Our custom handler will send emails to the recovery email address instead
-		return '';
-	}
-
-	/**
-	 * Prevent WordPress from sending fatal error emails via wp_mail
-	 * Intercepts wp_mail calls that are for fatal error notifications
-	 *
-	 * @param array $mail_data Mail data array
-	 * @return array|false Modified mail data or false to prevent sending
-	 */
-	public static function prevent_wordpress_fatal_error_wp_mail( $mail_data ) {
-		// Preserve our shutdown notification only for the configured recovery recipient.
-		// Its subject also contains the generic WordPress fatal-error pattern below.
-		$recovery_email = self::get_recovery_email();
-		$recipients = isset( $mail_data['to'] ) ? (array) $mail_data['to'] : array();
-		if ( $recovery_email && count( $recipients ) === 1
-			&& reset( $recipients ) === $recovery_email
-			&& isset( $mail_data['subject'] )
-			&& $mail_data['subject'] === sprintf( '[%s] SitePulse: Fatal Error Detected', get_bloginfo( 'name' ) ) ) {
-			return $mail_data;
-		}
-
-		// Check if this is a WordPress fatal error email
-		// WordPress fatal error emails typically have specific subject patterns
-		if ( isset( $mail_data['subject'] ) ) {
-			$subject = $mail_data['subject'];
-			
-			// Check for WordPress fatal error email patterns
-			$fatal_error_patterns = array(
-				'fatal error',
-				'fatal error occurred',
-				'your site is experiencing',
-				'critical error',
-			);
-			
-			foreach ( $fatal_error_patterns as $pattern ) {
-				if ( stripos( $subject, $pattern ) !== false ) {
-					// This is a WordPress fatal error email - prevent it
-					// Our custom handler will send the email to recovery address instead
-					return false;
-				}
-			}
-		}
-		
-		// Check if the email is going to admin email and contains error information
-		// WordPress sends fatal errors to admin_email by default
-		if ( isset( $mail_data['to'] ) ) {
-			$to = is_array( $mail_data['to'] ) ? $mail_data['to'][0] : $mail_data['to'];
-			$admin_email = get_option( 'admin_email' );
-			
-			// If email is going to admin and contains error-related content, block it
-			// unless it's going to our recovery email
-			if ( $to === $admin_email && $to !== $recovery_email ) {
-				if ( isset( $mail_data['message'] ) ) {
-					$message = $mail_data['message'];
-					$error_keywords = array( 'fatal', 'error', 'critical', 'wp_die', 'exception' );
-					$error_count = 0;
-					foreach ( $error_keywords as $keyword ) {
-						if ( stripos( $message, $keyword ) !== false ) {
-							$error_count++;
-						}
-					}
-					// If message contains multiple error keywords, it's likely a fatal error email
-					if ( $error_count >= 2 ) {
-						return false; // Block WordPress's default fatal error email
-					}
-				}
-			}
-		}
-		
-		// Allow other emails to proceed normally
-		return $mail_data;
 	}
 }
