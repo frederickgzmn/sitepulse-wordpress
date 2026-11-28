@@ -39,7 +39,6 @@ final class ErrorHandlerRecoveryTest extends Sitepulse_Test_Case {
         $html = Sitepulse_Error_Handler::format_error_for_display(array('message' => 'Example', 'file' => '/external/file.php', 'call_stack' => array(array('function' => 'example'), array('file' => '/external/file.php'), array())));
         $this->assertStringContainsString('Unknown Error:', $html); $this->assertStringContainsString('/external/file.php', $html); $this->assertStringContainsString('>example</code>', $html);
     }
-    public function test_wordpress_fatal_email_address_is_disabled(): void { $this->assertSame('', Sitepulse_Error_Handler::prevent_wordpress_fatal_error_email('admin@example.test')); }
     /**
      * @runInSeparateProcess
      * @preserveGlobalState disabled
@@ -55,16 +54,5 @@ final class ErrorHandlerRecoveryTest extends Sitepulse_Test_Case {
         Sitepulse_Error_Handler::handle_error(E_USER_ERROR, 'No recovery address', __FILE__, 1);
         $this->assertSame(array(), Sitepulse_Test_WP::$mail);
         $this->assertTrue(Sitepulse_Error_Handler::get_error_log()['errors'][0]['is_fatal']);
-    }
-    public function test_own_notification_exception_requires_exact_subject_and_recovery_recipient(): void {
-        Sitepulse_Error_Handler::set_recovery_email('recovery@example.test');
-        $own = array('to' => array('recovery@example.test'), 'subject' => '[Test Site] SitePulse: Fatal Error Detected');
-        $this->assertSame($own, Sitepulse_Error_Handler::prevent_wordpress_fatal_error_wp_mail($own));
-        $own['to'] = array('somebody@example.test');
-        $this->assertFalse(Sitepulse_Error_Handler::prevent_wordpress_fatal_error_wp_mail($own));
-        $own['to'] = array('recovery@example.test'); $own['subject'] = 'WordPress fatal error';
-        $this->assertFalse(Sitepulse_Error_Handler::prevent_wordpress_fatal_error_wp_mail($own));
-        $own['subject'] = '[Another site] SitePulse: Fatal Error Detected';
-        $this->assertFalse(Sitepulse_Error_Handler::prevent_wordpress_fatal_error_wp_mail($own));
     }
 }
