@@ -275,6 +275,15 @@ class Sitepulse_Error_Handler {
 		// WordPress never shows its "critical error" page or starts recovery mode, and the visitor
 		// gets a blank page. Give it back to PHP; handle_shutdown() knows it is logged already.
 		self::$exception_logged = true;
+
+		// PHP 7 cannot rethrow a syntax or compile error from an exception handler: it stops with
+		// "Exception thrown without a stack frame" and the page is empty. The same error goes back
+		// as an exception PHP can report, at the file and line of the original, which is how
+		// WordPress finds the plugin or theme to pause in recovery mode.
+		if ( $exception instanceof CompileError ) {
+			throw new ErrorException( $exception->getMessage(), 0, E_PARSE, $exception->getFile(), $exception->getLine(), $exception );
+		}
+
 		throw $exception;
 	}
 

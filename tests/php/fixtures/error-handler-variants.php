@@ -32,6 +32,13 @@ if ($input['mode'] === 'previous_handlers') {
     Sitepulse_Error_Handler::init();
     register_shutdown_function(static function () { echo json_encode(array('last' => error_get_last(), 'log' => get_option('sitepulse_error_log'), 'mail' => Sitepulse_Test_WP::$mail)); });
     throw new Error('Call to undefined function sitepulse_removed_function()');
+} elseif ($input['mode'] === 'uncaught_parse_error') {
+    ini_set('display_errors', '0'); ini_set('log_errors', '0');
+    Sitepulse_Error_Handler::init();
+    $file = ABSPATH . 'parse-fixture.php';
+    register_shutdown_function(static function () use ($file) { echo json_encode(array('last' => error_get_last(), 'file' => $file, 'log' => get_option('sitepulse_error_log'), 'mail' => Sitepulse_Test_WP::$mail)); });
+    file_put_contents($file, '<?php this is not php');
+    include $file;
 } elseif ($input['mode'] === 'shutdown_without_error') {
     error_clear_last(); Sitepulse_Error_Handler::handle_shutdown(); echo json_encode(array('log' => get_option('sitepulse_error_log'), 'mail' => Sitepulse_Test_WP::$mail));
 }
