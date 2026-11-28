@@ -210,6 +210,17 @@ final class DiagnosticTemplateCoverageTest extends Sitepulse_Test_Case {
         $this->assertStringNotContainsString('Get started with SitePulse', $this->render('easy/views/home.php'));
     }
 
+    public function test_white_labelled_dashboards_carry_no_sitepulse_pro_offer(): void {
+        Sitepulse_Whitelabel_Service::store_whitelabel_data(array('enabled' => true, 'plugin_name' => 'Acme Site Care'));
+        foreach (array($this->render('easy/views/home.php'), $this->render('backend/dashboard.php', array('sp_dashboard_view' => 'basic'))) as $html) {
+            $this->assertStringNotContainsString('sp-promo-banner', $html); $this->assertStringNotContainsString('sitepulse.me/pricing', $html); $this->assertStringNotContainsString('Start my free trial', $html);
+        }
+        Sitepulse_Whitelabel_Service::clear_whitelabel_data();
+        foreach (array($this->render('easy/views/home.php'), $this->render('backend/dashboard.php', array('sp_dashboard_view' => 'basic'))) as $html) {
+            $this->assertStringContainsString('sp-promo-banner', $html); $this->assertStringContainsString('Start my free trial', $html);
+        }
+    }
+
     /** @dataProvider classicViews */
     public function test_classic_dashboard_renders_the_saved_view_without_waiting_for_javascript($view, $basic_style, $developer_style, $offer): void {
         $html = $this->render('backend/dashboard.php', array('sp_dashboard_view' => $view));

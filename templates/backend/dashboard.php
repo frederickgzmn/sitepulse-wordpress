@@ -472,6 +472,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</div>
 				</div>
 
+				<?php // A white-labelled site carries an agency's name: no SitePulse offer for its client. ?>
+				<?php if ( ! Sitepulse_Whitelabel_Service::is_whitelabel_enabled() ) : ?>
 				<div class="col-12">
 					<!-- SitePulse Pro Promo Banner -->
 					<div class="sp-promo-banner">
@@ -487,6 +489,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</div>
 					</div>
 				</div>
+				<?php endif; ?>
 
 				<?php
 				// Allow pro version to add widgets to basic view (loaded after Site Health Overview)

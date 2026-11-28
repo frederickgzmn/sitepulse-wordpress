@@ -581,6 +581,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</div>
 </div>
 
+<?php // A white-labelled site carries an agency's name: no SitePulse offer for its client. ?>
+<?php if ( ! Sitepulse_Whitelabel_Service::is_whitelabel_enabled() ) : ?>
 <!-- SitePulse Pro Promo Banner -->
 <div class="sp-promo-banner sp-mb-24">
 	<div class="sp-promo-content">
@@ -594,6 +596,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</a>
 	</div>
 </div>
+<?php endif; ?>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      MAIN DASHBOARD COLUMNS
