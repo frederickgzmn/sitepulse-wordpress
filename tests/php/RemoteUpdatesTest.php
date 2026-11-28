@@ -745,6 +745,33 @@ final class RemoteUpdatesTest extends Sitepulse_Test_Case {
         $this->assertSame(array(array('maintenance', true), array('upgrade', 'plugin', 'seo/seo.php'), array('maintenance', false)), Sitepulse_Test_Upgrades::$calls);
     }
 
+    public function test_code_that_throws_mid_update_puts_the_site_back_before_the_error_goes_on(): void {
+        $this->plugin('seo/seo.php', '1.0');
+        $this->offer('plugin', 'seo/seo.php', '1.1');
+        Sitepulse_Test_Upgrades::$outcomes['plugin:seo/seo.php'] = function () {
+            $this->plugin('seo/seo.php', '1.1');
+            // A hook of the updated plugin calls a function its new files no longer have. No
+            // shutdown action has run when the error leaves the update.
+            throw new Error('Call to undefined function seo_removed_function()');
+        };
+        Sitepulse_Test_Upgrades::$on_restore = function () { $this->plugin('seo/seo.php', '1.0'); };
+        $this->start('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_first' => false));
+        $this->api();
+
+        try {
+            Sitepulse_Remote_Updates::run_job();
+            $this->fail('The error should have gone on.');
+        } catch (Error $e) {
+            $this->assertSame('Call to undefined function seo_removed_function()', $e->getMessage());
+        }
+
+        $backup = array(array('dir' => 'plugins', 'slug' => 'seo', 'src' => WP_PLUGIN_DIR));
+        $this->assertSame(array(array('maintenance', true), array('upgrade', 'plugin', 'seo/seo.php'), array('maintenance', false), array('restore', $backup), array('delete_temp_backup', $backup)), Sitepulse_Test_Upgrades::$calls, 'Out of maintenance mode and back on the previous version, although no shutdown action ran.');
+        $this->assertSame(array('from' => '1.0', 'rolled_back' => true), $this->job()['current']);
+        $this->assertFalse(get_transient(Sitepulse_Remote_Updates::LOCK), 'The next step does not wait for the lock to expire.');
+        $this->assertFalse(has_action('shutdown'));
+    }
+
     public function test_an_interrupted_update_without_a_backup_is_reported_as_it_is(): void {
         $this->plugin('seo/seo.php', '1.1');
         $this->start('update_plugins', array('plugins' => array('seo/seo.php'), 'backup_first' => false));
