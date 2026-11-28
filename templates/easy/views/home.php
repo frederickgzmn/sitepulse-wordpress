@@ -581,8 +581,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</div>
 </div>
 
-<?php // A white-labelled site carries an agency's name: no SitePulse offer for its client. ?>
-<?php if ( ! Sitepulse_Whitelabel_Service::is_whitelabel_enabled() ) : ?>
+<?php // Not for an agency's white-labelled client, a site already connected, or a multisite network. ?>
+<?php if ( Sitepulse_Remote_Management::offers_dashboard() ) : ?>
 <!-- SitePulse Pro Promo Banner -->
 <div class="sp-promo-banner sp-mb-24">
 	<div class="sp-promo-content">

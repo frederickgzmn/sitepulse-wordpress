@@ -237,6 +237,17 @@ class Sitepulse_Remote_Management {
 	}
 
 	/**
+	 * Whether the plugin's dashboards offer SitePulse Pro, the paid dashboard. Not on a
+	 * white-labelled site, which carries an agency's name; not on a site the dashboard already
+	 * manages; not on a multisite network, which cannot connect to it.
+	 *
+	 * @return bool
+	 */
+	public static function offers_dashboard() {
+		return ! Sitepulse_Whitelabel_Service::is_whitelabel_enabled() && ! is_multisite() && ! self::is_active();
+	}
+
+	/**
 	 * @return bool Whether the dashboard manages the site right now.
 	 */
 	public static function is_active() {

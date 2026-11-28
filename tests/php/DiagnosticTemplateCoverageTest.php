@@ -210,15 +210,24 @@ final class DiagnosticTemplateCoverageTest extends Sitepulse_Test_Case {
         $this->assertStringNotContainsString('Get started with SitePulse', $this->render('easy/views/home.php'));
     }
 
-    public function test_white_labelled_dashboards_carry_no_sitepulse_pro_offer(): void {
+    public function test_the_sitepulse_pro_offer_is_shown_only_where_it_applies(): void {
+        $views = function () { return array($this->render('easy/views/home.php'), $this->render('backend/dashboard.php', array('sp_dashboard_view' => 'basic'))); };
+        $hidden = function ($why) use ($views) {
+            $this->assertFalse(Sitepulse_Remote_Management::offers_dashboard(), $why);
+            foreach ($views() as $html) { $this->assertStringNotContainsString('sp-promo-banner', $html, $why); $this->assertStringNotContainsString('sitepulse.me/pricing', $html, $why); $this->assertStringNotContainsString('Start my free trial', $html, $why); }
+        };
         Sitepulse_Whitelabel_Service::store_whitelabel_data(array('enabled' => true, 'plugin_name' => 'Acme Site Care'));
-        foreach (array($this->render('easy/views/home.php'), $this->render('backend/dashboard.php', array('sp_dashboard_view' => 'basic'))) as $html) {
-            $this->assertStringNotContainsString('sp-promo-banner', $html); $this->assertStringNotContainsString('sitepulse.me/pricing', $html); $this->assertStringNotContainsString('Start my free trial', $html);
-        }
+        $hidden('The client of an agency that white-labels the plugin is not offered SitePulse.');
         Sitepulse_Whitelabel_Service::clear_whitelabel_data();
-        foreach (array($this->render('easy/views/home.php'), $this->render('backend/dashboard.php', array('sp_dashboard_view' => 'basic'))) as $html) {
-            $this->assertStringContainsString('sp-promo-banner', $html); $this->assertStringContainsString('Start my free trial', $html);
-        }
+        Sitepulse_Test_WP::$multisite = true;
+        $hidden('A multisite network cannot connect to the dashboard.');
+        Sitepulse_Test_WP::$multisite = false;
+        update_option('sitepulse_license_key', 'AAAA-BBBB-CCCC-DDDD-EEEE'); update_option(Sitepulse_Remote_Management::STATE_OPTION, array('active' => true));
+        $this->assertTrue(Sitepulse_Remote_Management::is_active());
+        $hidden('A site the dashboard already manages has nothing to start.');
+        delete_option(Sitepulse_Remote_Management::STATE_OPTION); delete_option('sitepulse_license_key');
+        $this->assertTrue(Sitepulse_Remote_Management::offers_dashboard());
+        foreach ($views() as $html) { $this->assertStringContainsString('sp-promo-banner', $html); $this->assertStringContainsString('Start my free trial', $html); }
     }
 
     /** @dataProvider classicViews */
