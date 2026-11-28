@@ -127,8 +127,8 @@ Yes. SitePulse tracks any page or post type, including WooCommerce product pages
 **Is this a "Lite" version with limited features?**
 No. This is the full Core version — a complete, unlimited performance monitor. Core features are **free forever**.
 
-**How do I join the Pro waitlist?**
-Sign up at [sitepulse.me](https://sitepulse.me/). Pro adds historical timelines, scheduled PageSpeed audits, multi-site dashboards, CSV/PDF exports, and unlimited AI diagnostics.
+**What is SitePulse Pro?**
+The paid dashboard at [sitepulse.me](https://sitepulse.me/pricing/). It works with this free plugin, with nothing extra to install: get a connection key under **SitePulse → Settings → Remote Management** and add the site to your dashboard to manage all your sites in one place, with safe updates, backup monitoring, client reports and alerts. It comes with a 14-day trial, and the Founders plan needs no card.
 
 ## Support
 

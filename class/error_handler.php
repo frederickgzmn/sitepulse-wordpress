@@ -82,6 +82,13 @@ class Sitepulse_Error_Handler {
 	private static $previous_exception_handler = null;
 
 	/**
+	 * Whether this request's uncaught exception is already in the error log.
+	 *
+	 * @var bool
+	 */
+	private static $exception_logged = false;
+
+	/**
 	 * Initialize the error handler
 	 */
 	public static function init() {
@@ -229,7 +236,7 @@ class Sitepulse_Error_Handler {
 	 * Handle uncaught exceptions
 	 *
 	 * @param Throwable $exception The exception object
-	 * @throws Throwable The same exception while WordPress checks the page for fatal errors.
+	 * @throws Throwable The same exception, once it is logged, so that PHP and WordPress treat it as the fatal error it is.
 	 */
 	public static function handle_exception( $exception ) {
 		// WordPress checks a page for fatal errors (in its plugin and theme editors, and SitePulse
@@ -261,7 +268,23 @@ class Sitepulse_Error_Handler {
 		// Call previous exception handler if it exists (chain handlers)
 		if ( self::$previous_exception_handler !== null && is_callable( self::$previous_exception_handler ) ) {
 			call_user_func( self::$previous_exception_handler, $exception );
+			return;
 		}
+
+		// An exception a handler returns from counts as handled: PHP records no fatal error, so
+		// WordPress never shows its "critical error" page or starts recovery mode, and the visitor
+		// gets a blank page. Give it back to PHP; handle_shutdown() knows it is logged already.
+		self::$exception_logged = true;
+
+		// PHP 7 cannot rethrow a syntax or compile error from an exception handler: it stops with
+		// "Exception thrown without a stack frame" and the page is empty. The same error goes back
+		// as an exception PHP can report, at the file and line of the original, which is how
+		// WordPress finds the plugin or theme to pause in recovery mode.
+		if ( $exception instanceof CompileError ) {
+			throw new ErrorException( $exception->getMessage(), 0, E_PARSE, $exception->getFile(), $exception->getLine(), $exception );
+		}
+
+		throw $exception;
 	}
 
 	/**
@@ -269,6 +292,11 @@ class Sitepulse_Error_Handler {
 	 */
 	public static function handle_shutdown() {
 		$error = error_get_last();
+
+		// The uncaught exception behind this fatal error was logged, with its trace, when it was thrown.
+		if ( self::$exception_logged ) {
+			return;
+		}
 
 		if ( $error !== null && in_array( $error['type'], array( E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_RECOVERABLE_ERROR ), true ) ) {
 			// Capture call stack for fatal errors

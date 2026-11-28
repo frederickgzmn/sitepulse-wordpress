@@ -473,16 +473,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 
 				<div class="col-12">
-					<!-- Early Access Promo Banner -->
+					<!-- SitePulse Pro Promo Banner -->
 					<div class="sp-promo-banner">
 						<div class="sp-promo-content">
-							<h3><?php echo esc_html__( 'Claim Your Early Access', 'sitepulse' ); ?></h3>
-							<p><?php echo esc_html__( 'Experience the future of WordPress performance today. SitePulse Pro is now open for early access. Secure your spot and start optimizing with elite tools.', 'sitepulse' ); ?></p>
+							<h3><?php echo esc_html__( 'Manage every site from one dashboard', 'sitepulse' ); ?></h3>
+							<p><?php echo esc_html__( 'SitePulse Pro puts all your sites on one screen, with safe updates, backups and client reports. Connect this site and start a 14-day trial, with no card needed on Founders.', 'sitepulse' ); ?></p>
 						</div>
 						<div class="sp-promo-action">
-							<a href="https://sitepulse.me/" target="_blank" class="sp-btn-early-access sp-pulse">
+							<a href="https://sitepulse.me/pricing/?utm_source=sitepulse-plugin&amp;utm_medium=banner-advanced&amp;utm_campaign=pro-trial" target="_blank" class="sp-btn-early-access sp-pulse">
 								<span class="dashicons dashicons-star-filled me-2"></span>
-								<?php echo esc_html__( 'Secure My Spot', 'sitepulse' ); ?>
+								<?php echo esc_html__( 'Start my free trial', 'sitepulse' ); ?>
 							</a>
 						</div>
 					</div>
