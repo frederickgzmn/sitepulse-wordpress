@@ -20,6 +20,7 @@ The defects below were reproduced with expected-correct tests, then repaired. Th
 | Frontend load durations choose the correct seconds/minutes/hours unit without converting a formatted string back to a number. | [FrontendAdminBarTest](php/FrontendAdminBarTest.php) |
 | Fatal-error recovery messages retain their format placeholders, and SitePulse's own fatal notifications are not blocked by its email filter. | [ErrorHandlerRecoveryTest](php/ErrorHandlerRecoveryTest.php) |
 | An uncaught exception on a page WordPress checks for fatal errors (after a change in its plugin or theme editor) reaches that check as the fatal error it is, and is logged once. | [ErrorHandlerVariantsTest](php/ErrorHandlerVariantsTest.php) |
+| An uncaught exception on any page stays a fatal error after SitePulse logs it: WordPress shows its critical error page (HTTP 500) and can start recovery mode, where the visitor used to get a blank page with HTTP 200. It is logged once, with its trace. | [ErrorHandlerVariantsTest](php/ErrorHandlerVariantsTest.php) |
 | Translation loading uses the plugin translations directory on disk. | [LifecycleTest](php/LifecycleTest.php) |
 | A failed configuration rewrite returns an error before a duplicate SAVEQUERIES declaration can be added. | [PluginAdditionalBehaviorTest](php/PluginAdditionalBehaviorTest.php) |
 | A failed query diagnostic displays its error and retains the SAVEQUERIES enable action. | [DiagnosticTemplateCoverageTest](php/DiagnosticTemplateCoverageTest.php) |
