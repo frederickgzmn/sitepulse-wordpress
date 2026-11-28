@@ -472,6 +472,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</div>
 				</div>
 
+				<?php // Not for an agency's white-labelled client, a site already connected, or a multisite network. ?>
+				<?php if ( Sitepulse_Remote_Management::offers_dashboard() ) : ?>
 				<div class="col-12">
 					<!-- SitePulse Pro Promo Banner -->
 					<div class="sp-promo-banner">
@@ -487,6 +489,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 						</div>
 					</div>
 				</div>
+				<?php endif; ?>
 
 				<?php
 				// Allow pro version to add widgets to basic view (loaded after Site Health Overview)

@@ -527,7 +527,12 @@ class Sitepulse_Remote_Updates {
 		// A PHP time limit or crash can end this request in the middle of the update. WordPress
 		// still runs its shutdown actions then: leave maintenance mode, put the previous version
 		// back before WordPress deletes its copy (at priority 100), and free the job for its next step.
-		$recover = static function () use ( $upgrader, $kind, $id ) {
+		$recovered = false;
+		$recover   = static function () use ( $upgrader, $kind, $id, &$recovered ) {
+			if ( $recovered ) {
+				return;
+			}
+			$recovered = true;
 			$upgrader->maintenance_mode( false );
 			$job = self::job();
 			if ( null !== $job && null !== $job['current'] ) {
@@ -539,6 +544,12 @@ class Sitepulse_Remote_Updates {
 		add_action( 'shutdown', $recover, 1 );
 		try {
 			return self::install_and_check( $job, $upgrader, $offer, $id, $from );
+		} catch ( Throwable $error ) {
+			// Code that throws during the update (a hook of the updated plugin, most often) ends the
+			// request like a crash, but PHP still runs the finally block below, which would take the
+			// recovery away before the request ends. Recover now, then let the error go on.
+			$recover();
+			throw $error;
 		} finally {
 			remove_action( 'shutdown', $recover, 1 );
 		}

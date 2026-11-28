@@ -12,7 +12,7 @@ if ($input['mode'] === 'previous_handlers') {
     Sitepulse_Error_Handler::init(); Sitepulse_Error_Handler::init();
     Sitepulse_Error_Handler::handle_error(E_WARNING, 'Chained warning', __FILE__, 15);
     Sitepulse_Error_Handler::handle_exception(new RuntimeException('Chained exception'));
-    echo json_encode(array('errors' => $GLOBALS['previous_errors'], 'exceptions' => $GLOBALS['previous_exceptions'], 'mail' => Sitepulse_Test_WP::$mail, 'wp_enabled' => apply_filters('wp_fatal_error_handler_enabled', true)));
+    echo json_encode(array('errors' => $GLOBALS['previous_errors'], 'exceptions' => $GLOBALS['previous_exceptions'], 'mail' => Sitepulse_Test_WP::$mail, 'hooks' => array('wp_fatal_error_handler_enabled' => has_filter('wp_fatal_error_handler_enabled'), 'wp_fatal_error_handler_email' => has_filter('wp_fatal_error_handler_email'), 'wp_mail' => has_filter('wp_mail'))));
     restore_error_handler(); restore_exception_handler();
 } elseif ($input['mode'] === 'fatal_shutdown') {
     ini_set('display_errors', '0'); ini_set('log_errors', '0');
@@ -39,6 +39,20 @@ if ($input['mode'] === 'previous_handlers') {
     register_shutdown_function(static function () use ($file) { echo json_encode(array('last' => error_get_last(), 'file' => $file, 'log' => get_option('sitepulse_error_log'), 'mail' => Sitepulse_Test_WP::$mail)); });
     file_put_contents($file, '<?php this is not php');
     include $file;
+} elseif ($input['mode'] === 'scraping_parse_error') {
+    ini_set('display_errors', '0'); ini_set('log_errors', '0');
+    define('WP_SANDBOX_SCRAPING', true);
+    Sitepulse_Error_Handler::init();
+    $file = ABSPATH . 'scrape-parse-fixture.php';
+    register_shutdown_function(static function () use ($file) { echo json_encode(array('last' => error_get_last(), 'file' => $file, 'log' => get_option('sitepulse_error_log'), 'mail' => Sitepulse_Test_WP::$mail)); });
+    file_put_contents($file, '<?php this is not php');
+    include $file;
+} elseif ($input['mode'] === 'earlier_handler_rethrows') {
+    ini_set('display_errors', '0'); ini_set('log_errors', '0');
+    set_exception_handler(static function ($exception) { throw $exception; });
+    Sitepulse_Error_Handler::init();
+    register_shutdown_function(static function () { echo json_encode(array('last' => error_get_last(), 'log' => get_option('sitepulse_error_log'), 'mail' => Sitepulse_Test_WP::$mail)); });
+    throw new RuntimeException('Given back');
 } elseif ($input['mode'] === 'shutdown_without_error') {
     error_clear_last(); Sitepulse_Error_Handler::handle_shutdown(); echo json_encode(array('log' => get_option('sitepulse_error_log'), 'mail' => Sitepulse_Test_WP::$mail));
 }

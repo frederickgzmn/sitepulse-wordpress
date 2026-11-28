@@ -581,6 +581,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</div>
 </div>
 
+<?php // Not for an agency's white-labelled client, a site already connected, or a multisite network. ?>
+<?php if ( Sitepulse_Remote_Management::offers_dashboard() ) : ?>
 <!-- SitePulse Pro Promo Banner -->
 <div class="sp-promo-banner sp-mb-24">
 	<div class="sp-promo-content">
@@ -594,6 +596,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</a>
 	</div>
 </div>
+<?php endif; ?>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      MAIN DASHBOARD COLUMNS

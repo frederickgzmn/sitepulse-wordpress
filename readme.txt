@@ -224,6 +224,9 @@ Start a 14-day trial at [sitepulse.me](https://sitepulse.me/pricing/?utm_source=
 == Changelog ==
 = 1.5.2 =
 * Fixed: a fatal error on the site shows WordPress's "There has been a critical error on this website" page again, and recovery mode can start. With SitePulse active, visitors got a blank page instead.
+* Fixed: SitePulse no longer interferes with the recovery email WordPress sends after a fatal error, which carries the link to recovery mode.
+* Fixed: the SitePulse Pro banner is no longer shown on a white-labelled site, on a site the dashboard already manages, or on a multisite network.
+* Fixed: when code throws an error during a remote update, the site leaves maintenance mode and goes back to the previous version at once.
 * Changed: the dashboard banner and the readme now point to SitePulse Pro, the paid dashboard, and its 14-day trial instead of an early-access waitlist.
 
 = 1.5.1 =
